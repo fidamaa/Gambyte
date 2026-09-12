@@ -324,14 +324,6 @@ canvas#chart { width:100%; height:130px; display:block; }
 /* Lance da ramificação ao vivo (Modo Livre) — diferencia da linha original */
 .move-item.branch { background:rgba(89,184,224,.07); outline:1px dashed rgba(89,184,224,.35); outline-offset:-1px; }
 .move-item.branch:hover { background:rgba(89,184,224,.14); }
-/* Selo de variantes alternativas num ponto de ramificação — nada é
-   apagado, isto só alterna qual delas está sendo exibida. */
-.move-alt-variations {
-  flex: none; font-size:9px; font-weight:700; font-family:'JetBrains Mono',monospace;
-  color:var(--accent); background:rgba(232,201,122,.16); border:1px solid rgba(232,201,122,.4);
-  border-radius:99px; padding:1px 5px; margin-left:2px; cursor:pointer;
-}
-.move-alt-variations:hover { background:rgba(232,201,122,.3); }
 /* Active item keeps its classification border color — no override here */
 .move-item.book      { border-left-color:var(--book); }
 .move-item.brilliant { border-left-color:var(--brilliant); }

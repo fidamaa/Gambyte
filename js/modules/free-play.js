@@ -3,14 +3,17 @@
    Allows moving pieces freely, with live engine eval.
    Uses PGNParser.applyMove for move validation.
 
-   O histórico de lances é uma ÁRVORE (não uma pilha linear): voltar um
-   lance ("Voltar") só move o ponteiro da posição atual para o pai —
-   NUNCA apaga o nó. Jogar um lance diferente a partir de um ponto
-   anterior cria um novo FILHO (uma ramificação) irmão do que já existia
-   ali, preservando os dois; isso pode se repetir indefinidamente
-   (ramificação de ramificação). Cada nó carrega sua própria classificação
-   (calculada uma vez, em tempo real, e cacheada — nunca recalculada só
-   por navegar de volta a ele).
+   Modelo simples de navegação (uma única linha + índice, como o
+   histórico de um navegador):
+     - "Voltar"/"Avançar" só movem o ponteiro — NUNCA apagam nada.
+     - Jogar de novo o MESMO lance que já vinha depois do ponteiro
+       simplesmente avança (sem perder nada à frente).
+     - Jogar um lance DIFERENTE enquanto o ponteiro está atrás da ponta
+       da linha DESCARTA tudo que vinha depois e começa uma linha nova
+       a partir daí — essa é a "ramificação": ela só existe a partir do
+       momento em que o lance diferente é jogado, e substitui de vez o
+       que havia antes (não fica um passado alternativo pra escolher —
+       simples assim, de propósito).
 
    Depende de: pgn-parser.js, board-ui.js, arrow-system.js,
                stockfish-manager.js, engine-suggestion.js,
@@ -22,52 +25,41 @@ const FreePlay = (() => {
   let selectedSq    = null;
   let legalTargets  = [];
   let evalAbort     = null;
-  let onBranchCb    = null;   // chamado sempre que a árvore muda (lance, navegação, reclassificação)
+  let onBranchCb    = null;   // chamado sempre que a linha muda (lance, navegação, reclassificação)
   let _pgnHeaders   = {};     // from the loaded game
+  let _session      = 0;      // incrementado a cada start()/stop() — invalida callbacks assíncronos antigos
 
-  // ── Árvore de lances do Modo Livre ───────────────────────────
-  let root         = null;    // nó raiz: { id, fen, san:null, uci:null, parent:null, children:[], moveData:null }
-  let currentNode  = null;    // nó da posição atual (ponteiro de navegação)
-  let currentFEN   = null;    // sempre igual a currentNode.fen — mantido à parte só por conveniência
-  let _nodeSeq     = 0;
-  let _session     = 0;       // incrementado a cada start()/stop() — invalida callbacks assíncronos antigos
+  // ── Linha única de lances a partir da posição inicial ────────
+  // fens[0] é a posição inicial; fens[i+1] é a posição depois de sans[i].
+  let fens       = [];
+  let sans       = [];
+  let ucis       = [];
+  let movesData  = [];   // paralelo a sans — classificação de cada lance
+  let idx        = -1;   // ponteiro atual: -1 = posição inicial, k = depois de sans[k]
+  let currentFEN = null; // sempre igual a fens[idx+1] — mantido à parte por conveniência
 
-  // Último lance da partida original mantido antes da raiz da árvore
-  // começar (idx=-1 = nenhum, ou seja, a árvore começa do zero).
+  // Último lance da partida original mantido antes desta linha começar
+  // (idx=-1 = nenhum, ou seja, a linha começa do zero).
   let _baseCtx = { idx: -1, moves: [], movesData: [] };
 
-  function _newNode(fen, san, uci, parent) {
-    return { id: ++_nodeSeq, fen, san, uci, parent, children: [], moveData: null, _activeChildId: null };
-  }
-
-  function _depthOf(node) {
-    let d = 0, n = node;
-    while (n.parent) { d++; n = n.parent; }
-    return d;
-  }
-
-  // ── Público: quantos lances "Brilhante" já apareceram ANTES deste nó,
-  // no CAMINHO específico dele (não globalmente — cada ramificação conta
-  // os seus próprios lances, não os de outra linha) ────────────────────
-  function _brilliantsOnPathTo(node) {
-    let count = 0, n = node.parent;
-    while (n) { if (n.moveData && n.moveData.classification === 'brilliant') count++; n = n.parent; }
+  // ── Público: quantos lances "Brilhante"/livro já apareceram ANTES do
+  // índice dado nesta linha — usado pra classificar corretamente mesmo
+  // depois de uma ramificação substituir o que vinha antes.
+  function _brilliantsBefore(uptoIdx) {
+    let count = 0;
+    for (let i = 0; i < uptoIdx; i++) if (movesData[i] && movesData[i].classification === 'brilliant') count++;
     return count;
   }
-
-  // Idem para "já saiu do livro" — cada ramificação tem seu próprio
-  // histórico de livro, baseado só nos ANCESTRAIS dela.
-  function _wasOutOfBookBefore(node) {
-    let n = node.parent;
-    while (n) { if (n.moveData && n.moveData.isBook === false) return true; n = n.parent; }
+  function _wasOutOfBookBefore(uptoIdx) {
+    for (let i = 0; i < uptoIdx; i++) if (movesData[i] && movesData[i].isBook === false) return true;
     return false;
   }
 
   // ── Public API ─────────────────────────────────────────────
   // baseCtx (opcional): { idx, moves, movesData } — último lance da
-  // partida original mantido antes da árvore começar (idx=-1 = nenhum).
+  // partida original mantido antes desta linha começar (idx=-1 = nenhum).
   //
-  // start() cria uma árvore NOVA do zero. Se o jogador só quer sair
+  // start() cria uma linha NOVA do zero. Se o jogador só quer sair
   // temporariamente e voltar depois sem perder nada, use pause()/resume()
   // — start() é só para a primeira vez, ou depois de um stop() de verdade
   // (nova partida carregada, "Limpar").
@@ -76,8 +68,7 @@ const FreePlay = (() => {
     _session++;
     active     = true;
     const fen  = startFEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-    root       = _newNode(fen, null, null, null);
-    currentNode = root;
+    fens = [fen]; sans = []; ucis = []; movesData = []; idx = -1;
     currentFEN  = fen;
     selectedSq = null;
     legalTargets = [];
@@ -93,14 +84,14 @@ const FreePlay = (() => {
     return true;
   }
 
-  // Existe uma árvore viva (ativa ou pausada) que pode ser retomada?
-  function hasTree() { return !!root; }
+  // Existe uma linha viva (ativa ou pausada) que pode ser retomada?
+  function hasTree() { return fens.length > 0; }
 
   // Sai da edição SEM apagar nada — o tabuleiro, a lista de lances e o
   // gráfico continuam mostrando exatamente onde o jogador parou. Clicar
-  // em "Modo Livre" de novo retoma a mesma árvore com resume().
+  // em "Modo Livre" de novo retoma a mesma linha com resume().
   function pause() {
-    console.log(`[DEBUG] 🎮 FreePlay.pause — mantém a árvore (${root ? root.children.length : 0} lance(s) na raiz)`);
+    console.log(`[DEBUG] 🎮 FreePlay.pause — mantém a linha (${sans.length} lance(s))`);
     active = false;
     if (evalAbort) { evalAbort(); evalAbort = null; }
     selectedSq = null; legalTargets = [];
@@ -108,9 +99,9 @@ const FreePlay = (() => {
     document.getElementById('free-play-bar').classList.remove('visible');
   }
 
-  // Retoma uma árvore pausada exatamente de onde parou.
+  // Retoma uma linha pausada exatamente de onde parou.
   function resume(onBranchUpdate) {
-    if (!root) return false;
+    if (!hasTree()) return false;
     console.log(`[DEBUG] 🎮 FreePlay.resume`);
     active = true;
     onBranchCb = onBranchUpdate || null;
@@ -122,10 +113,10 @@ const FreePlay = (() => {
     return true;
   }
 
-  // Descarta a árvore de verdade — só quando uma partida realmente nova é
+  // Descarta a linha de verdade — só quando uma partida realmente nova é
   // carregada (Analisar Partida) ou o usuário pede pra "Limpar" tudo.
   function stop() {
-    console.log(`[DEBUG] 🎮 FreePlay.stop — descarta a árvore`);
+    console.log(`[DEBUG] 🎮 FreePlay.stop — descarta a linha`);
     _session++; // invalida qualquer classificação/eval assíncrona pendente desta sessão
     active = false;
     if (evalAbort) { evalAbort(); evalAbort = null; }
@@ -134,75 +125,48 @@ const FreePlay = (() => {
     document.getElementById('board-canvas').classList.remove('free-play', 'piece-selected');
     document.getElementById('free-play-bar').classList.remove('visible');
     onBranchCb = null;
-    root = null; currentNode = null;
+    fens = []; sans = []; ucis = []; movesData = []; idx = -1;
   }
 
   function isActive() { return active; }
 
-  // ── Leitura da árvore atual (para a UI renderizar) ──────────
-  // path: lances do caminho raiz → posição atual (o que apareceu antes
-  // era chamado de "ramificação"; agora é só "o caminho até aqui" — pode
-  // ser a linha original, ou uma ramificação, ou ramificação de ramificação).
-  // Cada item traz `siblings`: os outros lances possíveis NAQUELE ponto
-  // (irmãos no mesmo pai) — usado pra UI oferecer trocar de variante.
+  // ── Leitura da linha atual (para a UI renderizar) ───────────
+  // path: lances do início até o ponteiro atual (idx). Sem irmãos, sem
+  // variantes escondidas — só a linha como ela é agora.
   function getBranchView() {
-    if (!currentNode) return { baseIdx: _baseCtx.idx, path: [] };
-    const chain = [];
-    let n = currentNode;
-    while (n && n.parent) { chain.unshift(n); n = n.parent; }
-    const path = chain.map(node => ({
-      id: node.id,
-      san: node.san,
-      isCurrent: node.id === currentNode.id,
-      moveData: node.moveData,
-      siblings: node.parent.children.map(s => ({ id: s.id, san: s.san, active: s.id === node.id }))
-    }));
-    // Filhos da posição ATUAL (pra quem quiser escolher por qual continuar,
-    // em vez de só seguir o último visitado via goForward()).
-    const children = currentNode.children.map(c => ({ id: c.id, san: c.san }));
-    return { baseIdx: _baseCtx.idx, path, children };
+    const path = [];
+    for (let i = 0; i <= idx; i++) {
+      path.push({ index: i, san: sans[i], isCurrent: i === idx, moveData: movesData[i] });
+    }
+    return { baseIdx: _baseCtx.idx, path };
   }
 
-  function canGoBack()    { return !!(currentNode && currentNode.parent); }
-  function canGoForward() { return !!(currentNode && currentNode.children.length); }
+  function canGoBack()    { return idx > -1; }
+  function canGoForward() { return idx < sans.length - 1; }
 
   // Volta ao lance anterior SEM apagar nada — pode avançar de novo depois.
   function goBack() {
     if (!canGoBack()) return;
-    currentNode = currentNode.parent;
-    currentFEN  = currentNode.fen;
+    idx--;
+    currentFEN = fens[idx + 1];
     _afterNavigate(null, null);
   }
 
-  // Avança pelo filho ativo (o último visitado a partir daqui), ou pelo
-  // mais recente se nunca visitou nenhum a partir deste ponto.
+  // Avança pelo lance seguinte que já existia nesta linha.
   function goForward() {
     if (!canGoForward()) return;
-    const cid = currentNode._activeChildId;
-    const child = (cid && currentNode.children.find(c => c.id === cid)) ||
-                  currentNode.children[currentNode.children.length - 1];
-    currentNode = child;
-    currentFEN  = currentNode.fen;
+    idx++;
+    currentFEN = fens[idx + 1];
     _afterNavigate(null, null);
   }
 
-  // Pula direto para qualquer nó da árvore (ex.: clique numa variante).
-  // Marca o caminho raiz→nó como "ativo" pra "Avançar" seguir por ele depois.
-  function gotoNode(nodeId) {
-    if (!root) return;
-    const target = _findNode(root, nodeId);
-    if (!target) return;
-    let n = target;
-    while (n.parent) { n.parent._activeChildId = n.id; n = n.parent; }
-    currentNode = target;
-    currentFEN  = currentNode.fen;
+  // Pula direto para qualquer ponto já jogado nesta linha (ex.: clique
+  // num lance da lista). Não avança além da ponta atual.
+  function gotoIndex(target) {
+    if (target < -1 || target >= sans.length) return;
+    idx = target;
+    currentFEN = fens[idx + 1];
     _afterNavigate(null, null);
-  }
-
-  function _findNode(node, id) {
-    if (node.id === id) return node;
-    for (const c of node.children) { const f = _findNode(c, id); if (f) return f; }
-    return null;
   }
 
   function _afterNavigate(fromSq, toSq) {
@@ -354,18 +318,17 @@ const FreePlay = (() => {
     const san       = PGNParser.uciToSan(state, uci) || uci;
     const fenBefore = currentFEN;
     const isWhite   = state.turn === 'w';
+    const nextIdx   = idx + 1;
 
     selectedSq   = null;
     legalTargets = [];
     document.getElementById('board-canvas').classList.remove('piece-selected');
 
-    // Já existe esse exato lance a partir daqui (ex.: o jogador voltou e
-    // repetiu o mesmo lance) — só navega pra ele, sem duplicar o nó.
-    const existing = currentNode.children.find(c => c.uci === uci);
-    if (existing) {
-      currentNode._activeChildId = existing.id;
-      currentNode = existing;
-      currentFEN  = existing.fen;
+    // O mesmo lance que já vinha em seguida nesta linha — só avança,
+    // sem descartar nada (não é uma ramificação de verdade).
+    if (nextIdx < ucis.length && ucis[nextIdx] === uci) {
+      idx = nextIdx;
+      currentFEN = fens[idx + 1];
       _updateTurnLabel();
       _requestEval();
       _redraw(fromSq, toSq);
@@ -373,27 +336,33 @@ const FreePlay = (() => {
       return;
     }
 
-    // Lance novo a partir daqui — vira um FILHO (ramificação) do nó atual.
-    // Se o nó atual já tinha outro(s) filho(s) (a continuação original ou
-    // outra variante já explorada), eles são preservados como irmãos.
-    const newNode = _newNode(newFEN, san, uci, currentNode);
-    newNode.moveData = {
-      index: _baseCtx.idx + _depthOf(newNode),
+    // Lance diferente (ou já estava na ponta): descarta tudo que vinha
+    // depois do ponteiro e começa uma linha nova a partir daqui — essa é
+    // a ramificação, e ela substitui de vez o que havia antes.
+    sans.length      = nextIdx;
+    ucis.length      = nextIdx;
+    movesData.length = nextIdx;
+    fens.length      = nextIdx + 1;
+
+    const newMoveData = {
+      index: _baseCtx.idx + 1 + nextIdx,
       san, color: isWhite ? 'white' : 'black',
       evalBefore: null, evalAfter: null, bestEval: null, bestMoveUCI: null,
       playedMoveUCI: uci, multiPVEvals: null, mateNs: null,
       classification: null, isBook: false, isCheckmate: san.includes('#')
     };
-    currentNode._activeChildId = newNode.id;
-    currentNode.children.push(newNode);
-    currentNode = newNode;
-    currentFEN  = newFEN;
+    sans.push(san);
+    ucis.push(uci);
+    fens.push(newFEN);
+    movesData.push(newMoveData);
+    idx = nextIdx;
+    currentFEN = newFEN;
 
     _updateTurnLabel();
     _requestEval();
     _redraw(fromSq, toSq);
     if (onBranchCb) onBranchCb();
-    _classifyNode(newNode, fenBefore, newFEN, san, uci, isWhite);
+    _classifyMove(nextIdx, newMoveData, fenBefore, newFEN, san, uci, isWhite);
   }
 
   // ── Classificação em tempo real do lance ─────────────────────
@@ -403,20 +372,23 @@ const FreePlay = (() => {
   const BRANCH_REFINE_FREE   = 14;
   const BRANCH_REFINE_PRO    = 18;
 
-  async function _classifyNode(node, fenBefore, fenAfter, san, playedMoveUCI, isWhite) {
+  async function _classifyMove(i, entry, fenBefore, fenAfter, san, playedMoveUCI, isWhite) {
     const mySession = _session;
-    const stillCurrent = () => mySession === _session;
+    // `entry` é o objeto exato criado em _makeMove — se o índice i tiver
+    // sido reaproveitado por uma ramificação nova (o array foi truncado e
+    // recriado), movesData[i] já não é mais este objeto, e paramos aqui.
+    const stillCurrent = () => mySession === _session && movesData[i] === entry;
 
     const isCheckmateMove = san.includes('#');
-    const inBook = !_wasOutOfBookBefore(node) && OpeningDetector.isBookPosition(fenAfter);
+    const inBook = !_wasOutOfBookBefore(i) && OpeningDetector.isBookPosition(fenAfter);
 
     if (inBook) {
-      node.moveData.isBook = true;
-      node.moveData.classification = 'book';
+      entry.isBook = true;
+      entry.classification = 'book';
       if (stillCurrent() && onBranchCb) onBranchCb();
       return;
     }
-    node.moveData.isBook = false;
+    entry.isBook = false;
 
     const isPro = typeof AuthSystem !== 'undefined' && AuthSystem.isPremium();
     const depths = [BRANCH_QUICK_DEPTH, isPro ? BRANCH_REFINE_PRO : BRANCH_REFINE_FREE];
@@ -455,8 +427,8 @@ const FreePlay = (() => {
         playedMoveUCI: playedMoveUCI,
         multiPVEvals:  beforeRes.evals,
         isBook: false, isWhite,
-        brilliantsUsed: _brilliantsOnPathTo(node),
-        moveIndex: _depthOf(node),
+        brilliantsUsed: _brilliantsBefore(i),
+        moveIndex: i,
         isStalemate: likelyStalemateOrDraw,
         isCheckmate: isCheckmateMove,
         immediateCaptureValue, sacrificeValue,
@@ -464,14 +436,14 @@ const FreePlay = (() => {
         depth
       });
 
-      node.moveData.evalBefore  = evalBefore;
-      node.moveData.evalAfter   = evalAfter;
-      node.moveData.bestEval    = bestEval;
-      node.moveData.bestMoveUCI = beforeRes.bestMove;
-      node.moveData.multiPVEvals = beforeRes.evals;
-      node.moveData.mateNs      = beforeRes.mateNs;
-      node.moveData.immediateCaptureValue = immediateCaptureValue;
-      node.moveData.classification = cls;
+      entry.evalBefore  = evalBefore;
+      entry.evalAfter   = evalAfter;
+      entry.bestEval    = bestEval;
+      entry.bestMoveUCI = beforeRes.bestMove;
+      entry.multiPVEvals = beforeRes.evals;
+      entry.mateNs      = beforeRes.mateNs;
+      entry.immediateCaptureValue = immediateCaptureValue;
+      entry.classification = cls;
       if (stillCurrent() && onBranchCb) onBranchCb();
     }
   }
@@ -553,10 +525,7 @@ const FreePlay = (() => {
 
   // ── module: pgn-exporter.js ────────────────────────────────
   function _buildPGN() {
-    const chain = [];
-    let n = currentNode;
-    while (n && n.parent) { chain.unshift(n); n = n.parent; }
-    const moves = [..._baseCtx.moves, ...chain.map(n => n.san)];
+    const moves = [..._baseCtx.moves, ...sans.slice(0, idx + 1)];
     const date  = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
     let pgn = `[Event "Free Play"]\n[Date "${date}"]\n[White "${_pgnHeaders.White || '?'}"]\n[Black "${_pgnHeaders.Black || '?'}"]\n[Result "*"]\n\n`;
     for (let i = 0; i < moves.length; i++) {
@@ -593,6 +562,6 @@ const FreePlay = (() => {
     start, stop, pause, resume, hasTree, isActive,
     handleClick, undoMove, exportPGN, copyPGN,
     currentFEN: () => currentFEN, _redrawPublic,
-    getBranchView, gotoNode, goBack, goForward, canGoBack, canGoForward
+    getBranchView, gotoIndex, goBack, goForward, canGoBack, canGoForward
   };
 })();

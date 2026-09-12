@@ -465,12 +465,10 @@ const UIController = (() => {
     }
   }
 
-  // Redesenha a cauda da lista de lances com o CAMINHO atual da árvore do
-  // Modo Livre (raiz → posição atual — pode ser a linha original, uma
-  // ramificação, ou ramificação de ramificação), e atualiza
-  // gráfico/abertura/estatísticas com base+caminho combinados. Pontos onde
-  // existem lances alternativos (irmãos na árvore) ganham um selinho
-  // clicável pra trocar de variante sem perder nenhuma delas.
+  // Redesenha a cauda da lista de lances com a linha atual do Modo Livre
+  // (do início até o ponteiro — pode ser a linha original ou já ter sido
+  // substituída por uma ramificação), e atualiza gráfico/abertura/
+  // estatísticas com base+linha combinados.
   function renderBranch() {
     if (!_branchBaseCtx) return;
     const { idx: baseIdx } = _branchBaseCtx;
@@ -548,23 +546,7 @@ const UIController = (() => {
       <span class="move-eval">${_formatEvalDisplay(moveData.evalAfter)}</span>
       <span class="move-class-badge${cls ? ' ' + cls : ''}" title="${cls ? MoveClassifier.LABELS[cls] : ''}">${cls ? MoveClassifier.LABELS[cls] : ''}</span>
     `;
-    div.addEventListener('click', () => FreePlay.gotoNode(ply.id));
-
-    // Ponto de ramificação: outros lances possíveis aqui, nenhum apagado.
-    // Clicar cicla entre eles (inclusive voltando pro que está ativo).
-    if (ply.siblings.length > 1) {
-      const altWrap = document.createElement('span');
-      altWrap.className = 'move-alt-variations';
-      altWrap.title = `${ply.siblings.length} variantes neste ponto — clique pra alternar`;
-      altWrap.textContent = `⑂${ply.siblings.length}`;
-      altWrap.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const idx = ply.siblings.findIndex(s => s.active);
-        const next = ply.siblings[(idx + 1) % ply.siblings.length];
-        FreePlay.gotoNode(next.id);
-      });
-      div.appendChild(altWrap);
-    }
+    div.addEventListener('click', () => FreePlay.gotoIndex(ply.index));
     return div;
   }
 
