@@ -136,15 +136,10 @@ const UIController = (() => {
       });
     }
 
-    // ── Free play back/forward buttons ─────────────────────────
-    const btnFPBack = document.getElementById('free-play-back');
-    if (btnFPBack) btnFPBack.addEventListener('click', () => FreePlay.undoMove());
-    const btnFPFwd = document.getElementById('free-play-forward');
-    if (btnFPFwd) btnFPFwd.addEventListener('click', () => FreePlay.goForward());
-
-    // ── Free play exit button ─────────────────────────────────
-    const btnFPExit = document.getElementById('free-play-exit');
-    if (btnFPExit) btnFPExit.addEventListener('click', () => _exitFreePlay());
+    // Navegação (Voltar/Avançar) do Modo Livre usa as MESMAS setas de
+    // baixo (nav-prev/nav-next/nav-start/nav-end) e as mesmas setas do
+    // teclado do modo normal — ver navigate()/navTo()/setupKeyboard().
+    // Sair do Modo Livre é só clicar em "Modo Livre" de novo (btnFP acima).
 
     // ── Board click for free play ────────────────────────────
     document.getElementById('board-canvas').addEventListener('click', (e) => {
@@ -350,7 +345,16 @@ const UIController = (() => {
   }
 
   // ── Navigation ──────────────────────────────────────────────
+  // No Modo Livre, as MESMAS setas/teclas navegam a linha do Modo Livre
+  // (Voltar/Avançar) em vez da partida carregada — sem botões extras.
   function navigate(delta) {
+    // hasTree() (não isActive()) de propósito: dá pra rever a linha do
+    // Modo Livre com as setas mesmo pausado ("Sair"), sem precisar
+    // reentrar em edição só pra olhar os lances de novo.
+    if (FreePlay.hasTree()) {
+      if (delta < 0) FreePlay.goBack(); else FreePlay.goForward();
+      return;
+    }
     if (!parsedGameRef) return;
     const max = parsedGameRef.fensAfter.length - 1;
     const newIdx = Math.max(-1, Math.min(max, currentMoveIdx + delta));
@@ -360,6 +364,20 @@ const UIController = (() => {
   function navTo(idx) {
     if (!parsedGameRef) return;
     renderBoardAtMove(idx);
+  }
+
+  function navToStart() {
+    if (FreePlay.hasTree()) { FreePlay.gotoIndex(-1); return; }
+    navTo(-1);
+  }
+
+  function navToEnd() {
+    if (FreePlay.hasTree()) {
+      const { path } = FreePlay.getBranchView();
+      FreePlay.gotoIndex(path.length - 1);
+      return;
+    }
+    if (parsedGameRef) navTo(parsedGameRef.fensAfter.length - 1);
   }
 
   // ── Opening banner ──────────────────────────────────────────
@@ -529,10 +547,12 @@ const UIController = (() => {
     if (combinedMovesData.some(m => m.evalAfter !== null)) updateChart(combinedMovesData);
     updatePlayerStats(combinedMovesData);
 
-    const btnBack = document.getElementById('free-play-back');
-    const btnFwd  = document.getElementById('free-play-forward');
-    if (btnBack) btnBack.disabled = !FreePlay.canGoBack();
-    if (btnFwd)  btnFwd.disabled  = !FreePlay.canGoForward();
+    // As mesmas setas de baixo navegam o Modo Livre — refletem o estado
+    // da linha atual (Voltar/Avançar), não mais o da partida carregada.
+    els.navStart.disabled = !FreePlay.canGoBack();
+    els.navPrev.disabled  = !FreePlay.canGoBack();
+    els.navEnd.disabled   = !FreePlay.canGoForward();
+    els.navNext.disabled  = !FreePlay.canGoForward();
   }
 
   function _createBranchMoveEl(ply) {
@@ -706,18 +726,14 @@ const UIController = (() => {
       if (e.target.tagName === 'TEXTAREA') return;
       if (e.key === 'ArrowLeft')  navigate(-1);
       if (e.key === 'ArrowRight') navigate(+1);
-      if (e.key === 'ArrowUp' || e.key === 'Home') navTo(-1);
-      if (e.key === 'ArrowDown' || e.key === 'End') {
-        if (parsedGameRef) navTo(parsedGameRef.fensAfter.length - 1);
-      }
+      if (e.key === 'ArrowUp' || e.key === 'Home') navToStart();
+      if (e.key === 'ArrowDown' || e.key === 'End') navToEnd();
     });
 
-    els.navStart.addEventListener('click', () => navTo(-1));
+    els.navStart.addEventListener('click', navToStart);
     els.navPrev.addEventListener('click',  () => navigate(-1));
     els.navNext.addEventListener('click',  () => navigate(+1));
-    els.navEnd.addEventListener('click',   () => {
-      if (parsedGameRef) navTo(parsedGameRef.fensAfter.length - 1);
-    });
+    els.navEnd.addEventListener('click',   navToEnd);
   }
 
   setupKeyboard();

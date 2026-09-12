@@ -540,6 +540,7 @@ canvas#chart { width:100%; height:130px; display:block; }
 }
 .free-play-bar.visible { display: flex; }
 .free-play-status { font-weight: 600; }
+.free-play-hint { color: var(--text3); font-size: 11px; }
 .free-play-eval {
   font-family: 'JetBrains Mono', monospace;
   font-size: 13px;
