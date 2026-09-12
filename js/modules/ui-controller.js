@@ -68,7 +68,7 @@ const UIController = (() => {
   // Ramificação do Modo Livre: quando o jogador faz um lance diferente do
   // original, o "resto" da partida vira uma variante ao vivo, classificada
   // conforme o Stockfish analisa — some se ele voltar ao lance base.
-  let _branchBaseCtx = null; // { idx, moves, movesData, fullMovesData }
+  let _branchBaseCtx = null; // { idx, moves, movesData }
 
   // ── Board size: responsive ──────────────────────────────────
   function getBoardSize() {
@@ -193,38 +193,40 @@ const UIController = (() => {
   }
 
   // ── Entrar/sair do Modo Livre ────────────────────────────────
+  // "Sair" NUNCA apaga o que foi feito: só pausa a edição (o tabuleiro, a
+  // lista de lances e o gráfico continuam mostrando a árvore como estava).
+  // Clicar em "Modo Livre" de novo retoma exatamente do mesmo ponto — só
+  // recomeça do zero se a árvore tiver sido descartada de vez (nova
+  // análise carregada, ou "Limpar"; ver showResults()).
   function _enterFreePlay() {
     const btnFP = document.getElementById('btn-free-play');
+    if (btnFP) btnFP.classList.add('active');
+    document.getElementById('btn-free-play-label').textContent = 'Sair do Modo Livre';
+    ArrowSystem.clearManual();
+
+    if (FreePlay.hasTree()) {
+      console.log('[DEBUG] 🎮 Retomando o Modo Livre — árvore existente preservada');
+      FreePlay.resume(() => renderBranch());
+      return;
+    }
+
     const startFEN = currentMoveIdx < 0
       ? PGNParser.INITIAL_FEN
       : (parsedGameRef && parsedGameRef.fensAfter[currentMoveIdx]) || PGNParser.INITIAL_FEN;
     console.log(`[DEBUG] 🎮 Entrando no Modo Livre — FEN: ${startFEN.slice(0, 40)}…`);
-    if (btnFP) btnFP.classList.add('active');
-    document.getElementById('btn-free-play-label').textContent = 'Sair do Modo Livre';
-    // Limpa setas antes de entrar
-    ArrowSystem.clearManual();
     EngineSuggestion.updateArrow(null);
 
     const baseIdx = currentMoveIdx;
     const baseCtx = {
       idx: baseIdx,
       moves: parsedGameRef ? parsedGameRef.moves.slice(0, baseIdx + 1) : [],
-      movesData: parsedGameRef && parsedGameRef.movesData ? parsedGameRef.movesData.slice(0, baseIdx + 1) : [],
-      fullMovesData: parsedGameRef ? parsedGameRef.movesData : null
+      movesData: parsedGameRef && parsedGameRef.movesData ? parsedGameRef.movesData.slice(0, baseIdx + 1) : []
     };
     _branchBaseCtx = baseCtx;
 
     FreePlay.start(
       startFEN,
       parsedGameRef ? parsedGameRef.headers : {},
-      null,
-      () => {
-        console.log(`[DEBUG] 🎮 Modo Livre encerrado — voltando ao lance ${currentMoveIdx}`);
-        if (btnFP) btnFP.classList.remove('active');
-        document.getElementById('btn-free-play-label').textContent = 'Modo Livre';
-        _clearBranch();
-        renderBoardAtMove(currentMoveIdx);
-      },
       baseCtx,
       () => renderBranch()
     );
@@ -235,8 +237,13 @@ const UIController = (() => {
   }
 
   function _exitFreePlay() {
-    console.log(`[DEBUG] 🎮 Saindo do Modo Livre`);
-    FreePlay.stop(); // dispara o onExit registrado em _enterFreePlay, que já chama _clearBranch()
+    console.log(`[DEBUG] 🎮 Pausando o Modo Livre — nada é apagado`);
+    FreePlay.pause();
+    const btnFP = document.getElementById('btn-free-play');
+    if (btnFP) btnFP.classList.remove('active');
+    document.getElementById('btn-free-play-label').textContent = 'Modo Livre';
+    // O tabuleiro e a lista de lances continuam mostrando a árvore atual —
+    // nenhuma chamada a _clearBranch()/renderBoardAtMove() aqui de propósito.
   }
 
   function renderBoardAtMove(idx) {
@@ -387,6 +394,14 @@ const UIController = (() => {
   }
 
   function showResults(parsedGame) {
+    // Mostrar uma partida (nova análise, ou o tabuleiro vazio de "Limpar")
+    // sempre descarta de vez qualquer árvore do Modo Livre anterior —
+    // mas SAIR do Modo Livre sozinho (botão "Sair"/toggle) não passa por
+    // aqui, então o que foi feito lá só se perde se o usuário realmente
+    // trocar de partida ou limpar.
+    if (FreePlay.isActive() || FreePlay.hasTree()) FreePlay.stop();
+    _branchBaseCtx = null;
+
     parsedGameRef = parsedGame;
     currentMoveIdx = -1;
 
@@ -410,7 +425,6 @@ const UIController = (() => {
   // carga inicial da página (o tabuleiro já aparece antes de colar
   // qualquer PGN) e sempre que "Limpar" é clicado (reinicia do zero).
   function showEmptyBoard() {
-    if (FreePlay.isActive()) FreePlay.stop(); // descarta a árvore anterior por completo
     const emptyGame = {
       headers: { White: 'Brancas', Black: 'Pretas' },
       moves: [], fensBefore: [], fensAfter: [], moveSquares: []
@@ -449,26 +463,6 @@ const UIController = (() => {
 
       els.movesList.appendChild(pairDiv);
     }
-  }
-
-  // ── Ramificação do Modo Livre ────────────────────────────────
-  // Restaura a lista de lances / gráfico / abertura ao estado original,
-  // sem a ramificação — chamado ao sair do Modo Livre ou quando o
-  // jogador desfaz todos os lances da variante e volta ao lance base.
-  function _clearBranch() {
-    document.querySelectorAll('.move-pair[data-branch="1"]').forEach(p => p.remove());
-    document.querySelectorAll('.move-item[data-branch-in-base="1"]').forEach(el => el.remove());
-    moveElementsRef.forEach(el => { if (el) el.style.display = ''; });
-    els.movesList.querySelectorAll('.move-pair').forEach(p => { p.style.display = ''; });
-    if (parsedGameRef) {
-      if (_branchBaseCtx) parsedGameRef.movesData = _branchBaseCtx.fullMovesData;
-      updateOpeningBanner(parsedGameRef.moves);
-      if (parsedGameRef.movesData) {
-        updateChart(parsedGameRef.movesData);
-        updatePlayerStats(parsedGameRef.movesData);
-      }
-    }
-    _branchBaseCtx = null;
   }
 
   // Redesenha a cauda da lista de lances com o CAMINHO atual da árvore do

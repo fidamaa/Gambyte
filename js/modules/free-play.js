@@ -22,8 +22,6 @@ const FreePlay = (() => {
   let selectedSq    = null;
   let legalTargets  = [];
   let evalAbort     = null;
-  let onEvalCb      = null;
-  let onExitCb      = null;
   let onBranchCb    = null;   // chamado sempre que a árvore muda (lance, navegação, reclassificação)
   let _pgnHeaders   = {};     // from the loaded game
 
@@ -68,7 +66,12 @@ const FreePlay = (() => {
   // ── Public API ─────────────────────────────────────────────
   // baseCtx (opcional): { idx, moves, movesData } — último lance da
   // partida original mantido antes da árvore começar (idx=-1 = nenhum).
-  function start(startFEN, headers, onEval, onExit, baseCtx, onBranchUpdate) {
+  //
+  // start() cria uma árvore NOVA do zero. Se o jogador só quer sair
+  // temporariamente e voltar depois sem perder nada, use pause()/resume()
+  // — start() é só para a primeira vez, ou depois de um stop() de verdade
+  // (nova partida carregada, "Limpar").
+  function start(startFEN, headers, baseCtx, onBranchUpdate) {
     console.log(`[DEBUG] 🎮 FreePlay.start — FEN: ${(startFEN||'').slice(0,40)}…`);
     _session++;
     active     = true;
@@ -79,8 +82,6 @@ const FreePlay = (() => {
     selectedSq = null;
     legalTargets = [];
     _pgnHeaders  = headers || {};
-    onEvalCb  = onEval;
-    onExitCb  = onExit;
     onBranchCb = onBranchUpdate || null;
     _baseCtx = baseCtx || { idx: -1, moves: [], movesData: [] };
 
@@ -92,8 +93,39 @@ const FreePlay = (() => {
     return true;
   }
 
+  // Existe uma árvore viva (ativa ou pausada) que pode ser retomada?
+  function hasTree() { return !!root; }
+
+  // Sai da edição SEM apagar nada — o tabuleiro, a lista de lances e o
+  // gráfico continuam mostrando exatamente onde o jogador parou. Clicar
+  // em "Modo Livre" de novo retoma a mesma árvore com resume().
+  function pause() {
+    console.log(`[DEBUG] 🎮 FreePlay.pause — mantém a árvore (${root ? root.children.length : 0} lance(s) na raiz)`);
+    active = false;
+    if (evalAbort) { evalAbort(); evalAbort = null; }
+    selectedSq = null; legalTargets = [];
+    document.getElementById('board-canvas').classList.remove('free-play', 'piece-selected');
+    document.getElementById('free-play-bar').classList.remove('visible');
+  }
+
+  // Retoma uma árvore pausada exatamente de onde parou.
+  function resume(onBranchUpdate) {
+    if (!root) return false;
+    console.log(`[DEBUG] 🎮 FreePlay.resume`);
+    active = true;
+    onBranchCb = onBranchUpdate || null;
+    document.getElementById('board-canvas').classList.add('free-play');
+    document.getElementById('free-play-bar').classList.add('visible');
+    _updateTurnLabel();
+    _requestEval();
+    if (onBranchCb) onBranchCb();
+    return true;
+  }
+
+  // Descarta a árvore de verdade — só quando uma partida realmente nova é
+  // carregada (Analisar Partida) ou o usuário pede pra "Limpar" tudo.
   function stop() {
-    console.log(`[DEBUG] 🎮 FreePlay.stop`);
+    console.log(`[DEBUG] 🎮 FreePlay.stop — descarta a árvore`);
     _session++; // invalida qualquer classificação/eval assíncrona pendente desta sessão
     active = false;
     if (evalAbort) { evalAbort(); evalAbort = null; }
@@ -101,10 +133,8 @@ const FreePlay = (() => {
     legalTargets = [];
     document.getElementById('board-canvas').classList.remove('free-play', 'piece-selected');
     document.getElementById('free-play-bar').classList.remove('visible');
-    const cb = onExitCb;
-    onExitCb = null; onEvalCb = null; onBranchCb = null;
+    onBranchCb = null;
     root = null; currentNode = null;
-    if (cb) cb();
   }
 
   function isActive() { return active; }
@@ -517,7 +547,6 @@ const FreePlay = (() => {
         });
         if (aborted) return;
         applyEval(result.evals[0] ?? 0, result.bestMove);
-        if (onEvalCb) onEvalCb(result);
       } catch(e) { /* aborted or error */ }
     }, 120);
   }
@@ -561,7 +590,8 @@ const FreePlay = (() => {
   }
 
   return {
-    start, stop, isActive, handleClick, undoMove, exportPGN, copyPGN,
+    start, stop, pause, resume, hasTree, isActive,
+    handleClick, undoMove, exportPGN, copyPGN,
     currentFEN: () => currentFEN, _redrawPublic,
     getBranchView, gotoNode, goBack, goForward, canGoBack, canGoForward
   };

@@ -49,11 +49,10 @@ const App = (() => {
     UIController.hideError();
 
     // Toda transição pra uma nova análise reinicia do zero: aborta
-    // qualquer análise anterior ainda rodando (o motor realmente para,
-    // não só a UI) e sai do Modo Livre, se estava ativo — MENOS o Modo
-    // Livre em si, que só reinicia quando o próprio usuário sai dele.
+    // qualquer análise anterior ainda rodando (o motor realmente para, não
+    // só a UI). UIController.showResults() abaixo descarta a árvore do
+    // Modo Livre anterior, se houver uma.
     if (analyzing) { AnalysisEngine.abort(); analyzing = false; UIController.setAnalyzing(false); }
-    if (FreePlay.isActive()) FreePlay.stop();
 
     analyzing = true;
     UIController.setAnalyzing(true);
