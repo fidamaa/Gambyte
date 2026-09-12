@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gambyte — Entrar / Cadastrar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #0d0f14;
+  --bg2:     #13161e;
+  --bg3:     #1a1e2a;
+  --border:  #252a38;
+  --border2: #2e3448;
+  --text:    #e8eaf0;
+  --text2:   #8890a8;
+  --text3:   #555d78;
+  --accent:  #e8c97a;
+  --accent2: #c9a84c;
+  --green:   #5bc97a;
+  --red:     #e05c5c;
+  --radius:  8px;
+  --radius-lg: 14px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 70% 60% at 15% 10%, rgba(232,201,122,0.08) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 50% at 85% 90%, rgba(91,143,224,0.07) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(155,125,224,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* ── Floating chess pieces background ── */
+.bg-pieces {
+  position: fixed; inset: 0; pointer-events: none; overflow: hidden;
+}
+.bg-piece {
+  position: absolute;
+  font-size: 80px;
+  opacity: 0.03;
+  animation: floatPiece linear infinite;
+  filter: blur(1px);
+}
+@keyframes floatPiece {
+  0%   { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+  10%  { opacity: 0.04; }
+  90%  { opacity: 0.04; }
+  100% { transform: translateY(-120px) rotate(360deg); opacity: 0; }
+}
+
+/* ── Card ── */
+.auth-container {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 440px;
+  padding: 20px;
+}
+
+.auth-logo {
+  text-align: center;
+  margin-bottom: 32px;
+  animation: fadeInDown .6s ease both;
+}
+.auth-logo-icon {
+  width: 72px; height: 72px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 28px; margin-bottom: 10px;
+  overflow: hidden;
+}
+.auth-logo-text {
+  font-family: 'DM Serif Display', serif;
+  font-size: 32px; letter-spacing: -0.5px;
+  display: block;
+}
+.auth-logo-text span { color: var(--accent); }
+.auth-logo-sub {
+  font-size: 12px; color: var(--text3);
+  letter-spacing: 2px; text-transform: uppercase;
+  margin-top: 4px; display: block;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.auth-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  animation: fadeInUp .6s ease .1s both;
+  box-shadow: 0 24px 60px rgba(0,0,0,.5);
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Tabs ── */
+.auth-tabs {
+  display: grid; grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--border);
+}
+.auth-tab {
+  padding: 16px;
+  background: transparent; border: none;
+  font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600;
+  color: var(--text3); cursor: pointer;
+  transition: all .2s; position: relative;
+}
+.auth-tab::after {
+  content: '';
+  position: absolute; bottom: -1px; left: 0; right: 0; height: 2px;
+  background: var(--accent); transform: scaleX(0); transition: transform .25s;
+}
+.auth-tab.active { color: var(--text); }
+.auth-tab.active::after { transform: scaleX(1); }
+.auth-tab:hover:not(.active) { color: var(--text2); background: rgba(255,255,255,.02); }
+
+/* ── Form ── */
+.auth-form-wrap { padding: 28px; }
+
+.form-panel { display: none; }
+.form-panel.active { display: block; }
+
+.form-title { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+.form-sub   { font-size: 13px; color: var(--text2); margin-bottom: 24px; line-height: 1.5; }
+
+.form-group { margin-bottom: 16px; }
+.form-label {
+  display: block; font-size: 11px; font-weight: 600;
+  letter-spacing: 1px; text-transform: uppercase;
+  color: var(--text3); margin-bottom: 7px;
+}
+.form-input {
+  width: 100%; padding: 11px 14px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: var(--radius); color: var(--text);
+  font-family: 'Outfit', sans-serif; font-size: 14px;
+  outline: none; transition: border-color .2s, box-shadow .2s;
+}
+.form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(232,201,122,.1);
+}
+.form-input::placeholder { color: var(--text3); }
+
+.form-input-row {
+  position: relative;
+}
+.form-input-row .form-input { padding-right: 44px; }
+.toggle-pw {
+  position: absolute; right: 12px; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none; color: var(--text3);
+  cursor: pointer; font-size: 16px; padding: 4px;
+  transition: color .2s;
+}
+.toggle-pw:hover { color: var(--text2); }
+
+.form-error {
+  background: rgba(224,92,92,.1); border: 1px solid rgba(224,92,92,.3);
+  border-radius: var(--radius); padding: 10px 14px;
+  color: var(--red); font-size: 12px; margin-bottom: 16px;
+  display: none; animation: fadeInDown .3s ease;
+}
+.form-error.visible { display: block; }
+
+.form-success {
+  background: rgba(91,201,122,.1); border: 1px solid rgba(91,201,122,.3);
+  border-radius: var(--radius); padding: 10px 14px;
+  color: var(--green); font-size: 12px; margin-bottom: 16px;
+  display: none; animation: fadeInDown .3s ease;
+}
+.form-success.visible { display: block; }
+
+.btn-auth {
+  width: 100%; padding: 13px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; border-radius: var(--radius);
+  color: #0d0f14; font-family: 'Outfit', sans-serif;
+  font-size: 15px; font-weight: 700; letter-spacing: .3px;
+  cursor: pointer; transition: opacity .2s, transform .1s;
+  margin-top: 4px;
+}
+.btn-auth:hover { opacity: .9; transform: translateY(-1px); }
+.btn-auth:active { transform: translateY(0); }
+.btn-auth:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+.form-divider {
+  text-align: center; margin: 16px 0;
+  font-size: 11px; color: var(--text3);
+  position: relative;
+}
+.form-divider::before,
+.form-divider::after {
+  content: '';
+  position: absolute; top: 50%;
+  width: calc(50% - 30px); height: 1px;
+  background: var(--border2);
+}
+.form-divider::before { left: 0; }
+.form-divider::after  { right: 0; }
+
+/* ── Premium promo ── */
+.premium-promo {
+  margin-top: 20px;
+  background: linear-gradient(135deg, rgba(255,190,60,.07), rgba(232,160,32,.03));
+  border: 1px solid rgba(255,190,60,.2);
+  border-radius: var(--radius);
+  padding: 14px;
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer; transition: border-color .2s;
+}
+.premium-promo:hover { border-color: rgba(255,190,60,.45); }
+.premium-promo-icon { font-size: 24px; flex-shrink: 0; }
+.premium-promo-text { flex: 1; }
+.premium-promo-title { font-size: 13px; font-weight: 600; color: #ffbe3c; margin-bottom: 2px; }
+.premium-promo-desc  { font-size: 11px; color: var(--text2); }
+.premium-promo-arrow { color: var(--text3); font-size: 16px; }
+
+/* ── Logged in state ── */
+.logged-in-panel {
+  padding: 28px; text-align: center;
+  display: none;
+}
+.logged-in-panel.visible { display: block; }
+
+.user-big-avatar {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 700; color: #0d0f14;
+  margin-bottom: 14px;
+  box-shadow: 0 8px 24px rgba(232,201,122,.25);
+}
+.logged-in-name { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+.logged-in-email { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
+.logged-in-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 99px; font-size: 12px; font-weight: 600;
+  margin-bottom: 20px;
+}
+.logged-in-badge.free    { background: rgba(136,144,168,.1); color: var(--text2); border: 1px solid var(--border2); }
+.logged-in-badge.premium { background: rgba(255,190,60,.15); color: #ffbe3c; border: 1px solid rgba(255,190,60,.4); }
+
+.btn-back-analyze {
+  display: block; width: 100%; padding: 12px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; border-radius: var(--radius);
+  color: #0d0f14; font-family: 'Outfit', sans-serif;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  text-decoration: none; text-align: center; margin-bottom: 10px;
+  transition: opacity .2s;
+}
+.btn-back-analyze:hover { opacity: .9; }
+
+.btn-logout {
+  display: block; width: 100%; padding: 10px;
+  background: transparent; border: 1px solid var(--border2);
+  border-radius: var(--radius); color: var(--text2);
+  font-family: 'Outfit', sans-serif; font-size: 13px;
+  cursor: pointer; transition: all .2s;
+}
+.btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+/* ── Back link ── */
+.back-link {
+  text-align: center; margin-top: 20px;
+  font-size: 12px; color: var(--text3);
+  animation: fadeInUp .6s ease .2s both;
+}
+.back-link a { color: var(--accent); text-decoration: none; }
+.back-link a:hover { text-decoration: underline; }
+
+/* ── Toast ── */
+#toast-area {
+  position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.toast {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 16px;
+  font-size: 13px; color: var(--text);
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+  animation: toastIn .3s ease;
+  max-width: 280px;
+}
+.toast.success { border-color: rgba(91,201,122,.4); }
+.toast.error   { border-color: rgba(224,92,92,.4); }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Password strength */
+.pw-strength { margin-top: 6px; display: flex; gap: 4px; align-items: center; }
+.pw-strength-bar { flex: 1; height: 3px; border-radius: 2px; background: var(--border2); overflow: hidden; }
+.pw-strength-fill { height: 100%; border-radius: 2px; transition: width .3s, background .3s; width: 0%; }
+.pw-strength-label { font-size: 10px; color: var(--text3); width: 50px; text-align: right; }
+</style>
+</head>
+<body>
+
+<div class="bg-pieces" id="bg-pieces"></div>
+
+<div class="auth-container">
+  <!-- Logo -->
+  <div class="auth-logo">
+    <div class="auth-logo-icon"><img src="logo.png" alt="Gambyte" style="width:72px;height:72px;object-fit:contain;display:block;"></div>
+    <span class="auth-logo-text">Gambyte</span>
+    <span class="auth-logo-sub">Análise Profissional de Partidas</span>
+  </div>
+
+  <!-- Auth Card -->
+  <div class="auth-card" id="auth-card">
+    <!-- Tabs -->
+    <div class="auth-tabs" id="auth-tabs">
+      <button class="auth-tab active" id="tab-login-btn" onclick="switchTab('login')">Entrar</button>
+      <button class="auth-tab" id="tab-register-btn"    onclick="switchTab('register')">Cadastrar</button>
+    </div>
+
+    <!-- Forms -->
+    <div class="auth-form-wrap" id="auth-forms">
+
+      <!-- LOGIN FORM -->
+      <div class="form-panel active" id="form-login">
+        <div class="form-title">Bem-vindo de volta!</div>
+        <div class="form-sub">Entre com sua conta para acessar análises completas.</div>
+
+        <div class="form-error" id="login-error"></div>
+        <div class="form-success" id="login-success"></div>
+
+        <div class="form-group">
+          <label class="form-label" for="login-email">Email</label>
+          <input class="form-input" type="email" id="login-email" placeholder="seu@email.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="login-password">Senha</label>
+          <div class="form-input-row">
+            <input class="form-input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+            <button class="toggle-pw" type="button" onclick="togglePw('login-password',this)">👁</button>
+          </div>
+        </div>
+
+        <button class="btn-auth" id="btn-login" onclick="doLogin()">Entrar na conta</button>
+
+        <div class="premium-promo" onclick="window.open('gambyte-premium.html','_blank')">
+          <div class="premium-promo-icon">⭐</div>
+          <div class="premium-promo-text">
+            <div class="premium-promo-title">Assine o Gambyte Pro</div>
+            <div class="premium-promo-desc">Insights completos por apenas R$9,90/mês</div>
+          </div>
+          <div class="premium-promo-arrow">›</div>
+        </div>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div class="form-panel" id="form-register">
+        <div class="form-title">Crie sua conta</div>
+        <div class="form-sub">Gratuito para sempre. Upgrade para Gambyte Pro quando quiser.</div>
+
+        <div class="form-error"   id="register-error"></div>
+        <div class="form-success" id="register-success"></div>
+
+        <div class="form-group">
+          <label class="form-label" for="reg-name">Nome</label>
+          <input class="form-input" type="text" id="reg-name" placeholder="Seu nome" autocomplete="name">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-email">Email</label>
+          <input class="form-input" type="email" id="reg-email" placeholder="seu@email.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-password">Senha</label>
+          <div class="form-input-row">
+            <input class="form-input" type="password" id="reg-password" placeholder="Mín. 6 caracteres" autocomplete="new-password" oninput="checkPwStrength(this.value)">
+            <button class="toggle-pw" type="button" onclick="togglePw('reg-password',this)">👁</button>
+          </div>
+          <div class="pw-strength">
+            <div class="pw-strength-bar"><div class="pw-strength-fill" id="pw-fill"></div></div>
+            <span class="pw-strength-label" id="pw-label"></span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-confirm">Confirmar Senha</label>
+          <div class="form-input-row">
+            <input class="form-input" type="password" id="reg-confirm" placeholder="Repita a senha" autocomplete="new-password">
+            <button class="toggle-pw" type="button" onclick="togglePw('reg-confirm',this)">👁</button>
+          </div>
+        </div>
+
+        <button class="btn-auth" id="btn-register" onclick="doRegister()">Criar conta grátis</button>
+      </div>
+    </div>
+
+    <!-- Logged-in panel (shown when already logged in) -->
+    <div class="logged-in-panel" id="logged-in-panel">
+      <div class="user-big-avatar" id="li-avatar">?</div>
+      <div class="logged-in-name"  id="li-name">—</div>
+      <div class="logged-in-email" id="li-email">—</div>
+      <div class="logged-in-badge free" id="li-badge">Conta Gratuita</div>
+      <a class="btn-back-analyze" href="index.html">← Voltar para Análise</a>
+      <button class="btn-logout" onclick="doLogout()">Sair da conta</button>
+      <div class="premium-promo" style="margin-top:16px" onclick="window.open('gambyte-premium.html','_blank')" id="li-promo">
+        <div class="premium-promo-icon">⭐</div>
+        <div class="premium-promo-text">
+          <div class="premium-promo-title">Upgrade para Gambyte Pro</div>
+          <div class="premium-promo-desc">Desbloqueie todos os insights por R$9,90/mês</div>
+        </div>
+        <div class="premium-promo-arrow">›</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="back-link">
+    <a href="index.html">← Voltar ao Gambyte</a>
+  </div>
+</div>
+
+<div id="toast-area"></div>
+
+<script>
+/* ── Auth System (mesma lógica do analyzer) ── */
+const AuthSystem = (() => {
+  const USERS_KEY   = 'chesslens_users';
+  const SESSION_KEY = 'chesslens_session';
+  function getUsers()    { try { return JSON.parse(localStorage.getItem(USERS_KEY)||'{}'); } catch(e){return{};} }
+  function saveUsers(u)  { localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
+  function getSession()  { try { return JSON.parse(localStorage.getItem(SESSION_KEY)||'null'); } catch(e){return null;} }
+  function saveSession(s){ localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
+  function clearSession(){ localStorage.removeItem(SESSION_KEY); }
+
+  function register(email, password, name) {
+    const users = getUsers();
+    if (users[email]) return { ok:false, msg:'Email já cadastrado. Tente fazer login.' };
+    if (password.length < 6) return { ok:false, msg:'A senha deve ter pelo menos 6 caracteres.' };
+    users[email] = { email, password: btoa(password), name, premium:false, createdAt:Date.now() };
+    saveUsers(users);
+    saveSession({ email, name, premium:false });
+    return { ok:true };
+  }
+
+  function login(email, password) {
+    const users = getUsers();
+    const u = users[email];
+    if (!u) return { ok:false, msg:'Email não encontrado. Verifique ou crie uma conta.' };
+    if (u.password !== btoa(password)) return { ok:false, msg:'Senha incorreta. Tente novamente.' };
+    saveSession({ email, name:u.name, premium:u.premium });
+    return { ok:true };
+  }
+
+  function logout() { clearSession(); }
+  function currentSession() { return getSession(); }
+  function isPremium() { const s=getSession(); return s&&s.premium; }
+
+  return { register, login, logout, currentSession, isPremium };
+})();
+
+/* ── UI Logic ── */
+function switchTab(tab) {
+  document.getElementById('tab-login-btn').classList.toggle('active', tab==='login');
+  document.getElementById('tab-register-btn').classList.toggle('active', tab==='register');
+  document.getElementById('form-login').classList.toggle('active', tab==='login');
+  document.getElementById('form-register').classList.toggle('active', tab==='register');
+}
+
+function togglePw(id, btn) {
+  const inp = document.getElementById(id);
+  if (inp.type === 'password') { inp.type='text'; btn.textContent='🙈'; }
+  else                         { inp.type='password'; btn.textContent='👁'; }
+}
+
+function checkPwStrength(pw) {
+  const fill  = document.getElementById('pw-fill');
+  const label = document.getElementById('pw-label');
+  if (!pw) { fill.style.width='0%'; label.textContent=''; return; }
+  let score = 0;
+  if (pw.length >= 6)  score++;
+  if (pw.length >= 10) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const levels = [
+    { pct:'10%', color:'var(--red)', text:'Fraca' },
+    { pct:'30%', color:'var(--red)', text:'Fraca' },
+    { pct:'55%', color:'var(--orange, #e09b5b)', text:'Média' },
+    { pct:'80%', color:'#c9c45b', text:'Boa' },
+    { pct:'100%',color:'var(--green)', text:'Forte' }
+  ];
+  const l = levels[Math.min(score, 4)];
+  fill.style.width = l.pct;
+  fill.style.background = l.color;
+  label.textContent = l.text;
+}
+
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.classList.add('visible');
+}
+function hideErr(id) { document.getElementById(id).classList.remove('visible'); }
+function showSuc(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.classList.add('visible');
+}
+
+function showToast(msg, type='info') {
+  const c = document.getElementById('toast-area');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(()=>t.remove(), 3500);
+}
+
+function doLogin() {
+  hideErr('login-error');
+  const email = document.getElementById('login-email').value.trim();
+  const pw    = document.getElementById('login-password').value;
+  if (!email || !pw) { showErr('login-error','Preencha todos os campos.'); return; }
+  const btn = document.getElementById('btn-login');
+  btn.disabled = true; btn.textContent = 'Entrando…';
+  setTimeout(() => {
+    const res = AuthSystem.login(email, pw);
+    btn.disabled = false; btn.textContent = 'Entrar na conta';
+    if (res.ok) {
+      showToast('✅ Login realizado!', 'success');
+      setTimeout(() => window.location.href = 'index.html', 800);
+    } else {
+      showErr('login-error', res.msg);
+    }
+  }, 600);
+}
+
+function doRegister() {
+  hideErr('register-error');
+  const name    = document.getElementById('reg-name').value.trim();
+  const email   = document.getElementById('reg-email').value.trim();
+  const pw      = document.getElementById('reg-password').value;
+  const confirm = document.getElementById('reg-confirm').value;
+  if (!name || !email || !pw) { showErr('register-error','Preencha todos os campos.'); return; }
+  if (pw !== confirm)         { showErr('register-error','As senhas não coincidem.'); return; }
+  if (pw.length < 6)          { showErr('register-error','A senha deve ter pelo menos 6 caracteres.'); return; }
+  const btn = document.getElementById('btn-register');
+  btn.disabled = true; btn.textContent = 'Criando conta…';
+  setTimeout(() => {
+    const res = AuthSystem.register(email, pw, name);
+    btn.disabled = false; btn.textContent = 'Criar conta grátis';
+    if (res.ok) {
+      showToast('🎉 Conta criada com sucesso!', 'success');
+      setTimeout(() => window.location.href = 'index.html', 900);
+    } else {
+      showErr('register-error', res.msg);
+    }
+  }, 600);
+}
+
+function doLogout() {
+  AuthSystem.logout();
+  showToast('Sessão encerrada.', 'info');
+  setTimeout(() => location.reload(), 600);
+}
+
+// Enter key support
+['login-email','login-password'].forEach(id => {
+  document.getElementById(id)?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+});
+['reg-name','reg-email','reg-password','reg-confirm'].forEach(id => {
+  document.getElementById(id)?.addEventListener('keydown', e => { if(e.key==='Enter') doRegister(); });
+});
+
+/* ── Floating background pieces ── */
+function spawnPieces() {
+  const container = document.getElementById('bg-pieces');
+  const pieces = ['♔','♕','♖','♗','♘','♙','♚','♛','♜','♝','♞','♟'];
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('div');
+    p.className = 'bg-piece';
+    p.textContent = pieces[Math.floor(Math.random()*pieces.length)];
+    p.style.cssText = `
+      left: ${Math.random()*100}%;
+      animation-duration: ${18+Math.random()*20}s;
+      animation-delay: ${-Math.random()*20}s;
+      font-size: ${60+Math.random()*60}px;
+    `;
+    container.appendChild(p);
+  }
+}
+
+/* ── Init ── */
+function init() {
+  spawnPieces();
+  const sess = AuthSystem.currentSession();
+  if (sess) {
+    // Show logged-in panel
+    document.getElementById('auth-tabs').style.display  = 'none';
+    document.getElementById('auth-forms').style.display = 'none';
+    const panel = document.getElementById('logged-in-panel');
+    panel.classList.add('visible');
+    const initials = (sess.name||sess.email).charAt(0).toUpperCase();
+    document.getElementById('li-avatar').textContent = initials;
+    document.getElementById('li-name').textContent   = sess.name || 'Usuário';
+    document.getElementById('li-email').textContent  = sess.email;
+    const badge = document.getElementById('li-badge');
+    if (sess.premium) {
+      badge.textContent = '⭐ Gambyte Pro';
+      badge.className   = 'logged-in-badge premium';
+      document.getElementById('li-promo').style.display = 'none';
+    } else {
+      badge.textContent = 'Conta Gratuita';
+      badge.className   = 'logged-in-badge free';
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

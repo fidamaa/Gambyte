@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gambyte — Análise Profissional</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+  <!-- ============================================================
+       Google AdSense — script global (não duplicar)
+       Substitua SEU_ID pelo seu Publisher ID (ex: ca-pub-XXXXXXXXXXXXXXXX)
+       ============================================================ -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=SEU_ID"
+       crossorigin="anonymous"></script>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div class="header-inner">
+      <div class="header-left">
+        <div class="logo-icon"><img src="logo.png" alt="Gambyte"></div>
+        <div>
+          <div class="logo-text">Gambyte</div>
+          <div class="logo-tagline">Análise Profissional de Partidas</div>
+        </div>
+      </div>
+      <div class="header-right" id="header-auth-area">
+        <!-- preenchido pelo AuthUI -->
+      </div>
+    </div>
+  </header>
+
+  <!-- PGN Input -->
+  <section class="input-section">
+    <div class="section-label">Cole seu PGN</div>
+    <textarea id="pgn-input" placeholder='[Event "Rated Blitz game"]
+[White "Kasparov"]
+[Black "Karpov"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 ...'></textarea>
+    <div id="error-msg" class="error-msg"></div>
+    <div class="input-actions">
+      <button id="btn-analyze" class="btn-primary">▶ Analisar Partida</button>
+      <button id="btn-clear" class="btn-secondary">Limpar</button>
+      <label class="pro-toggle-wrap" title="Análise profunda até depth 20 (apenas Gambyte Pro)" id="pro-toggle-wrap" onclick="AuthUI.handleProToggleClick(event)">
+        <span class="pro-badge">Gambyte Pro</span>
+        <span class="pro-toggle-label">Análise Profunda</span>
+        <span class="pro-switch">
+          <input type="checkbox" id="pro-deep-toggle" disabled>
+          <span class="pro-slider"></span>
+        </span>
+      </label>
+      <div id="phase-indicator" class="phase-indicator hidden">
+        <div class="phase-dot"></div>
+        <span id="phase-text">Fase 1</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Progress -->
+  <div id="progress-container" class="progress-container">
+    <div class="progress-header">
+      <span class="progress-title" id="progress-title">Iniciando análise…</span>
+      <span class="progress-phase" id="progress-depth">depth 0</span>
+    </div>
+    <div class="progress-bar-track">
+      <div id="progress-fill" class="progress-bar-fill"></div>
+    </div>
+    <div class="progress-stats">
+      <span id="progress-move-count">0 / 0 lances</span>
+      <span id="progress-eta">calculando…</span>
+    </div>
+  </div>
+
+  <!-- Opening Banner -->
+  <div id="opening-banner" class="opening-banner">
+    <div class="opening-eco-badge" id="opening-eco">—</div>
+    <div>
+      <div class="opening-name" id="opening-name">Detectando abertura…</div>
+      <div class="opening-variation" id="opening-variation"></div>
+    </div>
+  </div>
+
+  <!-- Results Section -->
+  <section id="results-section">
+
+    <!-- INSIGHTS PREMIUM SECTION -->
+    <div id="insights-section" class="insights-section">
+      <div class="insights-tabs">
+        <button class="insights-tab active" onclick="InsightsUI.switchTab('global',this)">🧠 Resumo da Partida</button>
+        <button class="insights-tab" onclick="InsightsUI.switchTab('move',this)">🔄 Análise por Lance</button>
+        <button class="insights-tab" onclick="InsightsUI.switchTab('dna',this)">🧬 DNA do Jogador</button>
+      </div>
+
+      <!-- Banner de análise parcial (depth 14 pronta, depth 20 ainda processando) -->
+      <div id="insights-partial-banner" style="display:none;align-items:center;gap:10px;
+        background:rgba(232,201,122,.07);border:1px solid rgba(232,201,122,.2);
+        border-radius:var(--radius);padding:9px 14px;margin-bottom:14px;font-size:12px;color:var(--accent);">
+        <span style="animation:pulse 1.5s infinite;font-size:14px">⚡</span>
+        <span><strong>Análise Gambyte Pro em andamento</strong> — valores preliminares (depth 14). Serão atualizados automaticamente ao concluir depth 20.</span>
+      </div>
+
+      <!-- TAB: GLOBAL INSIGHTS -->
+      <div id="insights-tab-global" class="insights-tab-content active">
+
+        <!-- FREE: precisão geral -->
+        <div id="insight-accuracy-free" class="insights-grid" style="margin-bottom:0">
+          <div class="insight-card green">
+            <div class="insight-card-icon">🎯</div>
+            <div class="insight-card-label">Precisão Geral</div>
+            <div class="insight-card-value" id="ig-accuracy-w">—</div>
+            <div class="insight-card-sub">Brancas</div>
+          </div>
+          <div class="insight-card blue">
+            <div class="insight-card-icon">🎯</div>
+            <div class="insight-card-label">Precisão Geral</div>
+            <div class="insight-card-value" id="ig-accuracy-b">—</div>
+            <div class="insight-card-sub">Pretas</div>
+          </div>
+          <div class="insight-card yellow">
+            <div class="insight-card-icon">💀</div>
+            <div class="insight-card-label">Gafes</div>
+            <div class="insight-card-value" id="ig-blunders-free">—</div>
+            <div class="insight-card-sub">Total</div>
+          </div>
+        </div>
+
+        <!-- PREMIUM content -->
+        <div class="premium-blur-wrap" id="premium-global-wrap">
+          <div class="premium-blur-inner">
+              <div class="insights-grid" style="margin-top:12px">
+              <div class="insight-card gold">
+                <div class="insight-card-icon">⚡</div>
+                <div class="insight-card-label">Momento Crítico</div>
+                <div class="insight-card-value" id="ig-critical-move">—</div>
+                <div class="insight-card-sub" id="ig-critical-desc">—</div>
+              </div>
+              <div class="insight-card red">
+                <div class="insight-card-icon">💀</div>
+                <div class="insight-card-label">Blunders / Erros / Imprecisões</div>
+                <div class="insight-card-value" id="ig-errors-total">—</div>
+                <div class="insight-card-sub" id="ig-errors-sub">—</div>
+              </div>
+              <div class="insight-card blue">
+                <div class="insight-card-icon">📊</div>
+                <div class="insight-card-label">Fase mais Fraca</div>
+                <div class="insight-card-value" id="ig-weak-phase">—</div>
+                <div class="insight-card-sub" id="ig-weak-phase-sub">—</div>
+              </div>
+            </div>
+
+            <!-- Phase precision bars -->
+            <div class="insight-wide">
+              <div class="insight-wide-title" style="display:flex;justify-content:space-between;align-items:center;">
+                <span>Precisão por Fase</span>
+                <span style="display:flex;gap:12px;font-size:10px;font-family:'JetBrains Mono',monospace;">
+                  <span style="color:#ddd;">⬜ Brancas</span>
+                  <span style="color:#8888bb;">⬛ Pretas</span>
+                </span>
+              </div>
+              <div class="phase-bars">
+                <!-- ABERTURA -->
+                <div style="margin-bottom:10px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <span style="font-size:11px;color:var(--text2);">🏁 Abertura</span>
+                    <span style="display:flex;gap:10px;font-size:11px;font-family:'JetBrains Mono',monospace;">
+                      <span id="phase-pct-opening-w" style="color:#ddd;">—</span>
+                      <span id="phase-pct-opening-b" style="color:#8888bb;">—</span>
+                    </span>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:3px;">
+                    <div class="phase-bar-track"><div class="phase-bar-fill opening" id="phase-bar-opening-w" style="width:0%"></div></div>
+                    <div class="phase-bar-track"><div class="phase-bar-fill opening" id="phase-bar-opening-b" style="width:0%;opacity:.6;"></div></div>
+                  </div>
+                </div>
+                <!-- MEIO-JOGO -->
+                <div style="margin-bottom:10px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <span style="font-size:11px;color:var(--text2);">⚔️ Meio-jogo</span>
+                    <span style="display:flex;gap:10px;font-size:11px;font-family:'JetBrains Mono',monospace;">
+                      <span id="phase-pct-midgame-w" style="color:#ddd;">—</span>
+                      <span id="phase-pct-midgame-b" style="color:#8888bb;">—</span>
+                    </span>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:3px;">
+                    <div class="phase-bar-track"><div class="phase-bar-fill midgame" id="phase-bar-midgame-w" style="width:0%"></div></div>
+                    <div class="phase-bar-track"><div class="phase-bar-fill midgame" id="phase-bar-midgame-b" style="width:0%;opacity:.6;"></div></div>
+                  </div>
+                </div>
+                <!-- FINAL -->
+                <div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <span style="font-size:11px;color:var(--text2);">🏆 Final</span>
+                    <span style="display:flex;gap:10px;font-size:11px;font-family:'JetBrains Mono',monospace;">
+                      <span id="phase-pct-endgame-w" style="color:#ddd;">—</span>
+                      <span id="phase-pct-endgame-b" style="color:#8888bb;">—</span>
+                    </span>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:3px;">
+                    <div class="phase-bar-track"><div class="phase-bar-fill endgame" id="phase-bar-endgame-w" style="width:0%"></div></div>
+                    <div class="phase-bar-track"><div class="phase-bar-fill endgame" id="phase-bar-endgame-b" style="width:0%;opacity:.6;"></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Best move lost -->
+            <div class="best-move-lost" id="best-move-lost-card">
+              <div class="bml-header">
+                <div class="bml-icon">🚨</div>
+                <div class="bml-title">Maior Erro da Partida</div>
+              </div>
+              <div class="bml-detail">
+                <div class="bml-item"><div class="bml-item-label">Lance</div><div class="bml-item-value" id="bml-move">—</div></div>
+                <div class="bml-item"><div class="bml-item-label">Vantagem Perdida</div><div class="bml-item-value" id="bml-loss">—</div></div>
+                <div class="bml-item"><div class="bml-item-label">Lance Jogado</div><div class="bml-item-value" id="bml-played">—</div></div>
+                <div class="bml-item"><div class="bml-item-label">Melhor Lance</div><div class="bml-item-value" id="bml-best">—</div></div>
+              </div>
+              <div class="bml-explanation" id="bml-explanation">—</div>
+            </div>
+
+            <!-- Chart insights -->
+            <div class="insight-wide">
+              <div class="insight-wide-title">Interpretação do Gráfico</div>
+              <div class="chart-insights" id="chart-insights-list"></div>
+            </div>
+
+            <!-- Rating estimate -->
+            <div class="rating-estimate">
+              <div>
+                <div class="rating-est-label">Nível Estimado da Partida</div>
+                <div class="rating-est-value" id="ig-rating">—</div>
+                <div class="rating-est-range" id="ig-rating-range">—</div>
+                <div id="ig-rating-extra" style="font-size:12px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace;letter-spacing:.5px;"></div>
+              </div>
+              <div style="font-size:36px">📈</div>
+            </div>
+
+            <!-- Personalized suggestions -->
+            <div class="insight-wide" style="margin-top:10px">
+              <div class="insight-wide-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <span>💡 Sugestões Personalizadas</span>
+                <div style="display:flex;gap:4px;background:var(--bg3);border-radius:6px;padding:3px;">
+                  <button id="sugg-tab-w" onclick="InsightsUI.switchSuggTab('white')"
+                    style="padding:3px 10px;border:none;border-radius:4px;font-size:11px;cursor:pointer;
+                    background:var(--bg2);color:#ddd;font-family:'Outfit',sans-serif;">⬜ Brancas</button>
+                  <button id="sugg-tab-b" onclick="InsightsUI.switchSuggTab('black')"
+                    style="padding:3px 10px;border:none;border-radius:4px;font-size:11px;cursor:pointer;
+                    background:transparent;color:var(--text3);font-family:'Outfit',sans-serif;">⬛ Pretas</button>
+                </div>
+              </div>
+              <div id="suggestions-list-w" class="suggestions-list"></div>
+              <div id="suggestions-list-b" class="suggestions-list" style="display:none"></div>
+            </div>
+          </div>
+
+          <!-- Premium overlay -->
+          <div class="premium-blur-overlay">
+            <div style="font-size:28px">🔒</div>
+            <span>Gambyte Pro — insights completos</span>
+            <button class="btn-unlock-premium" onclick="AuthUI.openPremiumPage()">
+              Assinar Gambyte Pro — R$9,90/mês
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: MOVE INSIGHTS -->
+      <div id="insights-tab-move" class="insights-tab-content">
+        <div class="premium-blur-wrap" id="premium-move-wrap">
+          <div class="premium-blur-inner">
+            <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">
+              Navegue pelos lances usando ← → para atualizar a análise abaixo.
+            </div>
+            <div class="move-insight-panel" id="move-insight-panel">
+              <div class="move-insight-header">
+                <div class="move-insight-move" id="mi-san">—</div>
+                <div class="move-insight-cls" id="mi-cls-badge">—</div>
+              </div>
+              <div class="move-insight-eval-row">
+                <div class="move-insight-eval-item">
+                  <div class="mie-label">Avaliação Antes</div>
+                  <div class="mie-value" id="mi-eval-before">—</div>
+                </div>
+                <div class="move-insight-eval-item">
+                  <div class="mie-label">Avaliação Depois</div>
+                  <div class="mie-value" id="mi-eval-after">—</div>
+                </div>
+                <div class="move-insight-eval-item">
+                  <div class="mie-label">Diferença</div>
+                  <div class="mie-value" id="mi-eval-diff">—</div>
+                </div>
+              </div>
+              <div class="move-insight-comment" id="mi-comment">Selecione um lance para ver a análise.</div>
+              <div class="move-insight-flags" id="mi-flags"></div>
+              <div class="best-move-suggestion" id="mi-best-suggestion" style="display:none">
+                <span class="bms-label">Melhor lance:</span>
+                <span class="bms-move" id="mi-best-move">—</span>
+                <span class="bms-gain" id="mi-best-gain"></span>
+              </div>
+            </div>
+          </div>
+          <div class="premium-blur-overlay">
+            <div style="font-size:28px">🔒</div>
+            <span>Análise por lance — exclusivo Gambyte Pro</span>
+            <button class="btn-unlock-premium" onclick="AuthUI.openPremiumPage()">
+              Desbloquear Gambyte Pro
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: DNA -->
+      <div id="insights-tab-dna" class="insights-tab-content">
+        <div class="premium-blur-wrap" id="premium-dna-wrap">
+          <div class="premium-blur-inner">
+            <div class="dna-card">
+              <div class="dna-title">🧬 DNA do Jogador</div>
+              <div class="dna-profile" id="dna-profile">—</div>
+              <div class="dna-desc" id="dna-desc">—</div>
+              <div class="dna-tags" id="dna-tags"></div>
+            </div>
+            <div class="insight-wide">
+              <div class="insight-wide-title">Padrões Recorrentes</div>
+              <div class="insight-wide-body" id="dna-patterns">—</div>
+            </div>
+          </div>
+          <div class="premium-blur-overlay">
+            <div style="font-size:28px">🔒</div>
+            <span>DNA do Jogador — exclusivo Gambyte Pro</span>
+            <button class="btn-unlock-premium" onclick="AuthUI.openPremiumPage()">
+              Desbloquear Gambyte Pro
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /INSIGHTS SECTION -->
+
+    <!-- Player Cards -->
+    <div class="players-row">
+      <div class="player-card white">
+        <div class="player-color-badge">⬜ Brancas</div>
+        <div class="player-name" id="white-name">White</div>
+        <div class="player-rating-display" id="white-rating">—</div>
+        <div class="player-rating-label">Rating Estimado</div>
+        <div class="player-stats-row">
+          <div class="player-stat"><div class="player-stat-label">ACPL</div><div class="player-stat-value" id="white-acpl">—</div></div>
+          <div class="player-stat"><div class="player-stat-label">Precisão</div><div class="player-stat-value" id="white-acc">—</div></div>
+          <div class="player-stat"><div class="player-stat-label">Erros</div><div class="player-stat-value" id="white-mistakes">—</div></div>
+          <div class="player-stat"><div class="player-stat-label">Gafes</div><div class="player-stat-value" id="white-blunders">—</div></div>
+        </div>
+      </div>
+      <div class="player-card black">
+        <div class="player-color-badge">⬛ Pretas</div>
+        <div class="player-name" id="black-name">Black</div>
+        <div class="player-rating-display" id="black-rating">—</div>
+        <div class="player-rating-label">Rating Estimado</div>
+        <div class="player-stats-row">
+          <div class="player-stat"><div class="player-stat-label">ACPL</div><div class="player-stat-value" id="black-acpl">—</div></div>
+          <div class="player-stat"><div class="player-stat-label">Precisão</div><div class="player-stat-value" id="black-acc">—</div></div>
+          <div class="player-stat"><div class="player-stat-label">Erros</div><div class="player-stat-value" id="black-mistakes">—</div></div>
+          <div class="player-stat"><div class="player-stat-label">Gafes</div><div class="player-stat-value" id="black-blunders">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         ANÚNCIO 1 — Após os resultados da análise (players-row)
+         ============================================================ -->
+    <div style="margin: 12px 0; text-align: center;">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="SEU_ID"
+           data-ad-slot="INSIRA_SLOT_AQUI"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>
+           (adsbygoogle = window.adsbygoogle || []).push({});
+      </script>
+    </div>
+
+    <!-- Analysis layout: Board | Chart+Moves | Summary -->
+    <div class="analysis-layout">
+
+      <!-- Board Panel -->
+      <div class="board-panel">
+
+        <!-- Eval bar + board side by side -->
+        <div class="board-panel-inner">
+          <!-- Evaluation Bar (module: evaluation-bar.js) -->
+          <div class="eval-bar-wrapper" id="eval-bar-wrapper">
+            <div class="eval-bar-label" id="eval-bar-top-label"></div>
+            <div class="eval-bar-track" id="eval-bar-track">
+              <div class="eval-bar-white" id="eval-bar-white" style="height:50%"></div>
+            </div>
+            <div class="eval-bar-label" id="eval-bar-bot-label"></div>
+          </div>
+
+          <!-- Board wrapper -->
+          <div>
+            <div class="board-wrapper" id="board-wrapper" style="position:relative;">
+              <div class="board-coords-ranks" id="board-ranks"></div>
+              <canvas id="board-canvas"></canvas>
+              <canvas id="arrow-canvas" style="position:absolute;top:0;left:0;pointer-events:none;"></canvas>
+              <!-- Overlay de classificação do lance -->
+              <div id="move-class-overlay" style="opacity:0;"></div>
+              <div class="board-coords-files" id="board-files"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Free play status bar -->
+        <div class="free-play-bar" id="free-play-bar">
+          <span class="free-play-status">🎮 Modo Livre</span>
+          <span id="free-play-turn">Vez das brancas</span>
+          <button class="btn-board" id="free-play-back">↩ Voltar</button>
+          <button class="btn-board" id="free-play-exit">✕ Sair</button>
+          <span class="free-play-eval" id="free-play-eval">0.00</span>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav-controls">
+          <button class="nav-btn" id="nav-start" title="Início">⏮</button>
+          <button class="nav-btn" id="nav-prev"  title="Voltar (←)">◀</button>
+          <button class="nav-btn" id="nav-next"  title="Avançar (→)">▶</button>
+          <button class="nav-btn" id="nav-end"   title="Fim">⏭</button>
+        </div>
+
+        <!-- Action buttons row -->
+        <div class="board-actions">
+          <label class="engine-toggle">
+            <input type="checkbox" id="show-engine-arrow" checked>
+            <span class="engine-toggle-label">Melhor lance</span>
+          </label>
+          <button class="btn-board" id="btn-flip"      title="Inverter tabuleiro">⇅ Inverter</button>
+          <button class="btn-board" id="btn-free-play" title="Modo de jogo livre">🎮 Modo Livre</button>
+          <button class="btn-board" id="btn-export-pgn" title="Exportar PGN">⬇ PGN</button>
+        </div>
+      </div>
+
+      <!-- Middle Panel -->
+      <div class="middle-panel">
+        <div class="chart-section">
+          <div class="section-title">Gráfico de Vantagem</div>
+          <div class="chart-labels">
+            <span class="lbl-white">▲ Brancas ganhando</span>
+            <span class="lbl-black">Pretas ganhando ▼</span>
+          </div>
+          <canvas id="chart"></canvas>
+        </div>
+
+        <!-- ============================================================
+             ANÚNCIO 2 — Entre o gráfico de vantagem e a lista de lances
+             ============================================================ -->
+        <div style="margin: 8px 0; text-align: center;">
+          <ins class="adsbygoogle"
+               style="display:block"
+               data-ad-client="SEU_ID"
+               data-ad-slot="INSIRA_SLOT_AQUI"
+               data-ad-format="auto"
+               data-full-width-responsive="true"></ins>
+          <script>
+               (adsbygoogle = window.adsbygoogle || []).push({});
+          </script>
+        </div>
+
+        <div class="moves-section">
+          <div class="section-title">Análise de Lances</div>
+          <div id="moves-list" class="moves-list"></div>
+        </div>
+      </div>
+
+      <!-- Summary Panel -->
+      <div class="summary-panel">
+        <div class="accuracy-card">
+          <div class="accuracy-title">Precisão</div>
+          <div class="accuracy-player">
+            <div class="accuracy-player-name">
+              <span id="acc-white-name">Brancas</span>
+              <span id="acc-white-pct" class="mono">—%</span>
+            </div>
+            <div class="accuracy-bar-track">
+              <div id="acc-white-bar" class="accuracy-bar-fill white" style="width:0%"></div>
+            </div>
+          </div>
+          <div class="accuracy-player">
+            <div class="accuracy-player-name">
+              <span id="acc-black-name">Pretas</span>
+              <span id="acc-black-pct" class="mono">—%</span>
+            </div>
+            <div class="accuracy-bar-track">
+              <div id="acc-black-bar" class="accuracy-bar-fill black" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="classification-legend">
+          <div class="legend-header">
+            <span class="accuracy-title" style="margin-bottom:0">Classificações</span>
+            <div class="legend-col-labels">
+              <div class="legend-col-label" style="color:#ddd;">Brancas</div>
+              <div class="legend-col-label" style="color:#8888bb;">Pretas</div>
+            </div>
+          </div>
+          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--book)"></div><span style="color:var(--book)">Livro</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-book">0</div><div class="legend-count b" id="cnt-b-book">0</div></div></div>
+          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--brilliant)"></div><span style="color:var(--brilliant)">Brilhante</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-brilliant">0</div><div class="legend-count b" id="cnt-b-brilliant">0</div></div></div>
+          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--excellent)"></div><span style="color:var(--excellent)">Excelente</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-excellent">0</div><div class="legend-count b" id="cnt-b-excellent">0</div></div></div>
+          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--best-move)"></div><span style="color:var(--best-move)">Melhor Lance</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-best-move">0</div><div class="legend-count b" id="cnt-b-best-move">0</div></div></div>
+          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--very-good)"></div><span style="color:var(--very-good)">Muito Boa</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-very-good">0</div><div class="legend-count b" id="cnt-b-very-good">0</div></div></div>
+          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--good)"></div><span style="color:var(--good)">Boa</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-good">0</div><div class="legend-count b" id="cnt-b-good">0</div></div></div>
+          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--inaccuracy)"></div><span style="color:var(--inaccuracy)">Imprecisão</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-inaccuracy">0</div><div class="legend-count b" id="cnt-b-inaccuracy">0</div></div></div>
+          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--mistake)"></div><span style="color:var(--mistake)">Erro</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-mistake">0</div><div class="legend-count b" id="cnt-b-mistake">0</div></div></div>
+          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--blunder)"></div><span style="color:var(--blunder)">Gafe</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-blunder">0</div><div class="legend-count b" id="cnt-b-blunder">0</div></div></div>
+        </div>
+      </div>
+
+    </div><!-- /analysis-layout -->
+  </section><!-- /results-section -->
+
+  <!-- ============================================================
+       ANÚNCIO 3 — Rodapé da página, após todo o conteúdo
+       ============================================================ -->
+  <div style="margin: 20px auto; max-width: 1200px; padding: 0 16px; text-align: center;">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="SEU_ID"
+         data-ad-slot="INSIRA_SLOT_AQUI"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
+
+</div><!-- /container -->
+
+<div id="toast-container"></div>
+
+<!-- ============================================================
+     SCRIPTS — ordem importa (dependências carregadas antes de
+     quem as usa). Todos são globais (IIFE), sem bundler.
+     ============================================================ -->
+
+<!-- Dados -->
+<script src="js/data/eco-data.js"></script>
+
+<!-- Módulos de baixo nível (tabuleiro, PGN, engine) -->
+<script src="js/modules/opening-detector.js"></script>
+<script src="js/modules/board-ui.js"></script>
+<script src="js/modules/arrow-system.js"></script>
+<script src="js/modules/engine-suggestion.js"></script>
+<script src="js/modules/pgn-parser.js"></script>
+<script src="js/modules/rating-model.js"></script>
+<script src="js/modules/move-classifier.js"></script>
+<script src="js/modules/stockfish-manager.js"></script>
+<script src="js/modules/analysis-engine.js"></script>
+
+<!-- Renderização auxiliar -->
+<script src="js/modules/chart-renderer.js"></script>
+<script src="js/modules/evaluation-bar.js"></script>
+<script src="js/modules/free-play.js"></script>
+<script src="js/modules/pgn-exporter.js"></script>
+
+<!-- Contas / Premium / Insights -->
+<script src="js/modules/auth-system.js"></script>
+<script src="js/modules/insights-engine.js"></script>
+<script src="js/modules/insights-ui.js"></script>
+<script src="js/modules/auth-ui.js"></script>
+
+<!-- Controlador de UI (precisa que o DOM acima já exista) -->
+<script src="js/modules/ui-controller.js"></script>
+
+<!-- Orquestrador principal + bootstrap -->
+<script src="js/app.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gambyte Pro — Assinar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #0d0f14;
+  --bg2:     #13161e;
+  --bg3:     #1a1e2a;
+  --border:  #252a38;
+  --border2: #2e3448;
+  --text:    #e8eaf0;
+  --text2:   #8890a8;
+  --text3:   #555d78;
+  --accent:  #e8c97a;
+  --accent2: #c9a84c;
+  --green:   #5bc97a;
+  --red:     #e05c5c;
+  --blue:    #5b8fe0;
+  --purple:  #9b7de0;
+  --gold:    #ffbe3c;
+  --radius:  8px;
+  --radius-lg: 14px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Animated gradient background ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 10% -10%, rgba(255,190,60,0.10) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 50% at 90% 110%, rgba(91,143,224,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(155,125,224,0.04) 0%, transparent 55%);
+  pointer-events: none;
+  animation: bgShift 10s ease-in-out infinite alternate;
+}
+@keyframes bgShift {
+  from { opacity: 1; }
+  to   { opacity: .7; }
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 20px 60px;
+  position: relative; z-index: 1;
+}
+
+/* ── Header ── */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 0 18px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+.back-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: transparent; border: none;
+  color: var(--text2); font-family: 'Outfit', sans-serif;
+  font-size: 13px; cursor: pointer; text-decoration: none;
+  transition: color .2s;
+}
+.back-btn:hover { color: var(--accent); }
+.logo-area { display: flex; align-items: center; gap: 10px; }
+.logo-icon {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; flex-shrink: 0;
+}
+.logo-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.logo-text { font-family: 'DM Serif Display', serif; font-size: 22px; letter-spacing: -0.3px; }
+.logo-text span { color: var(--accent); }
+
+/* ── Hero ── */
+.hero {
+  text-align: center;
+  padding: 60px 0 48px;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 16px; border-radius: 99px;
+  background: rgba(255,190,60,.12); color: var(--gold);
+  border: 1px solid rgba(255,190,60,.3);
+  font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+  margin-bottom: 20px;
+  animation: fadeInDown .5s ease both;
+}
+.hero-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(36px, 6vw, 58px);
+  line-height: 1.1; letter-spacing: -1px;
+  margin-bottom: 16px;
+  animation: fadeInDown .5s ease .08s both;
+}
+.hero-title .gold { color: var(--gold); }
+.hero-sub {
+  font-size: 17px; color: var(--text2); line-height: 1.6;
+  max-width: 520px; margin: 0 auto 32px;
+  animation: fadeInDown .5s ease .16s both;
+}
+.hero-stats {
+  display: flex; justify-content: center; gap: 32px;
+  flex-wrap: wrap;
+  animation: fadeInDown .5s ease .24s both;
+}
+.hero-stat { text-align: center; }
+.hero-stat-num {
+  font-family: 'DM Serif Display', serif;
+  font-size: 32px; color: var(--accent);
+}
+.hero-stat-label { font-size: 11px; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; }
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Pricing Section ── */
+.pricing-section { margin-bottom: 56px; animation: fadeInUp .6s ease .3s both; }
+.section-title {
+  text-align: center; font-size: 12px; font-weight: 600;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--text3); margin-bottom: 28px;
+}
+
+.pricing-cards {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px; max-width: 700px; margin: 0 auto;
+}
+@media (max-width: 600px) { .pricing-cards { grid-template-columns: 1fr; } }
+
+.pricing-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 24px;
+  position: relative; transition: border-color .3s, transform .3s;
+}
+.pricing-card:hover { transform: translateY(-3px); }
+.pricing-card.featured {
+  border-color: rgba(255,190,60,.4);
+  background: linear-gradient(160deg, rgba(255,190,60,.06), rgba(13,15,20,0));
+}
+.pricing-card.featured::before {
+  content: 'MAIS POPULAR';
+  position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--gold), var(--accent2));
+  color: #0d0f14; font-size: 9px; font-weight: 800;
+  letter-spacing: 1.5px; padding: 3px 12px; border-radius: 99px;
+}
+
+.plan-name { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 12px; }
+.plan-price {
+  display: flex; align-items: baseline; gap: 4px; margin-bottom: 6px;
+}
+.plan-currency { font-size: 18px; font-weight: 600; color: var(--text2); }
+.plan-amount   { font-family: 'DM Serif Display', serif; font-size: 44px; color: var(--text); line-height: 1; }
+.plan-period   { font-size: 13px; color: var(--text3); }
+.plan-desc     { font-size: 12px; color: var(--text3); margin-bottom: 18px; }
+.plan-features { list-style: none; display: flex; flex-direction: column; gap: 9px; margin-bottom: 22px; }
+.plan-feature  { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; color: var(--text2); }
+.plan-feature-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+.plan-feature.locked { color: var(--text3); }
+
+.btn-plan {
+  display: block; width: 100%; padding: 12px;
+  border: none; border-radius: var(--radius);
+  font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all .2s; text-align: center;
+}
+.btn-plan.free {
+  background: transparent; border: 1px solid var(--border2);
+  color: var(--text2);
+}
+.btn-plan.free:hover { border-color: var(--text3); color: var(--text); }
+.btn-plan.premium-cta {
+  background: linear-gradient(135deg, var(--gold), var(--accent2));
+  color: #0d0f14;
+  box-shadow: 0 4px 20px rgba(255,190,60,.3);
+}
+.btn-plan.premium-cta:hover {
+  opacity: .92; transform: translateY(-1px);
+  box-shadow: 0 8px 28px rgba(255,190,60,.4);
+}
+
+/* ── Features Grid ── */
+.features-section { margin-bottom: 56px; animation: fadeInUp .6s ease .4s both; }
+.features-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.feature-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 18px;
+  transition: border-color .2s, transform .2s;
+}
+.feature-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+.feature-icon { font-size: 26px; margin-bottom: 10px; }
+.feature-title { font-size: 14px; font-weight: 600; margin-bottom: 5px; }
+.feature-desc  { font-size: 12px; color: var(--text2); line-height: 1.5; }
+.feature-badge {
+  display: inline-block; margin-top: 8px;
+  font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 4px;
+  background: rgba(255,190,60,.12); color: var(--gold);
+  border: 1px solid rgba(255,190,60,.3);
+}
+
+/* ── Checkout Modal ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,.75); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  opacity: 0; pointer-events: none; transition: opacity .3s;
+}
+.modal-overlay.visible { opacity: 1; pointer-events: all; }
+.modal-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); width: 100%; max-width: 480px;
+  max-height: 90vh; overflow-y: auto;
+  transform: translateY(20px); transition: transform .3s;
+}
+.modal-overlay.visible .modal-card { transform: translateY(0); }
+.modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-title { font-size: 18px; font-weight: 600; }
+.modal-close {
+  background: none; border: none; color: var(--text3);
+  font-size: 20px; cursor: pointer; padding: 4px;
+  line-height: 1; transition: color .2s;
+}
+.modal-close:hover { color: var(--text); }
+.modal-body { padding: 24px; }
+
+/* Order summary */
+.order-summary {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 20px;
+}
+.order-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; padding: 4px 0;
+}
+.order-row.total {
+  border-top: 1px solid var(--border);
+  margin-top: 8px; padding-top: 12px;
+  font-weight: 700; font-size: 15px;
+}
+.order-label { color: var(--text2); }
+.order-value { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.order-value.gold { color: var(--gold); }
+
+/* Payment form */
+.payment-step { display: none; }
+.payment-step.active { display: block; }
+
+.pay-section-title {
+  font-size: 11px; font-weight: 600; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--text3); margin-bottom: 12px;
+}
+.form-group { margin-bottom: 14px; }
+.form-label {
+  display: block; font-size: 11px; font-weight: 600;
+  letter-spacing: 1px; text-transform: uppercase;
+  color: var(--text3); margin-bottom: 6px;
+}
+.form-input {
+  width: 100%; padding: 10px 13px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: var(--radius); color: var(--text);
+  font-family: 'Outfit', sans-serif; font-size: 14px;
+  outline: none; transition: border-color .2s;
+}
+.form-input:focus { border-color: var(--accent); }
+.form-input::placeholder { color: var(--text3); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* Payment methods */
+.pay-methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
+.pay-method {
+  padding: 12px 8px; border: 1px solid var(--border2);
+  border-radius: var(--radius); cursor: pointer;
+  text-align: center; font-size: 11px; color: var(--text2);
+  transition: all .2s; background: var(--bg3);
+}
+.pay-method:hover { border-color: var(--accent); color: var(--text); }
+.pay-method.active { border-color: var(--accent); background: rgba(232,201,122,.08); color: var(--accent); }
+.pay-method-icon { font-size: 22px; display: block; margin-bottom: 4px; }
+
+.btn-pay {
+  width: 100%; padding: 14px;
+  background: linear-gradient(135deg, var(--gold), var(--accent2));
+  border: none; border-radius: var(--radius);
+  color: #0d0f14; font-family: 'Outfit', sans-serif;
+  font-size: 15px; font-weight: 800; cursor: pointer;
+  transition: all .2s; letter-spacing: .3px;
+  box-shadow: 0 4px 20px rgba(255,190,60,.3);
+}
+.btn-pay:hover { opacity: .92; transform: translateY(-1px); box-shadow: 0 8px 28px rgba(255,190,60,.4); }
+.btn-pay:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.pay-security {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  font-size: 11px; color: var(--text3); margin-top: 12px;
+}
+
+/* Success step */
+.success-step {
+  text-align: center; padding: 20px 0;
+}
+.success-icon-wrap {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--accent2));
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 36px; margin-bottom: 20px;
+  box-shadow: 0 8px 32px rgba(255,190,60,.4);
+  animation: popIn .5s cubic-bezier(.17,.89,.32,1.28) both;
+}
+@keyframes popIn {
+  0%   { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.success-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.success-sub   { font-size: 14px; color: var(--text2); margin-bottom: 24px; line-height: 1.6; }
+.btn-go-analyze {
+  display: inline-block; padding: 13px 32px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; border-radius: var(--radius);
+  color: #0d0f14; font-family: 'Outfit', sans-serif;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  text-decoration: none; transition: opacity .2s;
+}
+.btn-go-analyze:hover { opacity: .9; }
+
+/* ── FAQ ── */
+.faq-section { margin-bottom: 56px; animation: fadeInUp .6s ease .5s both; }
+.faq-list { max-width: 680px; margin: 0 auto; }
+.faq-item {
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+.faq-question {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 0; cursor: pointer; gap: 12px;
+  font-size: 14px; font-weight: 500; color: var(--text);
+  user-select: none;
+}
+.faq-question:hover { color: var(--accent); }
+.faq-arrow { color: var(--text3); font-size: 18px; transition: transform .25s; flex-shrink: 0; }
+.faq-item.open .faq-arrow { transform: rotate(90deg); }
+.faq-answer {
+  font-size: 13px; color: var(--text2); line-height: 1.7;
+  max-height: 0; overflow: hidden; transition: max-height .35s ease, padding .25s;
+  padding: 0;
+}
+.faq-item.open .faq-answer { max-height: 200px; padding-bottom: 16px; }
+
+/* ── Toast ── */
+#toast-area {
+  position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.toast {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 16px;
+  font-size: 13px; color: var(--text);
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+  animation: toastIn .3s ease; max-width: 300px;
+}
+.toast.success { border-color: rgba(91,201,122,.4); }
+.toast.error   { border-color: rgba(224,92,92,.4); }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── User status bar ── */
+.user-status-bar {
+  display: flex; align-items: center; gap: 10px; justify-content: flex-end;
+}
+.ubar-name { font-size: 13px; color: var(--text2); }
+.ubar-badge {
+  font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px;
+  background: rgba(255,190,60,.15); color: var(--gold);
+  border: 1px solid rgba(255,190,60,.35); letter-spacing: .5px;
+}
+
+/* Pix QR placeholder */
+.pix-area {
+  text-align: center; padding: 20px 0;
+  border: 1px dashed var(--border2); border-radius: var(--radius);
+  margin-bottom: 16px; display: none;
+}
+.pix-area.visible { display: block; }
+.pix-qr {
+  width: 160px; height: 160px; margin: 0 auto 12px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); display: flex; align-items: center;
+  justify-content: center; font-size: 60px;
+}
+.pix-code {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: var(--text3); word-break: break-all; padding: 0 20px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <header>
+    <a class="back-btn" href="index.html">← Voltar</a>
+    <div class="logo-area">
+      <div class="logo-icon"><img src="logo.png" alt="Gambyte"></div>
+      <div class="logo-text">Gambyte</div>
+    </div>
+    <div class="user-status-bar" id="user-status-bar"></div>
+  </header>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-badge">⭐ Gambyte Pro</div>
+    <h1 class="hero-title">
+      Eleve seu xadrez<br>
+      ao próximo nível <span class="gold">hoje</span>
+    </h1>
+    <p class="hero-sub">
+      Análises profundas com insights de Grão-Mestre, DNA do jogador, análise por lance e muito mais. Por menos que um café por semana.
+    </p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-num">∞</div>
+        <div class="hero-stat-label">Partidas Analisadas</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">20</div>
+        <div class="hero-stat-label">Depth de Análise</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">100%</div>
+        <div class="hero-stat-label">Insights Desbloqueados</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pricing -->
+  <div class="pricing-section">
+    <div class="section-title">Escolha seu plano</div>
+    <div class="pricing-cards">
+      <!-- Free -->
+      <div class="pricing-card">
+        <div class="plan-name">Gratuito</div>
+        <div class="plan-price">
+          <span class="plan-currency">R$</span>
+          <span class="plan-amount">0</span>
+          <span class="plan-period">/mês</span>
+        </div>
+        <div class="plan-desc">Para experimentar a plataforma</div>
+        <ul class="plan-features">
+          <li class="plan-feature"><span class="plan-feature-icon">✅</span>Análise básica (depth 12)</li>
+          <li class="plan-feature"><span class="plan-feature-icon">✅</span>Precisão geral</li>
+          <li class="plan-feature"><span class="plan-feature-icon">✅</span>Classificação de lances</li>
+          <li class="plan-feature"><span class="plan-feature-icon">✅</span>Gráfico de vantagem</li>
+          <li class="plan-feature locked"><span class="plan-feature-icon">🔒</span>Insights avançados</li>
+          <li class="plan-feature locked"><span class="plan-feature-icon">🔒</span>Análise por lance</li>
+          <li class="plan-feature locked"><span class="plan-feature-icon">🔒</span>DNA do Jogador</li>
+          <li class="plan-feature locked"><span class="plan-feature-icon">🔒</span>Análise profunda (depth 20)</li>
+        </ul>
+        <button class="btn-plan free" onclick="window.location.href='index.html'">Continuar grátis</button>
+      </div>
+
+      <!-- Premium -->
+      <div class="pricing-card featured">
+        <div class="plan-name" style="color:var(--gold)">⭐ Premium</div>
+        <div class="plan-price">
+          <span class="plan-currency" style="color:var(--gold)">R$</span>
+          <span class="plan-amount" style="color:var(--gold)">9</span>
+          <span class="plan-period">,90/mês</span>
+        </div>
+        <div class="plan-desc">Tudo que você precisa para evoluir</div>
+        <ul class="plan-features">
+          <li class="plan-feature"><span class="plan-feature-icon">✅</span>Tudo do plano Gratuito</li>
+          <li class="plan-feature"><span class="plan-feature-icon">⚡</span>Análise profunda (depth 20)</li>
+          <li class="plan-feature"><span class="plan-feature-icon">🧠</span>Insights globais completos</li>
+          <li class="plan-feature"><span class="plan-feature-icon">🔄</span>Análise detalhada por lance</li>
+          <li class="plan-feature"><span class="plan-feature-icon">🧬</span>DNA do Jogador</li>
+          <li class="plan-feature"><span class="plan-feature-icon">🚨</span>Maior erro da partida</li>
+          <li class="plan-feature"><span class="plan-feature-icon">📊</span>Precisão por fase</li>
+          <li class="plan-feature"><span class="plan-feature-icon">🚫</span>Sem anúncios</li>
+        </ul>
+        <button class="btn-plan premium-cta" id="btn-subscribe" onclick="openCheckout()">
+          Assinar por R$9,90/mês
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features Grid -->
+  <div class="features-section">
+    <div class="section-title">O que você desbloqueia</div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🧠</div>
+        <div class="feature-title">Insights Globais</div>
+        <div class="feature-desc">Precisão por fase, momento crítico, padrões recorrentes e muito mais calculados para toda a partida.</div>
+        <span class="feature-badge">Premium</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔄</div>
+        <div class="feature-title">Análise por Lance</div>
+        <div class="feature-desc">Para cada jogada: avaliação antes/depois, diferença, melhor lance e comentário automático inteligente.</div>
+        <span class="feature-badge">Premium</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🧬</div>
+        <div class="feature-title">DNA do Jogador</div>
+        <div class="feature-desc">Seu perfil completo: agressivo, passivo, tático, imprudente. Com padrões detectados automaticamente.</div>
+        <span class="feature-badge">Premium</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🚨</div>
+        <div class="feature-title">Maior Erro da Partida</div>
+        <div class="feature-desc">O lance onde você perdeu mais vantagem, qual era o melhor e explicação simples do que aconteceu.</div>
+        <span class="feature-badge">Premium</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Precisão por Fase</div>
+        <div class="feature-desc">Abertura, meio-jogo e final separados. Identifique exatamente onde você precisa melhorar.</div>
+        <span class="feature-badge">Premium</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">Análise Profunda</div>
+        <div class="feature-desc">Depth 20 com Stockfish 18 para classificações mais precisas e melhores lances mais acurados.</div>
+        <span class="feature-badge">Premium</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="faq-section">
+    <div class="section-title">Perguntas frequentes</div>
+    <div class="faq-list" id="faq-list">
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>O pagamento é seguro?</span>
+          <span class="faq-arrow">›</span>
+        </div>
+        <div class="faq-answer">Sim. Usamos criptografia SSL/TLS em todas as transações. Seus dados de pagamento nunca são armazenados em nossos servidores.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>Posso cancelar a qualquer momento?</span>
+          <span class="faq-arrow">›</span>
+        </div>
+        <div class="faq-answer">Sim, sem fidelidade. Cancele quando quiser pelo seu perfil e não será cobrado no próximo ciclo. Você continua com acesso Premium até o fim do período pago.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>Quais formas de pagamento são aceitas?</span>
+          <span class="faq-arrow">›</span>
+        </div>
+        <div class="faq-answer">Aceitamos Pix, cartão de crédito (Visa, Mastercard, Elo, Amex) e boleto bancário. O Pix é aprovado instantaneamente.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>O Gambyte funciona com qualquer PGN?</span>
+          <span class="faq-arrow">›</span>
+        </div>
+        <div class="faq-answer">Sim! Cole qualquer PGN padrão — do Chess.com, Lichess, Chess24 ou exportado de qualquer software de xadrez. O analisador roda 100% no seu navegador com Stockfish 18.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>Preciso criar conta para usar gratuitamente?</span>
+          <span class="faq-arrow">›</span>
+        </div>
+        <div class="faq-answer">Não. O plano gratuito não exige conta. Mas para assinar o Gambyte Pro você precisará de uma conta para gerenciar sua assinatura.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Checkout Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeCheckoutOnOverlay(event)">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title-text">Assinar Premium</span>
+      <button class="modal-close" onclick="closeCheckout()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Step: Login required -->
+      <div class="payment-step active" id="step-auth-check">
+        <div style="text-align:center;padding:10px 0 20px">
+          <div style="font-size:40px;margin-bottom:14px">🔐</div>
+          <div style="font-size:16px;font-weight:600;margin-bottom:8px">Faça login para continuar</div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:22px;line-height:1.6">
+            Você precisa de uma conta para assinar o Gambyte Pro e acessar seus benefícios em qualquer dispositivo.
+          </div>
+          <button class="btn-pay" onclick="goToLogin()" style="margin-bottom:10px">
+            Entrar / Criar conta
+          </button>
+          <div style="font-size:11px;color:var(--text3)">Leva menos de 1 minuto</div>
+        </div>
+      </div>
+
+      <!-- Step: Already premium -->
+      <div class="payment-step" id="step-already-premium">
+        <div style="text-align:center;padding:10px 0 20px">
+          <div style="font-size:48px;margin-bottom:14px">⭐</div>
+          <div style="font-size:18px;font-weight:700;margin-bottom:8px;color:var(--gold)">Você já é Gambyte Pro!</div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:22px">
+            Sua conta já tem acesso a todos os recursos Gambyte Pro.
+          </div>
+          <a class="btn-go-analyze" href="index.html">Ir para a análise →</a>
+        </div>
+      </div>
+
+      <!-- Step: Payment -->
+      <div class="payment-step" id="step-payment">
+        <!-- Order summary -->
+        <div class="order-summary">
+          <div class="order-row">
+            <span class="order-label">⭐ Gambyte Pro</span>
+            <span class="order-value">R$9,90</span>
+          </div>
+          <div class="order-row">
+            <span class="order-label">Cobrança</span>
+            <span class="order-value">Mensal</span>
+          </div>
+          <div class="order-row total">
+            <span class="order-label">Total hoje</span>
+            <span class="order-value gold">R$9,90</span>
+          </div>
+        </div>
+
+        <!-- Payment methods -->
+        <div class="pay-section-title">Forma de pagamento</div>
+        <div class="pay-methods">
+          <div class="pay-method active" id="pm-pix" onclick="selectPayMethod('pix')">
+            <span class="pay-method-icon">🏦</span>
+            Pix
+          </div>
+          <div class="pay-method" id="pm-card" onclick="selectPayMethod('card')">
+            <span class="pay-method-icon">💳</span>
+            Cartão
+          </div>
+          <div class="pay-method" id="pm-boleto" onclick="selectPayMethod('boleto')">
+            <span class="pay-method-icon">📄</span>
+            Boleto
+          </div>
+        </div>
+
+        <!-- Pix form -->
+        <div id="pix-form">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5;">
+            Após clicar em pagar, um QR Code Pix será gerado. Aprovação instantânea.
+          </div>
+        </div>
+
+        <!-- Card form -->
+        <div id="card-form" style="display:none">
+          <div class="form-group">
+            <label class="form-label">Número do Cartão</label>
+            <input class="form-input" type="text" id="card-number" placeholder="0000 0000 0000 0000" maxlength="19" oninput="fmtCard(this)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nome no Cartão</label>
+            <input class="form-input" type="text" id="card-name" placeholder="Nome como no cartão">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Validade</label>
+              <input class="form-input" type="text" id="card-exp" placeholder="MM/AA" maxlength="5" oninput="fmtExp(this)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">CVV</label>
+              <input class="form-input" type="text" id="card-cvv" placeholder="000" maxlength="4">
+            </div>
+          </div>
+        </div>
+
+        <!-- Boleto info -->
+        <div id="boleto-form" style="display:none">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5;">
+            Um boleto será gerado e enviado para seu email cadastrado. Prazo de vencimento: 3 dias úteis.
+          </div>
+        </div>
+
+        <div class="form-error" id="payment-error" style="margin-bottom:14px"></div>
+
+        <button class="btn-pay" id="btn-pay" onclick="doPayment()">
+          🔒 Pagar R$9,90 e ativar Gambyte Pro
+        </button>
+        <div class="pay-security">🔒 Pagamento 100% seguro com SSL · Cancele quando quiser</div>
+      </div>
+
+      <!-- Step: Success -->
+      <div class="payment-step" id="step-success">
+        <div class="success-step">
+          <div class="success-icon-wrap">⭐</div>
+          <div class="success-title">Premium Ativado!</div>
+          <div class="success-sub">
+            Parabéns! Sua conta agora tem acesso a todos os recursos Gambyte Pro.<br>
+            Analise suas partidas com insights completos.
+          </div>
+          <a class="btn-go-analyze" href="index.html" onclick="reloadAnalyzer()">
+            Ir para a Análise →
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-area"></div>
+
+<script>
+/* ── Auth System ── */
+const AuthSystem = (() => {
+  const USERS_KEY   = 'chesslens_users';
+  const SESSION_KEY = 'chesslens_session';
+  function getUsers()    { try { return JSON.parse(localStorage.getItem(USERS_KEY)||'{}'); } catch(e){return{};} }
+  function saveUsers(u)  { localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
+  function getSession()  { try { return JSON.parse(localStorage.getItem(SESSION_KEY)||'null'); } catch(e){return null;} }
+  function saveSession(s){ localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
+
+  function activatePremium() {
+    const sess = getSession();
+    if (!sess) return false;
+    const users = getUsers();
+    if (users[sess.email]) {
+      users[sess.email].premium = true;
+      saveUsers(users);
+    }
+    sess.premium = true;
+    saveSession(sess);
+    return true;
+  }
+
+  function currentSession() { return getSession(); }
+  function isPremium() { const s=getSession(); return s&&s.premium; }
+  return { activatePremium, currentSession, isPremium };
+})();
+
+/* ── UI ── */
+let currentPayMethod = 'pix';
+
+function showToast(msg, type='info') {
+  const c = document.getElementById('toast-area');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(()=>t.remove(), 3500);
+}
+
+function toggleFaq(btn) {
+  const item = btn.parentElement;
+  item.classList.toggle('open');
+}
+
+function openCheckout() {
+  const overlay = document.getElementById('modal-overlay');
+  overlay.classList.add('visible');
+  document.body.style.overflow = 'hidden';
+
+  const sess = AuthSystem.currentSession();
+  if (!sess) {
+    showStep('step-auth-check');
+  } else if (sess.premium) {
+    showStep('step-already-premium');
+  } else {
+    showStep('step-payment');
+    document.getElementById('modal-title-text').textContent = 'Finalizar Assinatura';
+  }
+}
+
+function closeCheckout() {
+  document.getElementById('modal-overlay').classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+function closeCheckoutOnOverlay(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeCheckout();
+}
+
+function showStep(id) {
+  document.querySelectorAll('.payment-step').forEach(el => el.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+}
+
+function goToLogin() {
+  closeCheckout();
+  // Store intent to come back
+  sessionStorage.setItem('gambyte_redirect', 'premium');
+  window.location.href = 'gambyte-login.html';
+}
+
+function selectPayMethod(method) {
+  currentPayMethod = method;
+  ['pix','card','boleto'].forEach(m => {
+    document.getElementById(`pm-${m}`)?.classList.toggle('active', m===method);
+    const form = document.getElementById(`${m}-form`);
+    if (form) form.style.display = m===method ? 'block' : 'none';
+  });
+}
+
+function fmtCard(inp) {
+  let v = inp.value.replace(/\D/g,'').substring(0,16);
+  inp.value = v.replace(/(.{4})/g,'$1 ').trim();
+}
+function fmtExp(inp) {
+  let v = inp.value.replace(/\D/g,'');
+  if (v.length >= 3) v = v.substring(0,2)+'/'+v.substring(2,4);
+  inp.value = v;
+}
+
+function doPayment() {
+  const btn = document.getElementById('btn-pay');
+  const errEl = document.getElementById('payment-error');
+  errEl.style.display = 'none';
+
+  // Validate card fields
+  if (currentPayMethod === 'card') {
+    const num  = document.getElementById('card-number')?.value.replace(/\s/g,'');
+    const name = document.getElementById('card-name')?.value.trim();
+    const exp  = document.getElementById('card-exp')?.value;
+    const cvv  = document.getElementById('card-cvv')?.value;
+    if (!num || num.length < 16) { showPayErr('Número de cartão inválido.'); return; }
+    if (!name) { showPayErr('Nome no cartão obrigatório.'); return; }
+    if (!exp || exp.length < 5)  { showPayErr('Validade inválida.'); return; }
+    if (!cvv || cvv.length < 3)  { showPayErr('CVV inválido.'); return; }
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Processando…';
+
+  // Simulate payment processing
+  setTimeout(() => {
+    const success = Math.random() > 0.05; // 95% success rate simulation
+    if (success) {
+      AuthSystem.activatePremium();
+      btn.disabled = false;
+      btn.textContent = '🔒 Pagar R$9,90 e ativar Gambyte Pro';
+      document.getElementById('modal-title-text').textContent = '✅ Assinatura Ativada';
+      showStep('step-success');
+      showToast('⭐ Gambyte Pro ativado com sucesso!', 'success');
+    } else {
+      btn.disabled = false;
+      btn.textContent = '🔒 Pagar R$9,90 e ativar Gambyte Pro';
+      showPayErr('Pagamento recusado. Verifique os dados e tente novamente.');
+    }
+  }, 1800);
+}
+
+function showPayErr(msg) {
+  const el = document.getElementById('payment-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function reloadAnalyzer() {
+  // Ensure premium flag is current when returning to analyzer
+  setTimeout(() => {}, 100);
+}
+
+/* ── User status bar ── */
+function renderUserBar() {
+  const bar = document.getElementById('user-status-bar');
+  if (!bar) return;
+  const sess = AuthSystem.currentSession();
+  if (sess) {
+    bar.innerHTML = `
+      <span class="ubar-name">${sess.name || sess.email.split('@')[0]}</span>
+      ${sess.premium ? '<span class="ubar-badge">PRO</span>' : ''}
+    `;
+  }
+}
+
+/* ── Check redirect intent ── */
+function checkRedirect() {
+  const intent = sessionStorage.getItem('gambyte_redirect');
+  if (intent === 'premium') {
+    sessionStorage.removeItem('gambyte_redirect');
+    const sess = AuthSystem.currentSession();
+    if (sess && !sess.premium) {
+      setTimeout(openCheckout, 400);
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderUserBar();
+  checkRedirect();
+  // Initialize card form visibility
+  document.getElementById('card-form').style.display   = 'none';
+  document.getElementById('boleto-form').style.display = 'none';
+});
+
+// Keyboard close
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeCheckout();
+});
+</script>
+</body>
+</html>
