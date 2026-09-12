@@ -35,12 +35,8 @@ const App = (() => {
   }
 
   async function runAnalysis() {
-    if (analyzing) return;
-
     const pgn = document.getElementById('pgn-input').value.trim();
     if (!pgn) { UIController.showError('Cole um PGN válido antes de analisar.'); return; }
-
-    UIController.hideError();
 
     let parsedGame;
     try {
@@ -49,6 +45,15 @@ const App = (() => {
     } catch (err) { UIController.showError('Erro ao parsear PGN: ' + err.message); return; }
 
     if (!stockfishReady) { UIController.showError('Stockfish ainda não está pronto.'); return; }
+
+    UIController.hideError();
+
+    // Toda transição pra uma nova análise reinicia do zero: aborta
+    // qualquer análise anterior ainda rodando (o motor realmente para,
+    // não só a UI) e sai do Modo Livre, se estava ativo — MENOS o Modo
+    // Livre em si, que só reinicia quando o próprio usuário sai dele.
+    if (analyzing) { AnalysisEngine.abort(); analyzing = false; UIController.setAnalyzing(false); }
+    if (FreePlay.isActive()) FreePlay.stop();
 
     analyzing = true;
     UIController.setAnalyzing(true);
@@ -90,7 +95,7 @@ const App = (() => {
         analyzing = false;
         for (const m of allMoves) UIController.updateMoveElement(m);
         document.getElementById('progress-fill').style.width = '100%';
-        document.getElementById('progress-title').textContent = '✅ Análise concluída';
+        document.getElementById('progress-title').textContent = 'Análise concluída';
         document.getElementById('progress-container').classList.remove('visible');
         // ── INSIGHTS FINAIS (sempre atualiza ao completar) ──
         InsightsUI.renderGlobalInsights(allMoves, /*isPartial=*/false);
@@ -116,13 +121,18 @@ const App = (() => {
     });
     document.getElementById('btn-clear').addEventListener('click', () => {
       document.getElementById('pgn-input').value = '';
-      document.getElementById('results-section').classList.remove('visible');
       document.getElementById('progress-container').classList.remove('visible');
-      document.getElementById('opening-banner').classList.remove('visible');
       UIController.hideError();
       currentMovesData = [];
+      // Reinicia do zero: para a análise que estivesse rodando de verdade
+      // (não só a UI) e volta pro tabuleiro vazio em branco.
       if (analyzing) { AnalysisEngine.abort(); analyzing = false; UIController.setAnalyzing(false); }
+      UIController.showEmptyBoard();
     });
+
+    // O tabuleiro já aparece pronto pra uso antes mesmo de colar um PGN —
+    // como se o Modo Livre estivesse sempre ativo por padrão.
+    UIController.showEmptyBoard();
   }
 
   return { init };

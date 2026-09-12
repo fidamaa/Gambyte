@@ -43,8 +43,8 @@
 1. e4 e5 2. Nf3 Nc6 3. Bb5 ...'></textarea>
     <div id="error-msg" class="error-msg"></div>
     <div class="input-actions">
-      <button id="btn-analyze" class="btn-primary">▶ Analisar Partida</button>
-      <button id="btn-clear" class="btn-secondary">Limpar</button>
+      <button id="btn-analyze" class="btn-primary">Analisar Partida</button>
+      <button id="btn-clear" class="btn-secondary" title="Reinicia o tabuleiro e limpa a análise atual">Limpar</button>
       <label class="pro-toggle-wrap" title="Análise profunda até depth 22 (apenas Gambyte Pro)" id="pro-toggle-wrap" onclick="AuthUI.handleProToggleClick(event)">
         <span class="pro-badge">Gambyte Pro</span>
         <span class="pro-toggle-label">Análise Profunda</span>
@@ -162,30 +162,68 @@
 
         <!-- Free play status bar -->
         <div class="free-play-bar" id="free-play-bar">
-          <span class="free-play-status">🎮 Modo Livre</span>
+          <span class="free-play-status">Modo Livre</span>
           <span id="free-play-turn">Vez das brancas</span>
-          <button class="btn-board" id="free-play-back">↩ Voltar</button>
-          <button class="btn-board" id="free-play-exit">✕ Sair</button>
+          <button class="btn-board" id="free-play-back" title="Voltar um lance (nada é apagado)">
+            <svg class="btn-board-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+            <span>Voltar</span>
+          </button>
+          <button class="btn-board" id="free-play-forward" title="Avançar de novo">
+            <svg class="btn-board-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14 20 9l-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
+            <span>Avançar</span>
+          </button>
+          <button class="btn-board" id="free-play-exit" title="Sair do Modo Livre">
+            <svg class="btn-board-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            <span>Sair</span>
+          </button>
           <span class="free-play-eval" id="free-play-eval">0.00</span>
         </div>
 
         <!-- Navigation -->
         <div class="nav-controls">
-          <button class="nav-btn" id="nav-start" title="Início">⏮</button>
-          <button class="nav-btn" id="nav-prev"  title="Voltar (←)">◀</button>
-          <button class="nav-btn" id="nav-next"  title="Avançar (→)">▶</button>
-          <button class="nav-btn" id="nav-end"   title="Fim">⏭</button>
+          <button class="nav-btn" id="nav-start" title="Início">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 5v14"/><path d="M16 12 6 5v14z"/></svg>
+          </button>
+          <button class="nav-btn" id="nav-prev"  title="Voltar (←)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18 9 12l6-6"/></svg>
+          </button>
+          <button class="nav-btn" id="nav-next"  title="Avançar (→)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+          <button class="nav-btn" id="nav-end"   title="Fim">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 5v14"/><path d="M8 12l10-7v14z"/></svg>
+          </button>
         </div>
 
         <!-- Action buttons row -->
         <div class="board-actions">
           <label class="engine-toggle">
-            <input type="checkbox" id="show-engine-arrow" checked>
             <span class="engine-toggle-label">Melhor lance</span>
+            <span class="switch switch-green">
+              <input type="checkbox" id="show-engine-arrow" checked>
+              <span class="switch-slider"></span>
+            </span>
           </label>
-          <button class="btn-board" id="btn-flip"      title="Inverter tabuleiro">⇅ Inverter</button>
-          <button class="btn-board" id="btn-free-play" title="Modo de jogo livre">🎮 Modo Livre</button>
-          <button class="btn-board" id="btn-export-pgn" title="Exportar PGN">⬇ PGN</button>
+          <span class="action-divider"></span>
+          <button class="btn-board" id="btn-flip" title="Inverter tabuleiro">
+            <svg class="btn-board-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-4 4"/><path d="M21 7H8a4 4 0 0 0-4 4"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13a4 4 0 0 0 4-4"/></svg>
+            <span>Inverter</span>
+          </button>
+          <button class="btn-board" id="btn-free-play" title="Modo de jogo livre">
+            <svg class="btn-board-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span id="btn-free-play-label">Modo Livre</span>
+          </button>
+          <div class="btn-board-group" id="pgn-menu-wrap">
+            <button class="btn-board" id="btn-export-pgn" title="Exportar PGN">
+              <svg class="btn-board-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/></svg>
+              <span>PGN</span>
+              <svg class="btn-board-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="pgn-menu" id="pgn-menu" hidden>
+              <button type="button" id="pgn-menu-copy">Copiar PGN</button>
+              <button type="button" id="pgn-menu-download">Baixar arquivo .pgn</button>
+            </div>
+          </div>
         </div>
       </div>
 

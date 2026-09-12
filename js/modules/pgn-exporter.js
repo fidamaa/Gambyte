@@ -2,8 +2,8 @@
    MODULE: pgn-exporter.js  (for the main analyzed game)
    ============================================================== */
 const PGNExporter = (() => {
-  function exportGame(parsedGame) {
-    if (!parsedGame) return;
+  function buildPGN(parsedGame) {
+    if (!parsedGame) return '';
     const h = parsedGame.headers || {};
     const date = h.Date || new Date().toISOString().slice(0, 10).replace(/-/g, '.');
     let pgn = '';
@@ -19,12 +19,29 @@ const PGNExporter = (() => {
       pgn += moves[i] + ' ';
     }
     pgn += (h.Result || '*');
+    return pgn;
+  }
 
+  function _download(pgn, filename) {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([pgn], { type: 'text/plain' }));
-    a.download = `${(h.White || 'game').replace(/\s/g,'_')}_vs_${(h.Black || 'game').replace(/\s/g,'_')}.pgn`;
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(a.href);
   }
-  return { exportGame };
+
+  function exportGame(parsedGame) {
+    if (!parsedGame) return;
+    const h = parsedGame.headers || {};
+    const pgn = buildPGN(parsedGame);
+    _download(pgn, `${(h.White || 'game').replace(/\s/g,'_')}_vs_${(h.Black || 'game').replace(/\s/g,'_')}.pgn`);
+  }
+
+  async function copyGame(parsedGame) {
+    if (!parsedGame) return false;
+    try { await navigator.clipboard.writeText(buildPGN(parsedGame)); return true; }
+    catch (e) { return false; }
+  }
+
+  return { exportGame, copyGame, buildPGN };
 })();

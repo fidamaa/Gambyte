@@ -22,6 +22,7 @@ const StockfishManager = (() => {
   let ready = false;
   let currentResolve = null;
   let currentLines = [];
+  let currentOnUpdate = null;
   const usingMulti = false;
   const threadCount = 1;
   // Fila de análises: garante que apenas UMA roda por vez no worker
@@ -97,6 +98,28 @@ const StockfishManager = (() => {
   function handleMessage(data) {
     if (data.startsWith('info') && data.includes('score')) {
       currentLines.push(data);
+
+      // Atualização progressiva: entrega o melhor lance ATUAL (multipv 1)
+      // assim que uma nova linha "info ... pv ..." chega, sem esperar o
+      // "go depth" terminar — usado pra seta do motor acompanhar a busca
+      // em tempo real em vez de só aparecer no fim.
+      if (currentOnUpdate) {
+        const pvMatch      = data.match(/multipv (\d+)/);
+        const pvNum        = pvMatch ? parseInt(pvMatch[1]) : 1;
+        const scoreMatch   = data.match(/score (cp|mate) (-?\d+)/);
+        const depthMatch   = data.match(/\bdepth (\d+)\b/);
+        const pvLineMatch  = data.match(/\spv\s(.+)$/);
+        if (pvNum === 1 && scoreMatch && pvLineMatch) {
+          const type  = scoreMatch[1];
+          const val   = parseInt(scoreMatch[2]);
+          const depth = depthMatch ? parseInt(depthMatch[1]) : 0;
+          const firstMove = pvLineMatch[1].trim().split(/\s+/)[0];
+          let cpVal, mateN = null;
+          if (type === 'mate') { mateN = val; cpVal = val > 0 ? (30000 - val) : -(30000 - Math.abs(val)); }
+          else cpVal = val;
+          if (firstMove) currentOnUpdate({ bestMove: firstMove, eval: cpVal, mateN, depth });
+        }
+      }
     }
 
     if (data.startsWith('bestmove')) {
@@ -105,6 +128,7 @@ const StockfishManager = (() => {
       const lines = [...currentLines];
       currentResolve = null;
       currentLines = [];
+      currentOnUpdate = null;
       analysisRunning = false;
 
       if (resolve) resolve({ bestmove: data, infoLines: lines });
@@ -119,7 +143,8 @@ const StockfishManager = (() => {
     if (analysisRunning || analysisQueue.length === 0) return;
     analysisRunning = true;
 
-    const { fen, depth, multiPV, movesUCI, resolve } = analysisQueue.shift();
+    const { fen, depth, multiPV, movesUCI, resolve, onUpdate } = analysisQueue.shift();
+    currentOnUpdate = onUpdate || null;
     const movesSuffix = (movesUCI && movesUCI.length) ? ` moves ${movesUCI.join(' ')}` : '';
     console.log(
       `[Stockfish →] go depth ${depth} | multipv ${multiPV} | fen: ${fen.slice(0, 40)}…` +
@@ -193,8 +218,13 @@ const StockfishManager = (() => {
    *                            a partir do FEN antes de analisar (via
    *                            "position fen ... moves ..."), sem precisar
    *                            recalcular o FEN manualmente no chamador.
+   * @param {function}  onUpdate opcional. Chamado a cada nova linha "info"
+   *                            (multipv 1) recebida DURANTE a busca, com
+   *                            {bestMove, eval, mateN, depth} — permite
+   *                            mostrar o melhor lance atual progressivamente,
+   *                            sem esperar o "go depth" terminar.
    */
-  function analyzePosition(fen, depth, multiPV = 3, movesUCI = []) {
+  function analyzePosition(fen, depth, multiPV = 3, movesUCI = [], onUpdate = null) {
     return new Promise((resolve) => {
       if (!worker) {
         console.warn('[Stockfish] Worker não disponível, retornando eval 0');
@@ -202,7 +232,7 @@ const StockfishManager = (() => {
         return;
       }
       console.log(`[Stockfish] Enfileirando análise. Fila: ${analysisQueue.length + 1}`);
-      analysisQueue.push({ fen, depth, multiPV, movesUCI, resolve });
+      analysisQueue.push({ fen, depth, multiPV, movesUCI, resolve, onUpdate });
       _runNext();
     });
   }
@@ -249,11 +279,32 @@ const StockfishManager = (() => {
     };
   }
 
+  /**
+   * Interrompe a análise em andamento e descarta a fila — usado quando o
+   * usuário troca de contexto (Limpar, nova Análise, sair do Modo Livre)
+   * e o cálculo que estava rolando deixou de fazer sentido. Sem isso, o
+   * motor continuava rodando em segundo plano até terminar o "go depth"
+   * inteiro, mesmo depois do usuário já ter saído da tela que pediu aquilo.
+   */
+  function abort() {
+    const pending = analysisQueue;
+    analysisQueue = [];
+    for (const item of pending) {
+      // Resolve com um resultado neutro em vez de deixar o `await` de quem
+      // pediu pendurado pra sempre — quem chamou já deve checar sua própria
+      // flag de cancelamento antes de usar isso.
+      item.resolve({ evals: [0], mateNs: [null], pvLines: [null], bestMove: null });
+    }
+    if (analysisRunning && worker) {
+      worker.postMessage('stop'); // motor responde com "bestmove" quase na hora
+    }
+  }
+
   function terminate() {
     if (worker) { worker.terminate(); worker = null; ready = false; }
   }
 
   function getEngineInfo() { return { usingMulti, threadCount }; }
 
-  return { init, analyzePosition, verifySacrificeTrap, parsePV, terminate, getEngineInfo };
+  return { init, analyzePosition, verifySacrificeTrap, parsePV, abort, terminate, getEngineInfo };
 })();

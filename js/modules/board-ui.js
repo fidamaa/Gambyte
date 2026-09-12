@@ -366,18 +366,20 @@ const BoardUI = (() => {
   }
 
   // renderWithAnim() — igual a render(), mas dispara a animação de movimento.
-  // Chamado apenas por renderBoardAtMove (navegação de lances).
-  function renderWithAnim(board, fromSq, toSq) {
+  // Usado por renderBoardAtMove (navegação de lances) e por FreePlay
+  // (lances livres também recebem a animação tradicional).
+  function renderWithAnim(board, fromSq, toSq, selSq, dots) {
     if (!canvas || !ctx) return;
     _lastBoard = board; _lastFrom = fromSq; _lastTo = toSq;
-    selectedSq = null;
-    legalDots  = [];
+    selectedSq = selSq || null;
+    legalDots  = dots  || [];
     if (fromSq && toSq && board) {
       _animatePiece(board, fromSq, toSq, 180);
     } else {
       if (_anim) { cancelAnimationFrame(_anim.raf); _anim = null; }
       const highlights = [];
-      if (toSq) highlights.push({ sq: toSq, color: THEME.hlTo });
+      if (toSq)       highlights.push({ sq: toSq,       color: THEME.hlTo });
+      if (selectedSq) highlights.push({ sq: selectedSq, color: THEME.hlSelect });
       drawSquares(highlights);
       drawPieces(board);
     }

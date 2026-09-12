@@ -65,6 +65,11 @@ const UIController = (() => {
   let moveElementsRef = [];
   let analysisStartTime = null;
 
+  // Ramificação do Modo Livre: quando o jogador faz um lance diferente do
+  // original, o "resto" da partida vira uma variante ao vivo, classificada
+  // conforme o Stockfish analisa — some se ele voltar ao lance base.
+  let _branchBaseCtx = null; // { idx, moves, movesData, fullMovesData }
+
   // ── Board size: responsive ──────────────────────────────────
   function getBoardSize() {
     // Tabuleiro como peça central da tela — proporcional à largura mas com
@@ -74,6 +79,12 @@ const UIController = (() => {
   }
 
   // ── Init board ─────────────────────────────────────────────
+  // O canvas precisa ser (re)criado toda vez que o board aparece (o
+  // tamanho pode mudar), mas os event listeners dos controles só podem
+  // ser ligados UMA VEZ — senão cada reset (Limpar, nova Análise, entrar
+  // no tabuleiro vazio) empilhava um novo handler por cima do anterior.
+  let _controlsBound = false;
+
   function initBoard() {
     const sz = getBoardSize();
     BoardUI.init(document.getElementById('board-canvas'), sz);
@@ -83,7 +94,14 @@ const UIController = (() => {
       document.getElementById('board-canvas'),
       BoardUI.sqSize
     );
+    if (!_controlsBound) {
+      _controlsBound = true;
+      _bindBoardControls();
+    }
+    renderBoardAtMove(-1);
+  }
 
+  function _bindBoardControls() {
     // Sync show-engine-arrow toggle
     els.showEngineArrow.addEventListener('change', () => {
       ArrowSystem.setShowEngine(els.showEngineArrow.checked);
@@ -114,49 +132,19 @@ const UIController = (() => {
     const btnFP = document.getElementById('btn-free-play');
     if (btnFP) {
       btnFP.addEventListener('click', () => {
-        if (FreePlay.isActive()) {
-          console.log(`[DEBUG] 🎮 Saindo do Modo Livre`);
-          FreePlay.stop();
-          return;
-        }
-        const startFEN = currentMoveIdx < 0
-          ? PGNParser.INITIAL_FEN
-          : (parsedGameRef && parsedGameRef.fensAfter[currentMoveIdx]) || PGNParser.INITIAL_FEN;
-        console.log(`[DEBUG] 🎮 Entrando no Modo Livre — FEN: ${startFEN.slice(0, 40)}…`);
-        btnFP.classList.add('active');
-        btnFP.textContent = '✕ Sair Modo Livre';
-        // Limpa setas antes de entrar
-        ArrowSystem.clearManual();
-        EngineSuggestion.updateArrow(null);
-        FreePlay.start(
-          startFEN,
-          parsedGameRef ? parsedGameRef.headers : {},
-          null,
-          () => {
-            console.log(`[DEBUG] 🎮 Modo Livre encerrado — voltando ao lance ${currentMoveIdx}`);
-            btnFP.classList.remove('active');
-            btnFP.textContent = '🎮 Modo Livre';
-            renderBoardAtMove(currentMoveIdx);
-          }
-        );
-        // Renderiza o board inicial do freeplay
-        const board = __fenToBoard8x8(startFEN);
-        BoardUI.render(board, null, null, null, []);
-        _showClassOverlay(null);  // limpa overlay
+        if (FreePlay.isActive()) _exitFreePlay(); else _enterFreePlay();
       });
     }
 
-    // ── Free play back button ─────────────────────────────────
+    // ── Free play back/forward buttons ─────────────────────────
     const btnFPBack = document.getElementById('free-play-back');
     if (btnFPBack) btnFPBack.addEventListener('click', () => FreePlay.undoMove());
+    const btnFPFwd = document.getElementById('free-play-forward');
+    if (btnFPFwd) btnFPFwd.addEventListener('click', () => FreePlay.goForward());
 
     // ── Free play exit button ─────────────────────────────────
     const btnFPExit = document.getElementById('free-play-exit');
-    if (btnFPExit) btnFPExit.addEventListener('click', () => {
-      FreePlay.stop();
-      const btnFP2 = document.getElementById('btn-free-play');
-      if (btnFP2) { btnFP2.classList.remove('active'); btnFP2.textContent = '🎮 Modo Livre'; }
-    });
+    if (btnFPExit) btnFPExit.addEventListener('click', () => _exitFreePlay());
 
     // ── Board click for free play ────────────────────────────
     document.getElementById('board-canvas').addEventListener('click', (e) => {
@@ -166,16 +154,89 @@ const UIController = (() => {
       FreePlay.handleClick(sq);
     });
 
-    // ── Export PGN button ─────────────────────────────────────
+    // ── Export PGN button — abre menu com opções Copiar/Baixar ─
     const btnExport = document.getElementById('btn-export-pgn');
-    if (btnExport) {
-      btnExport.addEventListener('click', () => {
+    const pgnMenu    = document.getElementById('pgn-menu');
+    const pgnMenuWrap = document.getElementById('pgn-menu-wrap');
+    if (btnExport && pgnMenu) {
+      btnExport.addEventListener('click', (e) => {
+        e.stopPropagation();
+        pgnMenu.hidden = !pgnMenu.hidden;
+      });
+      document.addEventListener('click', (e) => {
+        if (!pgnMenu.hidden && pgnMenuWrap && !pgnMenuWrap.contains(e.target)) pgnMenu.hidden = true;
+      });
+      const btnCopy = document.getElementById('pgn-menu-copy');
+      const btnDownload = document.getElementById('pgn-menu-download');
+      if (btnCopy) btnCopy.addEventListener('click', async () => {
+        pgnMenu.hidden = true;
+        const ok = FreePlay.isActive()
+          ? await FreePlay.copyPGN()
+          : await PGNExporter.copyGame(parsedGameRef);
+        _flashPgnFeedback(btnExport, ok ? 'PGN copiado!' : 'Não foi possível copiar.');
+      });
+      if (btnDownload) btnDownload.addEventListener('click', () => {
+        pgnMenu.hidden = true;
         if (FreePlay.isActive()) { FreePlay.exportPGN(); return; }
         PGNExporter.exportGame(parsedGameRef);
       });
     }
+  }
 
-    renderBoardAtMove(-1);
+  function _flashPgnFeedback(btnExport, msg) {
+    if (!btnExport) return;
+    const label = btnExport.querySelector('span');
+    if (!label) return;
+    const original = label.textContent;
+    label.textContent = msg;
+    setTimeout(() => { label.textContent = original; }, 1500);
+  }
+
+  // ── Entrar/sair do Modo Livre ────────────────────────────────
+  function _enterFreePlay() {
+    const btnFP = document.getElementById('btn-free-play');
+    const startFEN = currentMoveIdx < 0
+      ? PGNParser.INITIAL_FEN
+      : (parsedGameRef && parsedGameRef.fensAfter[currentMoveIdx]) || PGNParser.INITIAL_FEN;
+    console.log(`[DEBUG] 🎮 Entrando no Modo Livre — FEN: ${startFEN.slice(0, 40)}…`);
+    if (btnFP) btnFP.classList.add('active');
+    document.getElementById('btn-free-play-label').textContent = 'Sair do Modo Livre';
+    // Limpa setas antes de entrar
+    ArrowSystem.clearManual();
+    EngineSuggestion.updateArrow(null);
+
+    const baseIdx = currentMoveIdx;
+    const baseCtx = {
+      idx: baseIdx,
+      moves: parsedGameRef ? parsedGameRef.moves.slice(0, baseIdx + 1) : [],
+      movesData: parsedGameRef && parsedGameRef.movesData ? parsedGameRef.movesData.slice(0, baseIdx + 1) : [],
+      fullMovesData: parsedGameRef ? parsedGameRef.movesData : null
+    };
+    _branchBaseCtx = baseCtx;
+
+    FreePlay.start(
+      startFEN,
+      parsedGameRef ? parsedGameRef.headers : {},
+      null,
+      () => {
+        console.log(`[DEBUG] 🎮 Modo Livre encerrado — voltando ao lance ${currentMoveIdx}`);
+        if (btnFP) btnFP.classList.remove('active');
+        document.getElementById('btn-free-play-label').textContent = 'Modo Livre';
+        _clearBranch();
+        renderBoardAtMove(currentMoveIdx);
+      },
+      baseCtx,
+      () => renderBranch()
+    );
+    // Renderiza o board inicial do freeplay
+    const board = __fenToBoard8x8(startFEN);
+    BoardUI.render(board, null, null, null, []);
+    _showClassOverlay(null);  // limpa overlay
+  }
+
+  function _exitFreePlay() {
+    console.log(`[DEBUG] 🎮 Saindo do Modo Livre`);
+    FreePlay.stop(); // dispara o onExit registrado em _enterFreePlay, que já chama _clearBranch()
   }
 
   function renderBoardAtMove(idx) {
@@ -315,7 +376,7 @@ const UIController = (() => {
 
   function setAnalyzing(active) {
     els.btnAnalyze.disabled = active;
-    els.btnAnalyze.textContent = active ? '⏳ Analisando…' : '▶ Analisar Partida';
+    els.btnAnalyze.textContent = active ? 'Analisando…' : 'Analisar Partida';
     if (active) {
       els.phaseIndicator.classList.remove('hidden');
       els.progressContainer.classList.add('visible');
@@ -342,6 +403,21 @@ const UIController = (() => {
     // Init board
     initBoard();
     renderBoardAtMove(-1);
+  }
+
+  // ── Tabuleiro vazio (sempre presente) ────────────────────────
+  // Monta uma "partida" vazia e entra direto no Modo Livre — usado na
+  // carga inicial da página (o tabuleiro já aparece antes de colar
+  // qualquer PGN) e sempre que "Limpar" é clicado (reinicia do zero).
+  function showEmptyBoard() {
+    if (FreePlay.isActive()) FreePlay.stop(); // descarta a árvore anterior por completo
+    const emptyGame = {
+      headers: { White: 'Brancas', Black: 'Pretas' },
+      moves: [], fensBefore: [], fensAfter: [], moveSquares: []
+    };
+    showResults(emptyGame);
+    initMovesList(emptyGame);
+    _enterFreePlay();
   }
 
   function initMovesList(parsedGame) {
@@ -375,6 +451,129 @@ const UIController = (() => {
     }
   }
 
+  // ── Ramificação do Modo Livre ────────────────────────────────
+  // Restaura a lista de lances / gráfico / abertura ao estado original,
+  // sem a ramificação — chamado ao sair do Modo Livre ou quando o
+  // jogador desfaz todos os lances da variante e volta ao lance base.
+  function _clearBranch() {
+    document.querySelectorAll('.move-pair[data-branch="1"]').forEach(p => p.remove());
+    document.querySelectorAll('.move-item[data-branch-in-base="1"]').forEach(el => el.remove());
+    moveElementsRef.forEach(el => { if (el) el.style.display = ''; });
+    els.movesList.querySelectorAll('.move-pair').forEach(p => { p.style.display = ''; });
+    if (parsedGameRef) {
+      if (_branchBaseCtx) parsedGameRef.movesData = _branchBaseCtx.fullMovesData;
+      updateOpeningBanner(parsedGameRef.moves);
+      if (parsedGameRef.movesData) {
+        updateChart(parsedGameRef.movesData);
+        updatePlayerStats(parsedGameRef.movesData);
+      }
+    }
+    _branchBaseCtx = null;
+  }
+
+  // Redesenha a cauda da lista de lances com o CAMINHO atual da árvore do
+  // Modo Livre (raiz → posição atual — pode ser a linha original, uma
+  // ramificação, ou ramificação de ramificação), e atualiza
+  // gráfico/abertura/estatísticas com base+caminho combinados. Pontos onde
+  // existem lances alternativos (irmãos na árvore) ganham um selinho
+  // clicável pra trocar de variante sem perder nenhuma delas.
+  function renderBranch() {
+    if (!_branchBaseCtx) return;
+    const { idx: baseIdx } = _branchBaseCtx;
+    const { path } = FreePlay.getBranchView();
+
+    document.querySelectorAll('.move-pair[data-branch="1"]').forEach(p => p.remove());
+    document.querySelectorAll('.move-item[data-branch-in-base="1"]').forEach(el => el.remove());
+
+    // Esconde pares INTEIROS além do ponto de ramificação (não só as
+    // células — senão sobrava o número "6.", "7."... com a linha vazia).
+    // O par que CONTÉM o lance base fica visível; só a célula preta é
+    // escondida ali quando o lance base foi das brancas (baseIdx par).
+    els.movesList.querySelectorAll('.move-pair').forEach((pairDiv, pairIdx) => {
+      const whiteIdx = pairIdx * 2;
+      const blackIdx = whiteIdx + 1;
+      pairDiv.style.display = (whiteIdx > baseIdx) ? 'none' : '';
+      if (moveElementsRef[blackIdx]) {
+        moveElementsRef[blackIdx].style.display = (blackIdx > baseIdx) ? 'none' : '';
+      }
+    });
+
+    let k0 = 0;
+    if (baseIdx >= 0 && baseIdx % 2 === 0 && path.length > 0) {
+      // Lance base foi das brancas — o 1º lance do caminho (pretas)
+      // completa o MESMO par visual, em vez de abrir um novo. O lance
+      // preto original fica só escondido (display:none não participa do
+      // grid), então a nova célula ocupa a 3ª coluna automaticamente.
+      const baseEl = moveElementsRef[baseIdx];
+      const basePair = baseEl ? baseEl.parentElement : null;
+      if (basePair) {
+        const bEl = _createBranchMoveEl(path[0]);
+        bEl.dataset.branchInBase = '1';
+        basePair.appendChild(bEl);
+        k0 = 1;
+      }
+    }
+    let pairDiv = null;
+    for (let k = k0; k < path.length; k++) {
+      const globalIdx = baseIdx + 1 + k;
+      if (globalIdx % 2 === 0 || !pairDiv) {
+        pairDiv = document.createElement('div');
+        pairDiv.className = 'move-pair';
+        pairDiv.dataset.branch = '1';
+        const numDiv = document.createElement('div');
+        numDiv.className = 'move-number';
+        numDiv.textContent = (Math.floor(globalIdx / 2) + 1) + '.';
+        pairDiv.appendChild(numDiv);
+        els.movesList.appendChild(pairDiv);
+      }
+      pairDiv.appendChild(_createBranchMoveEl(path[k]));
+    }
+    els.movesList.scrollTop = els.movesList.scrollHeight;
+
+    const branchMovesData   = path.map(p => p.moveData);
+    const combinedMoves     = _branchBaseCtx.moves.concat(path.map(p => p.san));
+    const combinedMovesData = _branchBaseCtx.movesData.concat(branchMovesData);
+    updateOpeningBanner(combinedMoves);
+    if (combinedMovesData.some(m => m.evalAfter !== null)) updateChart(combinedMovesData);
+    updatePlayerStats(combinedMovesData);
+
+    const btnBack = document.getElementById('free-play-back');
+    const btnFwd  = document.getElementById('free-play-forward');
+    if (btnBack) btnBack.disabled = !FreePlay.canGoBack();
+    if (btnFwd)  btnFwd.disabled  = !FreePlay.canGoForward();
+  }
+
+  function _createBranchMoveEl(ply) {
+    const moveData = ply.moveData;
+    const cls = moveData.classification || '';
+    const div = document.createElement('div');
+    div.className = 'move-item branch' + (cls ? ' ' + cls : '') + (ply.isCurrent ? ' active' : '');
+    div.innerHTML = `
+      <span class="move-class-icon${cls ? ' ' + cls : ''}">·</span>
+      <span class="move-san">${moveData.san}</span>
+      <span class="move-eval">${_formatEvalDisplay(moveData.evalAfter)}</span>
+      <span class="move-class-badge${cls ? ' ' + cls : ''}" title="${cls ? MoveClassifier.LABELS[cls] : ''}">${cls ? MoveClassifier.LABELS[cls] : ''}</span>
+    `;
+    div.addEventListener('click', () => FreePlay.gotoNode(ply.id));
+
+    // Ponto de ramificação: outros lances possíveis aqui, nenhum apagado.
+    // Clicar cicla entre eles (inclusive voltando pro que está ativo).
+    if (ply.siblings.length > 1) {
+      const altWrap = document.createElement('span');
+      altWrap.className = 'move-alt-variations';
+      altWrap.title = `${ply.siblings.length} variantes neste ponto — clique pra alternar`;
+      altWrap.textContent = `⑂${ply.siblings.length}`;
+      altWrap.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = ply.siblings.findIndex(s => s.active);
+        const next = ply.siblings[(idx + 1) % ply.siblings.length];
+        FreePlay.gotoNode(next.id);
+      });
+      div.appendChild(altWrap);
+    }
+    return div;
+  }
+
   function createMoveEl(idx, san) {
     const div = document.createElement('div');
     div.className = 'move-item';
@@ -389,6 +588,18 @@ const UIController = (() => {
     return div;
   }
 
+  // FIX 2: Mostrar profundidade real do mate (M3, M5, etc.)
+  // Codificação: ±(30000 - N) onde N é o número de lances até o mate
+  function _formatEvalDisplay(v) {
+    if (v === null || v === undefined) return '';
+    const absV = Math.abs(v);
+    if (absV >= 29000) {
+      const mateDepth = Math.max(1, 30000 - absV);
+      return v > 0 ? `+M${mateDepth}` : `-M${mateDepth}`;
+    }
+    return (v >= 0 ? '+' : '') + (v / 100).toFixed(2);
+  }
+
   function updateMoveElement(moveData) {
     const el = moveElementsRef[moveData.index];
     if (!el) return;
@@ -397,18 +608,7 @@ const UIController = (() => {
     el.querySelector('.move-class-icon').className = 'move-class-icon' + (cls ? ' ' + cls : '');
 
     if (moveData.evalAfter !== null) {
-      const v  = moveData.evalAfter;
-      // FIX 2: Mostrar profundidade real do mate (M3, M5, etc.)
-      // Codificação: ±(30000 - N) onde N é o número de lances até o mate
-      const absV = Math.abs(v);
-      let display;
-      if (absV >= 29000) {
-        const mateDepth = Math.max(1, 30000 - absV);
-        display = v > 0 ? `+M${mateDepth}` : `-M${mateDepth}`;
-      } else {
-        display = (v >= 0 ? '+' : '') + (v / 100).toFixed(2);
-      }
-      el.querySelector('.move-eval').textContent = display;
+      el.querySelector('.move-eval').textContent = _formatEvalDisplay(moveData.evalAfter);
     }
     const badge = el.querySelector('.move-class-badge');
     badge.className = 'move-class-badge' + (cls ? ' ' + cls : '');
@@ -549,6 +749,6 @@ const UIController = (() => {
   return {
     showError, hideError, setAnalyzing, showResults,
     initMovesList, updateMoveElement, updateProgress,
-    updatePlayerStats, updateChart
+    updatePlayerStats, updateChart, showEmptyBoard
   };
 })();

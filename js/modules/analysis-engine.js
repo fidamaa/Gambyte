@@ -60,7 +60,12 @@ const AnalysisEngine = (() => {
     onComplete = callbacks.onComplete;
   }
 
-  function abort() { aborted = true; }
+  function abort() {
+    aborted = true;
+    // Interrompe o motor de verdade — sem isso o "go depth" em andamento
+    // continuava rodando em segundo plano até terminar sozinho.
+    StockfishManager.abort();
+  }
 
   /**
    * Main analysis entry point
@@ -364,5 +369,5 @@ const AnalysisEngine = (() => {
     if (onComplete) onComplete([...movesData]);
   }
 
-  return { analyze, setCallbacks, abort };
+  return { analyze, setCallbacks, abort, pieceValueAtSquare, computeImmediateCaptureValue };
 })();
