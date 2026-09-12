@@ -183,14 +183,14 @@ const InsightsUI = (() => {
     if (sanEl) sanEl.textContent = moveData.san || '—';
     if (clsEl) {
       const clsColors = {
-        brilliant:'#5bc9b8', excellent:'#5bc97a', 'best-move':'#59b8e0',
-        'very-good':'#8fc95b', good:'#c9c45b', inaccuracy:'#e09b5b',
-        mistake:'#e05c5c', blunder:'#e03030', book:'#8890a8'
+        brilliant:'#5bc9b8', great:'#9b7de0', excellent:'#5bc97a', 'best-move':'#59b8e0',
+        good:'#c9c45b', inaccuracy:'#e09b5b',
+        mistake:'#e05c5c', miss:'#e0785b', blunder:'#e03030', book:'#8890a8'
       };
       const clsLabels = {
-        brilliant:'Brilhante!', excellent:'Excelente', 'best-move':'Melhor Lance',
-        'very-good':'Muito Boa', good:'Boa', inaccuracy:'Imprecisão',
-        mistake:'Erro', blunder:'Gafe', book:'Livro'
+        brilliant:'Brilhante!', great:'Ótimo', excellent:'Excelente', 'best-move':'Melhor Lance',
+        good:'Boa', inaccuracy:'Imprecisão',
+        mistake:'Erro', miss:'Chance Perdida', blunder:'Gafe', book:'Livro'
       };
       const color = clsColors[moveData.classification] || 'var(--text2)';
       clsEl.textContent = clsLabels[moveData.classification] || '—';
@@ -215,10 +215,12 @@ const InsightsUI = (() => {
     if (commentEl) {
       commentEl.textContent = insight.comment;
       const colors = { blunder:'rgba(201,48,48,.15)', mistake:'rgba(224,92,92,.1)', inaccuracy:'rgba(224,155,91,.1)',
-                       brilliant:'rgba(91,201,184,.1)', excellent:'rgba(91,201,122,.1)', 'best-move':'rgba(89,184,224,.1)' };
+                       brilliant:'rgba(91,201,184,.1)', great:'rgba(155,125,224,.1)', excellent:'rgba(91,201,122,.1)',
+                       'best-move':'rgba(89,184,224,.1)', miss:'rgba(224,120,91,.1)' };
       commentEl.style.background = colors[moveData.classification] || 'rgba(255,255,255,.02)';
       const borderColors = { blunder:'var(--blunder)', mistake:'var(--mistake)', inaccuracy:'var(--inaccuracy)',
-                             brilliant:'var(--brilliant)', excellent:'var(--excellent)', 'best-move':'var(--best-move)' };
+                             brilliant:'var(--brilliant)', great:'var(--great)', excellent:'var(--excellent)',
+                             'best-move':'var(--best-move)', miss:'var(--miss)' };
       commentEl.style.borderLeftColor = borderColors[moveData.classification] || 'var(--border2)';
     }
 

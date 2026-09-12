@@ -240,7 +240,7 @@ const InsightsEngine = (() => {
       const inaccuracies = cm.filter(m => m.classification === 'inaccuracy');
       const brilliants   = cm.filter(m => m.classification === 'brilliant');
       const bestMoves    = cm.filter(m => m.classification === 'best-move');
-      const goodMoves    = cm.filter(m => ['best-move','excellent','very-good'].includes(m.classification));
+      const goodMoves    = cm.filter(m => ['best-move','excellent','great'].includes(m.classification));
 
       // Erros graves frequentes
       if (blunders.length >= 3)
@@ -290,7 +290,7 @@ const InsightsEngine = (() => {
       for (let i = 1; i < cm.length - 1; i++) {
         const prev = cm[i-1].classification;
         const curr = cm[i].classification;
-        if (['blunder','mistake'].includes(curr) && ['best-move','excellent','brilliant'].includes(prev))
+        if (['blunder','mistake'].includes(curr) && ['best-move','excellent','brilliant','great'].includes(prev))
           instableCount++;
       }
       if (instableCount >= 2)
@@ -359,14 +359,15 @@ const InsightsEngine = (() => {
     const flags = [];
     let comment = '';
 
-    if (cls === 'brilliant')   comment = '✨ Lance brilhante! Sacrifício ou jogada genial que muda o rumo da partida.';
+    if (cls === 'brilliant')   comment = '✨ Lance brilhante! Sacrifício correto que muda o rumo da partida.';
+    else if (cls === 'great')      comment = '🚀 Ótimo lance! Encontrou a jogada que muda o curso da partida.';
     else if (cls === 'excellent')  comment = '✅ Excelente jogada! Uma das melhores opções nesta posição.';
     else if (cls === 'best-move')  comment = '🏆 Melhor lance possível! A engine concorda com você.';
-    else if (cls === 'very-good')  comment = '🎯 Muito boa jogada! Mantém a vantagem ou pressão ideal.';
     else if (cls === 'good')       comment = '👍 Boa jogada. Sólida, mas havia opções ligeiramente melhores.';
     else if (cls === 'inaccuracy') comment = `⚠️ Imprecisão. Perdeu ${loss.toFixed(0)}cp de vantagem. Havia um lance melhor.`;
     else if (cls === 'mistake')    comment = `❌ Erro! Perdeu ${loss.toFixed(0)}cp. Um lance muito melhor estava disponível.`;
-    else if (cls === 'blunder')    comment = `💀 Gafe grave! Perdeu ${loss.toFixed(0)}cp de vantagem. Erro decisivo na partida.`;
+    else if (cls === 'miss')       comment = '😬 Chance perdida! Havia uma vantagem decisiva (ou mate) disponível e não foi aproveitada.';
+    else if (cls === 'blunder')    comment = `💀 Gafe grave! Perdeu material real (ou permitiu mate). Erro decisivo na partida.`;
     else if (cls === 'book')       comment = '📖 Lance de abertura teórico. Conforme a teoria.';
     else comment = 'Analisando posição…';
 

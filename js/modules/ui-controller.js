@@ -55,8 +55,8 @@ const UIController = (() => {
   };
 
   const cntEls = {
-    white: { book:document.getElementById('cnt-w-book'), brilliant:document.getElementById('cnt-w-brilliant'), excellent:document.getElementById('cnt-w-excellent'), 'best-move':document.getElementById('cnt-w-best-move'), 'very-good':document.getElementById('cnt-w-very-good'), good:document.getElementById('cnt-w-good'), inaccuracy:document.getElementById('cnt-w-inaccuracy'), mistake:document.getElementById('cnt-w-mistake'), blunder:document.getElementById('cnt-w-blunder') },
-    black: { book:document.getElementById('cnt-b-book'), brilliant:document.getElementById('cnt-b-brilliant'), excellent:document.getElementById('cnt-b-excellent'), 'best-move':document.getElementById('cnt-b-best-move'), 'very-good':document.getElementById('cnt-b-very-good'), good:document.getElementById('cnt-b-good'), inaccuracy:document.getElementById('cnt-b-inaccuracy'), mistake:document.getElementById('cnt-b-mistake'), blunder:document.getElementById('cnt-b-blunder') }
+    white: { book:document.getElementById('cnt-w-book'), brilliant:document.getElementById('cnt-w-brilliant'), great:document.getElementById('cnt-w-great'), excellent:document.getElementById('cnt-w-excellent'), 'best-move':document.getElementById('cnt-w-best-move'), good:document.getElementById('cnt-w-good'), inaccuracy:document.getElementById('cnt-w-inaccuracy'), mistake:document.getElementById('cnt-w-mistake'), miss:document.getElementById('cnt-w-miss'), blunder:document.getElementById('cnt-w-blunder') },
+    black: { book:document.getElementById('cnt-b-book'), brilliant:document.getElementById('cnt-b-brilliant'), great:document.getElementById('cnt-b-great'), excellent:document.getElementById('cnt-b-excellent'), 'best-move':document.getElementById('cnt-b-best-move'), good:document.getElementById('cnt-b-good'), inaccuracy:document.getElementById('cnt-b-inaccuracy'), mistake:document.getElementById('cnt-b-mistake'), miss:document.getElementById('cnt-b-miss'), blunder:document.getElementById('cnt-b-blunder') }
   };
 
   // Navigation state
@@ -471,7 +471,7 @@ const UIController = (() => {
     els.accWhiteBar.style.width = wStats.accuracy + '%';
     els.accBlackBar.style.width = bStats.accuracy + '%';
 
-    const classes = ['book','brilliant','excellent','best-move','very-good','good','inaccuracy','mistake','blunder'];
+    const classes = ['book','brilliant','great','excellent','best-move','good','inaccuracy','mistake','miss','blunder'];
     for (const cls of classes) {
       cntEls.white[cls].textContent = movesData.filter(m => m.color==='white' && m.classification===cls).length;
       cntEls.black[cls].textContent = movesData.filter(m => m.color==='black' && m.classification===cls).length;

@@ -117,12 +117,13 @@ const ChartRenderer = (() => {
     const CLS_DOT_COLOR = {
       'book':       '#8890a8',
       'brilliant':  '#5bc9b8',
+      'great':      '#9b7de0',
       'excellent':  '#5bc97a',
       'best-move':  '#59b8e0',
-      'very-good':  '#8fc95b',
       'good':       '#c9c45b',
       'inaccuracy': '#e09b5b',
       'mistake':    '#e05c5c',
+      'miss':       '#e0785b',
       'blunder':    '#c93030',
     };
 
@@ -172,9 +173,9 @@ const ChartRenderer = (() => {
         const m   = validMoves[vmIdx];
         const cls = m.classification || '';
         const CLS_CURSOR = {
-          'book':'#8890a8','brilliant':'#5bc9b8','excellent':'#5bc97a',
-          'best-move':'#59b8e0','very-good':'#8fc95b','good':'#c9c45b',
-          'inaccuracy':'#e09b5b','mistake':'#e05c5c','blunder':'#c93030',
+          'book':'#8890a8','brilliant':'#5bc9b8','great':'#9b7de0','excellent':'#5bc97a',
+          'best-move':'#59b8e0','good':'#c9c45b',
+          'inaccuracy':'#e09b5b','mistake':'#e05c5c','miss':'#e0785b','blunder':'#c93030',
         };
         ctx.beginPath();
         ctx.arc(cx, cy, cr, 0, Math.PI * 2);

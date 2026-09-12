@@ -20,12 +20,13 @@
 
   --book:      #8890a8;
   --brilliant: #5bc9b8;
+  --great:     #9b7de0;
   --excellent: #5bc97a;
   --best-move: #59b8e0;
-  --very-good: #8fc95b;
   --good:      #c9c45b;
   --inaccuracy:#e09b5b;
   --mistake:   #e05c5c;
+  --miss:      #e0785b;
   --blunder:   #c93030;
 
   --sq-light:  #f0d9b5;
@@ -301,31 +302,34 @@ canvas#chart { width:100%; height:130px; display:block; }
 /* Active item keeps its classification border color — no override here */
 .move-item.book      { border-left-color:var(--book); }
 .move-item.brilliant { border-left-color:var(--brilliant); }
+.move-item.great     { border-left-color:var(--great); }
 .move-item.excellent { border-left-color:var(--excellent); }
 .move-item.best-move { border-left-color:var(--best-move); }
-.move-item.very-good { border-left-color:var(--very-good); }
 .move-item.good      { border-left-color:var(--good); }
 .move-item.inaccuracy{ border-left-color:var(--inaccuracy); }
 .move-item.mistake   { border-left-color:var(--mistake); }
+.move-item.miss      { border-left-color:var(--miss); }
 .move-item.blunder   { border-left-color:var(--blunder); }
 .move-item.active.book       { background:rgba(136,144,168,.18); border-left-width:4px; border-left-color:var(--book); }
 .move-item.active.brilliant  { background:rgba(91,201,184,.18);  border-left-width:4px; border-left-color:var(--brilliant); }
+.move-item.active.great      { background:rgba(155,125,224,.18); border-left-width:4px; border-left-color:var(--great); }
 .move-item.active.excellent  { background:rgba(91,201,122,.18);  border-left-width:4px; border-left-color:var(--excellent); }
 .move-item.active.best-move  { background:rgba(89,184,224,.18);  border-left-width:4px; border-left-color:var(--best-move); }
-.move-item.active.very-good  { background:rgba(143,201,91,.18);  border-left-width:4px; border-left-color:var(--very-good); }
 .move-item.active.good       { background:rgba(201,196,91,.18);  border-left-width:4px; border-left-color:var(--good); }
 .move-item.active.inaccuracy { background:rgba(224,155,91,.18);  border-left-width:4px; border-left-color:var(--inaccuracy); }
 .move-item.active.mistake    { background:rgba(224,92,92,.18);   border-left-width:4px; border-left-color:var(--mistake); }
+.move-item.active.miss       { background:rgba(224,120,91,.18);  border-left-width:4px; border-left-color:var(--miss); }
 .move-item.active.blunder    { background:rgba(201,48,48,.22);   border-left-width:4px; border-left-color:var(--blunder); }
 .move-class-icon { width:7px; height:7px; border-radius:50%; flex-shrink:0; background:var(--text3); }
 .move-class-icon.book       { background:var(--book); }
 .move-class-icon.brilliant  { background:var(--brilliant); }
+.move-class-icon.great      { background:var(--great); }
 .move-class-icon.excellent  { background:var(--excellent); }
 .move-class-icon.best-move  { background:var(--best-move); }
-.move-class-icon.very-good  { background:var(--very-good); }
 .move-class-icon.good       { background:var(--good); }
 .move-class-icon.inaccuracy { background:var(--inaccuracy); }
 .move-class-icon.mistake    { background:var(--mistake); }
+.move-class-icon.miss       { background:var(--miss); }
 .move-class-icon.blunder    { background:var(--blunder); }
 .move-san { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:var(--text); flex:1; }
 .move-eval { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text3); flex-shrink:0; }
@@ -335,12 +339,13 @@ canvas#chart { width:100%; height:130px; display:block; }
 }
 .move-class-badge.book      { background:rgba(136,144,168,.15); color:var(--book); }
 .move-class-badge.brilliant { background:rgba(91,201,184,.15);  color:var(--brilliant); }
+.move-class-badge.great     { background:rgba(155,125,224,.15); color:var(--great); }
 .move-class-badge.excellent { background:rgba(91,201,122,.15);  color:var(--excellent); }
 .move-class-badge.best-move { background:rgba(89,184,224,.15);  color:var(--best-move); }
-.move-class-badge.very-good { background:rgba(143,201,91,.15);  color:var(--very-good); }
 .move-class-badge.good      { background:rgba(201,196,91,.15);  color:var(--good); }
 .move-class-badge.inaccuracy{ background:rgba(224,155,91,.15);  color:var(--inaccuracy); }
 .move-class-badge.mistake   { background:rgba(224,92,92,.15);   color:var(--mistake); }
+.move-class-badge.miss      { background:rgba(224,120,91,.15);  color:var(--miss); }
 .move-class-badge.blunder   { background:rgba(201,48,48,.15);   color:var(--blunder); }
 
 /* ── Summary panel ── */

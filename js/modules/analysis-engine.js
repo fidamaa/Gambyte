@@ -19,6 +19,37 @@ const AnalysisEngine = (() => {
   let onComplete = null;
   let aborted = false;
 
+  // ── Material real capturável (usado por Gafe e Brilhante) ─────────
+  // Extraído da resposta REAL do motor (bestMove da posição pós-lance),
+  // não de um gerador de lances próprio — evita reimplementar regras de
+  // xeque/pinos/etc. só pra saber "o que está pendurado".
+  const PIECE_VALUES = { p: 100, n: 300, b: 300, r: 500, q: 900, k: 0 };
+
+  function pieceValueAtSquare(fen, square) {
+    const board = fen.split(' ')[0].split('/');
+    const col = square.charCodeAt(0) - 97;
+    const row = 8 - parseInt(square[1], 10);
+    let file = 0;
+    for (const ch of board[row]) {
+      if (/\d/.test(ch)) { file += parseInt(ch, 10); }
+      else {
+        if (file === col) return PIECE_VALUES[ch.toLowerCase()] || 0;
+        file++;
+      }
+    }
+    return 0;
+  }
+
+  // Valor do que o adversário realmente captura, segundo a própria
+  // continuação principal do motor na posição pós-lance (fenAfterOurMove).
+  function computeImmediateCaptureValue(fenAfterOurMove, opponentBestMoveUCI) {
+    // Stockfish retorna "bestmove (none)" quando não há lances legais
+    // (posição de xeque-mate/afogamento) — não é um UCI válido, ignorar.
+    if (!opponentBestMoveUCI || !/^[a-h][1-8][a-h][1-8]/.test(opponentBestMoveUCI)) return 0;
+    const toSquare = opponentBestMoveUCI.slice(2, 4);
+    return pieceValueAtSquare(fenAfterOurMove, toSquare);
+  }
+
   function setCallbacks(callbacks) {
     onProgress = callbacks.onProgress;
     onMoveUpdate = callbacks.onMoveUpdate;
@@ -137,6 +168,21 @@ const AnalysisEngine = (() => {
         ? (moveSquare.from + moveSquare.to)
         : null;
 
+      // Material real que o adversário captura na resposta do motor à
+      // posição pós-lance, e se essa resposta é um mate forçado contra nós.
+      const immediateCaptureValue = computeImmediateCaptureValue(fenAfter, afterResult.bestMove);
+      const opponentMateN         = afterResult.mateNs ? afterResult.mateNs[0] : null;
+      const opponentGetsMate      = opponentMateN != null && opponentMateN > 0;
+      const mateForMover          = beforeResult.mateNs ? beforeResult.mateNs[0] : null;
+
+      // Saldo líquido do lance: o que o adversário recaptura MENOS o que o
+      // próprio jogador capturou neste mesmo lance. Uma troca simples
+      // (Bxf3 Nxf3) dá saldo ~0 — não é sacrifício, é só uma troca.
+      const capturedByMoverValue = playedMoveUCI
+        ? pieceValueAtSquare(fenBefore, playedMoveUCI.slice(2, 4))
+        : 0;
+      const sacrificeValue = immediateCaptureValue - capturedByMoverValue;
+
       movesData[i].evalBefore    = evalBefore;
       movesData[i].evalAfter     = evalAfter;  // já na perspectiva do jogador
       movesData[i].bestEval      = bestEval;
@@ -144,6 +190,7 @@ const AnalysisEngine = (() => {
       movesData[i].playedMoveUCI = playedMoveUCI;
       movesData[i].multiPVEvals  = multiPV;
       movesData[i].mateNs        = beforeResult.mateNs || null;
+      movesData[i].immediateCaptureValue = immediateCaptureValue;
 
       console.log(
         `[Phase1 lance ${i} ${movesData[i].color} "${moves[i]}"]`,
@@ -173,7 +220,12 @@ const AnalysisEngine = (() => {
           brilliantsUsed,
           moveIndex:     i,
           isStalemate:   likelyStalemateOrDraw,
-          isCheckmate:   isCheckmateMove
+          isCheckmate:   isCheckmateMove,
+          immediateCaptureValue,
+          sacrificeValue,
+          mateForMover,
+          opponentGetsMate,
+          depth: PHASE1_DEPTH
         });
         movesData[i].classification = cls;
         if (cls === 'brilliant') brilliantsUsed++;
@@ -250,6 +302,16 @@ const AnalysisEngine = (() => {
         m._stable      = isStable;
         // m.evalBefore mantém o valor original da Phase 1 — NÃO atualizar aqui
 
+        // Material real capturável e mate, recalculados nesta profundidade
+        m.immediateCaptureValue = computeImmediateCaptureValue(fenAfter, aRes.bestMove);
+        const opponentMateN2    = aRes.mateNs ? aRes.mateNs[0] : null;
+        const opponentGetsMate2 = opponentMateN2 != null && opponentMateN2 > 0;
+        const mateForMover2     = bRes.mateNs ? bRes.mateNs[0] : null;
+        const capturedByMoverValue2 = m.playedMoveUCI
+          ? pieceValueAtSquare(fenBefore, m.playedMoveUCI.slice(2, 4))
+          : 0;
+        const sacrificeValue2   = m.immediateCaptureValue - capturedByMoverValue2;
+
         // Reclassify
         const likelyStalemateOrDraw2 = (
           m.evalBefore > 150 &&
@@ -269,7 +331,12 @@ const AnalysisEngine = (() => {
           brilliantsUsed,
           moveIndex:     i,
           isStalemate:   likelyStalemateOrDraw2,
-          isCheckmate:   m.isCheckmate
+          isCheckmate:   m.isCheckmate,
+          immediateCaptureValue: m.immediateCaptureValue,
+          sacrificeValue: sacrificeValue2,
+          mateForMover:  mateForMover2,
+          opponentGetsMate: opponentGetsMate2,
+          depth
         });
 
         if (newCls !== m.classification) {

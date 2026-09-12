@@ -317,6 +317,8 @@ const PGNParser = (() => {
       const nextState = applyMove(state, sanList[i]);
       if (!nextState) {
         console.warn(`Could not apply move: ${sanList[i]} at position ${i}`);
+        fensBefore.pop(); // remove a entrada "antes" órfã do lance que falhou,
+                           // senão fensAfter fica mais curto que moves/fensBefore
         break;
       }
       state = nextState;

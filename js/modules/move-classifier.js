@@ -1,34 +1,50 @@
 /* ==============================================================
    MODULE: move-classifier.js
-   Simple opening book detection helpers + move classification
-   (Brilhante, Excelente, Melhor Lance, Boa, Erro, Gafe, etc.)
+   Move classification usando o modelo "Expected Points" (EP),
+   aproximação da filosofia do Chess.com Game Review V2.
+
+   Fonte da fórmula EP: fórmula pública de win% do Lichess
+   (winPercent = 50 + 50·(2/(1+e^-0.00368208·cp) − 1)). O Chess.com
+   não publica a fórmula exata do seu modelo proprietário — esta é
+   a aproximação documentada mais próxima disponível publicamente.
+
+   Categorias: Livro, Brilhante, Ótimo (Great), Chance Perdida (Miss),
+   Melhor Lance, Excelente, Boa, Imprecisão, Erro, Gafe.
+
    Depende de: rating-model.js
    ============================================================== */
 const MoveClassifier = (() => {
 
-  // ── Thresholds de perda em centipawns ────────────────────────
-  // Hierarquia: Brilhante > Excelente > Melhor Lance > Muito Boa > Boa > Imprecisão > Erro > Gafe
-  //
-  // NOVO: "Melhor Lance" NÃO usa mais teto de cp-loss — ver isBestMoveMatch
-  // no classify(). Bater com a seta do motor já é prova definitiva; comparar
-  // cp entre duas análises independentes (antes/depois) é ruidoso demais em
-  // profundidade baixa e fazia "Melhor Lance" quase nunca aparecer.
-  const THRESHOLDS = {
-    excellent:  15,   // ≤15cp  → Excelente (quase tão bom quanto o melhor, raro/difícil)
-    very_good:  25,   // ≤25cp  → Muito Boa
-    good:       70,   // ≤70cp  → Boa
-    inaccuracy: 150,  // ≤150cp → Imprecisão
-    mistake:    300   // ≤300cp → Erro
+  // ── EP_loss thresholds (NÃO são centipawns — ver epFromCp) ───
+  // A mesma perda de cp tem impacto MUITO diferente dependendo da EP
+  // de partida (perder 100cp num +5.0 é irrelevante; num 0.0 é grave).
+  const EP_THRESHOLDS = {
+    excellent:  0.02,  // EP_loss < 0.02  → Excelente
+    good:       0.05,  // EP_loss < 0.05  → Boa
+    inaccuracy: 0.10,  // EP_loss < 0.10  → Imprecisão
+    mistake:    0.20   // EP_loss < 0.20  → Erro; acima disso é candidato a Gafe
   };
 
-  // NOVO: Gafe agora é decidido por MATERIAL REAL capturável no lance
-  // seguinte (immediateCaptureValue, calculado pelo AnalysisEngine a partir
-  // da resposta de verdade do motor), não mais pela queda de avaliação.
-  // BLUNDER_SWING_THRESHOLD = valor mínimo de peça pra contar como "perdeu
-  // peça de verdade" — mesma escala de PIECE_VALUES do analysis-engine.js
-  // (peão=100, peça menor=300, torre=500, dama=900).
+  // Gafe só é Gafe com PERDA MATERIAL REAL (immediateCaptureValue,
+  // calculado pelo AnalysisEngine a partir da resposta de verdade do
+  // motor) ou mate forçado contra o jogador — nunca só por EP_loss alto.
   const BLUNDER_SWING_THRESHOLD = 300;  // ~valor de uma peça menor
   const BLUNDER_WINNING_TO_LOST = 100;
+
+  // Profundidade mínima pra confiar numa detecção de sacrifício (Brilhante).
+  // Na Fase 1 (depth 7) a leitura tática ainda é rasa demais — só
+  // reclassificamos como Brilhante a partir da Fase 2.
+  const BRILLIANT_MIN_DEPTH = 10;
+
+  /**
+   * Converte centipawns em Expected Points (0..1), a fórmula de win%
+   * do Lichess. cp já deve estar na perspectiva do jogador em questão.
+   */
+  function epFromCp(cp) {
+    if (cp == null) return 0.5;
+    const winPct = 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * cp)) - 1);
+    return winPct / 100;
+  }
 
   function normalizeLoss(rawLoss, evalBefore) {
     const contextFactor = 1 + (Math.abs(evalBefore) / 400);
@@ -64,24 +80,86 @@ const MoveClassifier = (() => {
   }
 
   /**
-   * NOVO: Erro vs Gafe, decidido por captura REAL disponível pro adversário
-   * (immediateCaptureValue), não pela magnitude da queda de avaliação.
-   *
-   * Um rei mais exposto, uma combinação de vários lances, "não ver" um mate
-   * distante — nada disso é Gafe se o adversário não tiver, JÁ NO LANCE
-   * SEGUINTE, uma captura direta valendo pelo menos uma peça menor.
+   * Erro vs Gafe: Gafe exige PERDA MATERIAL REAL (immediateCaptureValue,
+   * calculado pelo AnalysisEngine a partir da resposta de verdade do motor
+   * à posição resultante) ou mate forçado contra o jogador. Um EP_loss alto
+   * sozinho, sem uma dessas duas coisas, fica classificado como Erro.
    */
-  function classifyBlunderOrMistake(evalBefore, evalAfter, forced, immediateCaptureValue) {
-    if (forced) return 'mistake';
+  function classifyBlunderOrMistake(evalBefore, immediateCaptureValue, opponentGetsMate) {
+    if (opponentGetsMate) return 'blunder';
 
     const perdeuPecaDeVerdade = (immediateCaptureValue ?? 0) >= BLUNDER_SWING_THRESHOLD;
     if (!perdeuPecaDeVerdade) return 'mistake';
 
-    const wasWinning  = evalBefore >= BLUNDER_WINNING_TO_LOST;
-    const isNowLosing = evalAfter  <= -50;
-    if (wasWinning && isNowLosing) return 'blunder';
-    if (Math.abs(evalBefore) < 600) return 'blunder';
-    return 'mistake';
+    return 'blunder';
+  }
+
+  /**
+   * Um sacrifício "funciona" quando o jogador abre mão de material REAL
+   * NO SALDO — não confundir com uma troca simples (ex.: Bxf3 Nxf3, onde
+   * o "material que o adversário recaptura" é só a peça que o próprio
+   * jogador acabou de capturar, saldo zero). sacrificeValue já vem líquido
+   * do AnalysisEngine: (o que o adversário recaptura) − (o que o jogador
+   * capturou neste mesmo lance). Só saldo líquido negativo relevante
+   * conta como sacrifício de verdade.
+   */
+  function isGenuineSacrifice(evalAfter, sacrificeValue) {
+    return (sacrificeValue ?? 0) >= BLUNDER_SWING_THRESHOLD && evalAfter >= -50;
+  }
+
+  /**
+   * BRILHANTE (aproximação): o lance precisa ser o melhor (ou quase) E
+   * envolver sacrifício genuíno E a posição não podia já estar
+   * esmagadoramente ganha antes do lance (senão qualquer sacrifício seria
+   * "de graça"). Só avaliado a partir de BRILLIANT_MIN_DEPTH — na Fase 1
+   * (depth 7) a leitura tática é rasa demais e geraria falsos positivos.
+   */
+  function isBrilliantMove(params) {
+    const { playedIsBest, epLoss, evalBefore, evalAfter, sacrificeValue, depth } = params;
+    if ((depth ?? 0) < BRILLIANT_MIN_DEPTH) return false;
+    if (!(playedIsBest || epLoss < EP_THRESHOLDS.excellent)) return false;
+    if (!isGenuineSacrifice(evalAfter, sacrificeValue)) return false;
+    if (Math.abs(evalBefore) >= 600) return false; // já ganhando de goleada: sac é trivial
+    return true;
+  }
+
+  /**
+   * ÓTIMO / GREAT (aproximação): lance que muda o curso da partida —
+   * perdendo→igual, igual→ganhando, ou a única jogada boa numa posição
+   * tensa (gap grande entre PV1 e PV2). O Chess.com documenta Great como
+   * "a única jogada boa" mesmo quando não é tecnicamente a #1 do motor —
+   * por isso aceitamos também EP_loss muito pequeno (quase-melhor), não só
+   * playedIsBest estrito.
+   */
+  function isGreatMove(params) {
+    const { playedIsBest, epLoss, evalBefore, evalAfter, forced } = params;
+    if (!(playedIsBest || epLoss < EP_THRESHOLDS.excellent)) return false;
+    const wasLosing  = evalBefore <= -150;
+    const wasEqual   = Math.abs(evalBefore) <= 50;
+    const nowEqual   = evalAfter >= -60;
+    const nowWinning = evalAfter >= 150;
+    if (wasLosing && nowEqual) return true;
+    if (wasEqual && nowWinning) return true;
+    if (forced && Math.abs(evalBefore) < 400) return true; // única jogada boa
+    return false;
+  }
+
+  /**
+   * CHANCE PERDIDA / MISS (aproximação): havia mate ou vantagem decisiva
+   * disponível na posição (EP≥0.85 ou mate encontrado pelo motor) e o
+   * lance jogado desperdiça boa parte dela — mesmo sem perder material,
+   * o que a diferencia de um Erro/Gafe comum.
+   *
+   * NOTA: a definição "oficial" do Chess.com também considera se o
+   * ADVERSÁRIO acabou de cometer um erro no lance anterior. Esta versão
+   * usa apenas o estado da posição atual (mais simples, sem precisar de
+   * contexto do lance anterior) — aproximação documentada, não o critério
+   * exato do Chess.com.
+   */
+  function isMissedWin(params) {
+    const { epBefore, epAfter, epLoss, mateForMover } = params;
+    const hadWinningChance = epBefore >= 0.85 || (mateForMover != null && mateForMover > 0);
+    return hadWinningChance && epLoss >= 0.15 && epAfter < 0.75;
   }
 
   /**
@@ -89,16 +167,19 @@ const MoveClassifier = (() => {
    * @param {object} params
    *   - san, evalBefore, evalAfter, bestEval, bestMoveUCI, playedMoveUCI,
    *     multiPVEvals, isBook, isWhite, moveIndex, isStalemate, isCheckmate
-   *   - immediateCaptureValue: NOVO. Valor (escala 100/300/500/900) do que o
+   *   - immediateCaptureValue: valor (escala 100/300/500/900) do que o
    *     adversário realmente captura no lance seguinte, segundo o motor.
-   *     Calculado pelo AnalysisEngine via posição real do tabuleiro — não
-   *     é mais inferido pela queda de cp.
+   *     Calculado pelo AnalysisEngine a partir da posição real do tabuleiro.
+   *   - sacrificeValue: saldo material líquido do lance (o que o adversário
+   *     recaptura MENOS o que o jogador capturou neste mesmo lance) — usado
+   *     só para Brilhante/Ótimo, pra não confundir troca simples com sacrifício.
+   *   - mateForMover: mate em N a favor do jogador ANTES do lance (ou null).
+   *   - opponentGetsMate: true se, depois do lance, o adversário tem mate forçado.
+   *   - depth: profundidade de busca usada nesta (re)classificação — usada
+   *     para não confirmar Brilhante em profundidade rasa demais.
    *
-   * NOTA: 'brilliant' NÃO é mais retornado por esta função. A detecção de
-   * sacrifício genuíno agora exige verificação com o motor jogando a
-   * captura de verdade (não dá pra fazer isso de forma síncrona, lance a
-   * lance) — isso é feito à parte, na Fase 3 do AnalysisEngine, que
-   * sobrescreve `classification` diretamente quando confirma um sacrifício.
+   * Ordem de prioridade: Livro → Brilhante → Ótimo → Chance Perdida →
+   * Melhor Lance → escada de EP_loss (Excelente/Boa/Imprecisão/Erro/Gafe).
    */
   function classify(params) {
     const {
@@ -108,15 +189,17 @@ const MoveClassifier = (() => {
       moveIndex,
       isStalemate,
       isCheckmate,
-      immediateCaptureValue
+      immediateCaptureValue,
+      sacrificeValue,
+      mateForMover,
+      opponentGetsMate,
+      depth
     } = params;
 
     if (isBook) return 'book';
 
     if (isCheckmate) {
       // Xeque-mate: por definição, o melhor lance possível. Nunca penalizar.
-      // Se ESTE lance também foi um sacrifício genuíno, isso já deveria ter
-      // sido confirmado antes, no lance que ofereceu o material (Fase 3).
       return 'best-move';
     }
 
@@ -124,45 +207,39 @@ const MoveClassifier = (() => {
     if (drawPenalty) return drawPenalty;
 
     const playedIsBest = isBestMoveMatch(playedMoveUCI, bestMoveUCI);
+    const forced       = isForcedMove(multiPVEvals);
 
-    // ── MELHOR LANCE ── bateu com a seta do motor. Sem teto de cp extra
-    // (ver nota no topo do arquivo).
+    const epBefore = epFromCp(evalBefore);
+    const epAfter  = epFromCp(evalAfter);
+    const epLoss   = Math.max(0, epBefore - epAfter);
+
+    // ── BRILHANTE ──────────────────────────────────────────────
+    if (isBrilliantMove({ playedIsBest, epLoss, evalBefore, evalAfter, sacrificeValue, depth })) {
+      return 'brilliant';
+    }
+
+    // ── ÓTIMO (Great) ──────────────────────────────────────────
+    if (isGreatMove({ playedIsBest, epLoss, evalBefore, evalAfter, forced })) {
+      return 'great';
+    }
+
+    // ── CHANCE PERDIDA (Miss) ──────────────────────────────────
+    if (isMissedWin({ epBefore, epAfter, epLoss, mateForMover })) {
+      return 'miss';
+    }
+
+    // ── MELHOR LANCE ── bateu com a seta do motor NESTA profundidade.
     if (playedIsBest) {
       return 'best-move';
     }
 
-    if (Math.abs(evalBefore) > 900) {
-      const rawLoss900 = Math.max(0, bestEval - evalAfter);
-      const forced900  = isForcedMove(multiPVEvals);
-      if (rawLoss900 <= 60)  return 'very-good';
-      if (rawLoss900 <= 180) return 'inaccuracy';
-      if (rawLoss900 <= 400 || forced900) return 'mistake';
-      return classifyBlunderOrMistake(evalBefore, evalAfter, forced900, immediateCaptureValue);
-    }
+    // ── Escada de EP_loss ──────────────────────────────────────
+    if (epLoss < EP_THRESHOLDS.excellent)  return 'excellent';
+    if (epLoss < EP_THRESHOLDS.good)       return 'good';
+    if (epLoss < EP_THRESHOLDS.inaccuracy) return 'inaccuracy';
+    if (epLoss < EP_THRESHOLDS.mistake)    return 'mistake';
 
-    const playedEval  = evalAfter;
-    const rawLoss     = bestEval - playedEval;
-    const clampedLoss = Math.max(0, rawLoss);
-    const loss        = normalizeLoss(clampedLoss, evalBefore);
-    const forced      = isForcedMove(multiPVEvals);
-
-    // ── EXCELENTE ── quase tão bom quanto o melhor, raro/difícil
-    if (
-      loss <= THRESHOLDS.excellent &&
-      !forced &&
-      Math.abs(evalBefore) < 500 &&
-      multiPVEvals && multiPVEvals.length >= 2 &&
-      multiPVEvals[1] !== null &&
-      Math.abs(multiPVEvals[0] - multiPVEvals[1]) > 40
-    ) {
-      return 'excellent';
-    }
-
-    if (loss <= THRESHOLDS.very_good)  return 'very-good';
-    if (loss <= THRESHOLDS.good)       return 'good';
-    if (loss <= THRESHOLDS.inaccuracy) return 'inaccuracy';
-
-    return classifyBlunderOrMistake(evalBefore, evalAfter, forced, immediateCaptureValue);
+    return classifyBlunderOrMistake(evalBefore, immediateCaptureValue, opponentGetsMate);
   }
 
   /**
@@ -273,16 +350,15 @@ const MoveClassifier = (() => {
   const LABELS = {
     book:        'Livro',
     brilliant:   'Brilhante',
+    great:       'Ótimo',
     excellent:   'Excelente',
     'best-move': 'Melhor Lance',
-    'very-good': 'Muito Boa',
     good:        'Boa',
     inaccuracy:  'Imprecisão',
     mistake:     'Erro',
+    miss:        'Chance Perdida',
     blunder:     'Gafe'
   };
 
-  // NOVO: isForcedMove exportado — o AnalysisEngine usa isso na Fase 3
-  // pra excluir lances forçados da varredura de sacrifícios.
-  return { classify, computeStats, LABELS, normalizeLoss, isForcedMove, isBestMoveMatch };
+  return { classify, computeStats, LABELS, normalizeLoss, isForcedMove, isBestMoveMatch, epFromCp };
 })();
