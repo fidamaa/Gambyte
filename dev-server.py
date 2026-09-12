@@ -1,18 +1,27 @@
 #!/usr/bin/env python3
 """
-Servidor de desenvolvimento local com os headers COOP/COEP necessarios
-para o navegador habilitar SharedArrayBuffer (exigido pelo build
-multi-thread do Stockfish, stockfish-18-multi.js).
+Servidor de desenvolvimento local com:
 
-Sem esses headers, o navegador nao expoe SharedArrayBuffer e o app
-cai automaticamente para o build single-thread (stockfish-manager.js
-detecta isso via self.crossOriginIsolated).
+1) Headers COOP/COEP necessarios para o navegador habilitar
+   SharedArrayBuffer (exigido pelo build multi-thread do Stockfish,
+   stockfish-18-multi.js -- hoje nao usado por padrao, mas o header
+   nao atrapalha e mantem a porta aberta caso isso mude no futuro).
+
+2) Cache-Control: no-cache em TODA resposta. Isso NAO desliga o cache
+   do navegador -- faz o navegador sempre perguntar ao servidor "isso
+   mudou?" (via If-Modified-Since) antes de reusar uma copia salva. Se
+   nao mudou, o servidor responde 304 (rapido, sem reenviar o arquivo).
+   Se mudou, manda o arquivo novo. Sem isso, qualquer atualizacao de
+   codigo pode ficar "presa" no cache do navegador de quem visitou o
+   site antes -- cada usuario precisaria limpar o cache manualmente
+   pra ver a versao nova, o que nao e aceitavel em producao.
 
 Uso: python dev-server.py [porta]  (porta padrao: 8000)
 
-Para producao (hospedagem real), esses mesmos dois headers precisam
-ser configurados no servidor/CDN de verdade para o multi-thread
-funcionar para os visitantes do site.
+Para producao (hospedagem real), configure o mesmo header
+Cache-Control no servidor/CDN de verdade (ex.: Netlify/Vercel via
+arquivo de config, Apache via .htaccess, Nginx via add_header) --
+esse script python e so para teste local.
 """
 import sys
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
@@ -27,6 +36,10 @@ class COOPCOEPHandler(SimpleHTTPRequestHandler):
     def end_headers(self):
         self.send_header("Cross-Origin-Opener-Policy", "same-origin")
         self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
+        # Sempre revalidar com o servidor antes de usar cache -- garante
+        # que ninguem fica preso numa versao antiga do site sem precisar
+        # limpar cache manualmente.
+        self.send_header("Cache-Control", "no-cache, must-revalidate")
         super().end_headers()
 
 
