@@ -296,8 +296,9 @@ canvas#chart { width:100%; height:130px; display:block; }
 .move-number { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text3); padding-top:7px; text-align:right; }
 .move-item {
   background:var(--bg3); border-radius:5px; padding:6px 9px;
-  display:flex; align-items:center; gap:7px; cursor:pointer;
+  display:flex; align-items:center; gap:6px; cursor:pointer;
   transition:background .12s; border-left:3px solid transparent;
+  min-width:0; /* deixa os filhos flex encolherem em vez de vazar da grid */
 }
 .move-item:hover { background:var(--border); }
 .move-item.active { background:rgba(232,201,122,.08); }
@@ -333,11 +334,15 @@ canvas#chart { width:100%; height:130px; display:block; }
 .move-class-icon.mistake    { background:var(--mistake); }
 .move-class-icon.miss       { background:var(--miss); }
 .move-class-icon.blunder    { background:var(--blunder); }
-.move-san { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:var(--text); flex:1; }
+/* Linha do lance: SAN (encolhe até um piso) | eval (largura fixa) |
+   badge (o que sobrar, com reticências se não couber — nunca vaza
+   pra fora da caixa, mesmo com rótulos longos tipo "Chance Perdida"). */
+.move-san { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:var(--text); flex:0 0 auto; white-space:nowrap; }
 .move-eval { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text3); flex-shrink:0; }
 .move-class-badge {
-  font-size:9px; font-weight:600; letter-spacing:.5px; text-transform:uppercase;
-  padding:2px 5px; border-radius:3px; flex-shrink:0;
+  font-size:9px; font-weight:600; letter-spacing:.3px; text-transform:uppercase;
+  padding:2px 5px; border-radius:3px; flex:1 1 auto; min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center;
 }
 .move-class-badge.book      { background:rgba(136,144,168,.15); color:var(--book); }
 .move-class-badge.brilliant { background:rgba(91,201,184,.15);  color:var(--brilliant); }

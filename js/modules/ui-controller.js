@@ -412,7 +412,9 @@ const UIController = (() => {
     }
     const badge = el.querySelector('.move-class-badge');
     badge.className = 'move-class-badge' + (cls ? ' ' + cls : '');
-    badge.textContent = cls ? MoveClassifier.LABELS[cls] : '';
+    const label = cls ? MoveClassifier.LABELS[cls] : '';
+    badge.textContent = label;
+    badge.title = label; // rótulo completo no hover, mesmo se truncado (ex.: "Chance Perdida")
 
     // If this is the currently viewed move, refresh engine arrow
     if (moveData.index === currentMoveIdx && moveData.bestMoveUCI) {

@@ -341,6 +341,15 @@ const PGNParser = (() => {
   }
 
   // Detect squares that changed between two FENs (for move highlighting)
+  //
+  // FIX: uma casa que teve uma peça CAPTURADA (ocupada antes, ocupada por
+  // peça diferente depois) é o DESTINO do lance, nunca a origem — mas a
+  // versão antiga jogava essa casa em `removed` também, e como `fromEntry`
+  // pegava `removed[0]` (ordem de varredura do tabuleiro, não ordem
+  // cronológica do lance), em capturas onde a casa de destino ficava numa
+  // fileira varrida antes da casa de origem, `from` virava igual a `to`
+  // por engano — animação com distância zero (parece "pular") e o
+  // destaque azul aparecendo na casa errada.
   function _detectMoveSquares(fenBefore, fenAfter) {
     if (!fenBefore || !fenAfter) return { from: null, to: null };
     const b1 = fenBefore.split(' ')[0].split('/');
@@ -353,15 +362,20 @@ const PGNParser = (() => {
       for (let col = 0; col < 8; col++) {
         const sq = String.fromCharCode(97+col)+(8-r);
         const p1 = row1[col], p2 = row2[col];
-        if (p1 && !p2)              removed.push({ sq, piece: p1 });
-        if (!p1 && p2)              added.push({ sq, piece: p2 });
-        if (p1 && p2 && p1 !== p2) { removed.push({ sq, piece: p1 }); added.push({ sq, piece: p2 }); }
+        if (p1 && !p2) removed.push({ sq, piece: p1 });        // casa esvaziada → candidata a ORIGEM
+        else if (!p1 && p2) added.push({ sq, piece: p2 });     // casa preenchida → candidata a DESTINO
+        else if (p1 && p2 && p1 !== p2) added.push({ sq, piece: p2 }); // peça capturada → SÓ destino
       }
     }
-    // For castling: multiple pieces move. Prefer the King (K/k) as the "from"
+    // Roque: rei e torre se movem juntos. Prefere o Rei como "from"/"to".
     const isKingPiece = p => p === 'K' || p === 'k';
-    const fromEntry = removed.find(e => isKingPiece(e.piece)) || removed[0];
-    const toEntry   = added.find(e => isKingPiece(e.piece))   || added[0];
+    let toEntry   = added.find(e => isKingPiece(e.piece))   || added[0];
+    // En passant: DUAS casas esvaziam (a origem do peão e a casa do peão
+    // capturado, que não é a casa de destino). Desempata preferindo a
+    // origem cujo tipo/cor de peça bate com a peça que chegou no destino.
+    let fromEntry = removed.find(e => isKingPiece(e.piece)) ||
+                    (toEntry && removed.find(e => e.piece === toEntry.piece)) ||
+                    removed[0];
     return { from: fromEntry?.sq || null, to: toEntry?.sq || null };
   }
 
