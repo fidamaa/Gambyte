@@ -67,9 +67,6 @@ const AnalysisEngine = (() => {
    */
   async function analyze(parsedGame) {
     aborted = false;
-    const _analysisStartTime = performance.now();
-    const engineInfo = StockfishManager.getEngineInfo ? StockfishManager.getEngineInfo() : {};
-    console.log(`[AnalysisEngine] ⏱ Iniciando análise — engine=${engineInfo.usingMulti ? 'multi(' + engineInfo.threadCount + 't)' : 'single'}`);
 
     const { moves, fensBefore, fensAfter, headers } = parsedGame;
     const total = moves.length;
@@ -363,9 +360,6 @@ const AnalysisEngine = (() => {
         movesData: [...movesData]
       });
     }
-
-    const _totalMs = Math.round(performance.now() - _analysisStartTime);
-    console.log(`[AnalysisEngine] ⏱ Análise concluída em ${_totalMs}ms (${(_totalMs/1000).toFixed(1)}s) — ${total} lances, engine=${engineInfo.usingMulti ? 'multi(' + engineInfo.threadCount + 't)' : 'single'}`);
 
     if (onComplete) onComplete([...movesData]);
   }

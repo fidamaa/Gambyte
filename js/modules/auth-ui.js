@@ -40,6 +40,12 @@ const AuthUI = (() => {
     }
     // Update premium gates in insights
     InsightsUI.updatePremiumGates();
+
+    // Assinantes Pro não veem anúncios — a página de vendas promete isso
+    // explicitamente ("Sem anúncios"), então precisa cumprir de verdade.
+    document.querySelectorAll('.ad-slot').forEach(el => {
+      el.style.display = AuthSystem.isPremium() ? 'none' : '';
+    });
   }
 
   function handleProToggleClick(e) {

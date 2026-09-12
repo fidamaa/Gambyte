@@ -187,7 +187,9 @@ const BoardUI = (() => {
         const sq = String.fromCharCode(97 + boardCol) + (8 - boardRow);
         const { x, y } = sqToCanvas(sq);
         const img = _getPieceImg(piece);
-        if (!img) continue;
+        // Sem isso, um SVG ainda não decodificado pode desenhar em branco
+        // no primeiro frame (a peça "pisca"/some até o onload disparar).
+        if (!img || !img.complete || img.naturalWidth === 0) continue;
         const pad = sqSize * 0.04; // pequena margem interna
         ctx.save();
         ctx.shadowColor   = 'rgba(0,0,0,0.30)';
@@ -201,25 +203,60 @@ const BoardUI = (() => {
   }
 
   // ── Animação de movimento ─────────────────────────────────────
-  // Guarda o estado da animação em curso
-  let _anim = null;  // { fromX, fromY, toX, toY, piece, board, startTime, duration, fromSq, toSq }
+  // Guarda o estado da animação em curso. `pieces` é uma lista porque o
+  // roque precisa animar Rei E Torre ao mesmo tempo — sem isso a torre
+  // "teleportava" instantaneamente enquanto só o rei era animado.
+  let _anim = null;  // { pieces: [{fromX,fromY,toX,toY,piece,isKnight}], board, exceptSqs, startTime, duration }
 
-  function _animatePiece(board, fromSq, toSq, duration = 180) {
-    if (_anim && _anim.raf) cancelAnimationFrame(_anim.raf);
-    if (!fromSq || !toSq) { _anim = null; return; }
+  function _pieceAnimSpec(board, fromSq, toSq) {
     const { x: fx, y: fy } = sqToCanvas(fromSq);
     const { x: tx, y: ty } = sqToCanvas(toSq);
     const tc = toSq.charCodeAt(0) - 97;
     const tr = 8 - parseInt(toSq[1]);
     const piece = board[tr][tc];
-    // Detectar se é movimento de cavalo (N/n): padrão L 2+1 casas
     const fc = fromSq.charCodeAt(0) - 97;
     const fr = 8 - parseInt(fromSq[1]);
     const dc = Math.abs(tc - fc), dr = Math.abs(tr - fr);
     const isKnight = (dc === 2 && dr === 1) || (dc === 1 && dr === 2);
-    _anim = { fromX: fx, fromY: fy, toX: tx, toY: ty, piece, board, fromSq, toSq,
-              startTime: performance.now(), duration,
-              isKnight, raf: null };
+    return { fromX: fx, fromY: fy, toX: tx, toY: ty, piece, toSq, isKnight };
+  }
+
+  // Detecta roque a partir do movimento do rei (2 casas na horizontal, na
+  // fileira de origem) e devolve o par from/to correspondente da torre.
+  function _castlingRookSquares(fromSq, toSq) {
+    const fc = fromSq.charCodeAt(0) - 97, fr = fromSq[1];
+    const tc = toSq.charCodeAt(0) - 97;
+    if (Math.abs(tc - fc) !== 2) return null;
+    const row = fr; // '1' ou '8' — mesma fileira do rei
+    const kingSide = tc > fc;
+    const rookFrom = (kingSide ? 'h' : 'a') + row;
+    const rookTo   = (kingSide ? 'f' : 'd') + row;
+    return { rookFrom, rookTo };
+  }
+
+  function _animatePiece(board, fromSq, toSq, duration = 180) {
+    if (_anim && _anim.raf) cancelAnimationFrame(_anim.raf);
+    if (!fromSq || !toSq) { _anim = null; return; }
+
+    const specs = [_pieceAnimSpec(board, fromSq, toSq)];
+    const exceptSqs = [toSq];
+
+    // Roque: verifica se a peça movida é um rei e a distância é de 2 casas
+    const movedPiece = specs[0].piece;
+    if (movedPiece && movedPiece.toUpperCase() === 'K') {
+      const rookSqs = _castlingRookSquares(fromSq, toSq);
+      if (rookSqs) {
+        const { rookFrom, rookTo } = rookSqs;
+        const rc = board[8 - parseInt(rookTo[1])];
+        if (rc) { // torre já está na posição final em `board` (pós-lance)
+          specs.push(_pieceAnimSpec(board, rookFrom, rookTo));
+          exceptSqs.push(rookTo);
+        }
+      }
+    }
+
+    _anim = { pieces: specs, board, fromSq, toSq, exceptSqs,
+              startTime: performance.now(), duration, raf: null };
     _runAnim();
   }
 
@@ -229,39 +266,40 @@ const BoardUI = (() => {
     const prog = Math.min(1, (now - _anim.startTime) / _anim.duration);
     const t    = 1 - Math.pow(1 - prog, 3);  // ease-out cubic
 
-    let ax, ay;
-    if (_anim.isKnight) {
-      // Arco parabólico para o cavalo
-      const mx = (_anim.fromX + _anim.toX) / 2;
-      const arcH = sqSize * 1.1;
-      const cpx = mx;
-      const cpy = Math.min(_anim.fromY, _anim.toY) - arcH;
-      ax = (1-t)*(1-t)*_anim.fromX + 2*(1-t)*t*cpx + t*t*_anim.toX;
-      ay = (1-t)*(1-t)*_anim.fromY + 2*(1-t)*t*cpy + t*t*_anim.toY;
-    } else {
-      ax = _anim.fromX + (_anim.toX - _anim.fromX) * t;
-      ay = _anim.fromY + (_anim.toY - _anim.fromY) * t;
-    }
-
     // Fundo + highlights
     const hl = [
       { sq: _anim.fromSq, color: THEME.hlFrom },
       { sq: _anim.toSq,   color: THEME.hlTo   },
     ];
     drawSquares(hl);
-    // Todas as peças exceto a que está sendo animada
-    drawPiecesExcept(_anim.board, _anim.toSq);
-    // Peça animada no topo
-    const img = _getPieceImg(_anim.piece);
-    if (img && img.complete && img.naturalWidth > 0) {
-      const pad = sqSize * 0.04;
-      ctx.save();
-      ctx.shadowColor   = 'rgba(0,0,0,0.40)';
-      ctx.shadowBlur    = sqSize * 0.14;
-      ctx.shadowOffsetX = sqSize * 0.03;
-      ctx.shadowOffsetY = sqSize * 0.06;
-      ctx.drawImage(img, ax + pad, ay + pad, sqSize - pad*2, sqSize - pad*2);
-      ctx.restore();
+    // Todas as peças exceto as que estão sendo animadas (rei + torre no roque)
+    drawPiecesExcept(_anim.board, _anim.exceptSqs);
+
+    // Desenha cada peça em animação (rei + torre simultaneamente no roque)
+    for (const p of _anim.pieces) {
+      let ax, ay;
+      if (p.isKnight) {
+        // Arco parabólico para o cavalo
+        const mx = (p.fromX + p.toX) / 2;
+        const arcH = sqSize * 1.1;
+        const cpy = Math.min(p.fromY, p.toY) - arcH;
+        ax = (1-t)*(1-t)*p.fromX + 2*(1-t)*t*mx  + t*t*p.toX;
+        ay = (1-t)*(1-t)*p.fromY + 2*(1-t)*t*cpy + t*t*p.toY;
+      } else {
+        ax = p.fromX + (p.toX - p.fromX) * t;
+        ay = p.fromY + (p.toY - p.fromY) * t;
+      }
+      const img = _getPieceImg(p.piece);
+      if (img && img.complete && img.naturalWidth > 0) {
+        const pad = sqSize * 0.04;
+        ctx.save();
+        ctx.shadowColor   = 'rgba(0,0,0,0.40)';
+        ctx.shadowBlur    = sqSize * 0.14;
+        ctx.shadowOffsetX = sqSize * 0.03;
+        ctx.shadowOffsetY = sqSize * 0.06;
+        ctx.drawImage(img, ax + pad, ay + pad, sqSize - pad*2, sqSize - pad*2);
+        ctx.restore();
+      }
     }
     // Setas por cima
     ArrowSystem.redraw();
@@ -282,20 +320,21 @@ const BoardUI = (() => {
     if (fromSq) hl.push({ sq: fromSq, color: THEME.hlFrom });
     if (toSq)   hl.push({ sq: toSq,   color: THEME.hlTo });
     drawSquares(hl);
-    drawPiecesExcept(board, toSq);
+    drawPiecesExcept(board, [toSq]);
   }
 
-  function drawPiecesExcept(board, exceptSq) {
+  function drawPiecesExcept(board, exceptSqs) {
     if (!board) return;
+    const skip = Array.isArray(exceptSqs) ? exceptSqs : [exceptSqs];
     for (let boardRow = 0; boardRow < 8; boardRow++) {
       for (let boardCol = 0; boardCol < 8; boardCol++) {
         const piece = board[boardRow][boardCol];
         if (!piece) continue;
         const sq = String.fromCharCode(97 + boardCol) + (8 - boardRow);
-        if (sq === exceptSq) continue;  // skip peça animada
+        if (skip.includes(sq)) continue;  // skip peça(s) animada(s)
         const { x, y } = sqToCanvas(sq);
         const img = _getPieceImg(piece);
-        if (!img) continue;
+        if (!img || !img.complete || img.naturalWidth === 0) continue;
         const pad = sqSize * 0.04;
         ctx.save();
         ctx.shadowColor   = 'rgba(0,0,0,0.30)';

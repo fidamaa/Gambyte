@@ -93,13 +93,6 @@ const StockfishManager = (() => {
     });
   }
 
-  // ── Log de tempo por análise, pra comparar single vs multi-thread ──
-  // _goStartTime marca quando o "go depth" foi enviado; ao receber o
-  // bestmove calculamos quanto levou. currentGoDepth guarda a profundidade
-  // pedida pra aparecer junto no log (útil pra filtrar/comparar por depth).
-  let _goStartTime = null;
-  let _currentGoDepth = null;
-
   // Chamado pelo worker.onmessage durante análise
   function handleMessage(data) {
     if (data.startsWith('info') && data.includes('score')) {
@@ -107,12 +100,7 @@ const StockfishManager = (() => {
     }
 
     if (data.startsWith('bestmove')) {
-      const elapsedMs = _goStartTime != null ? Math.round(performance.now() - _goStartTime) : null;
-      console.log(
-        `[Stockfish ←] bestmove recebido, linhas coletadas: ${currentLines.length}` +
-        ` | ⏱ ${elapsedMs}ms @ depth ${_currentGoDepth}` +
-        ` | engine=${usingMulti ? 'multi(' + threadCount + 't)' : 'single'}`
-      );
+      console.log('[Stockfish ←] bestmove recebido, linhas coletadas:', currentLines.length);
       const resolve = currentResolve;
       const lines = [...currentLines];
       currentResolve = null;
@@ -137,8 +125,6 @@ const StockfishManager = (() => {
       `[Stockfish →] go depth ${depth} | multipv ${multiPV} | fen: ${fen.slice(0, 40)}…` +
       (movesSuffix ? ` | +moves: ${movesUCI.join(' ')}` : '')
     );
-    _goStartTime  = performance.now();
-    _currentGoDepth = depth;
 
     currentLines = [];
     currentResolve = (result) => {

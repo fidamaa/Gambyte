@@ -58,7 +58,7 @@ const InsightsUI = (() => {
     // Momento crítico — com identificação de quem errou
     const critical = InsightsEngine.findCriticalMoment(movesData);
     if (critical) {
-      const whoLabel = critical.color === 'white' ? '⬜ Brancas' : '⬛ Pretas';
+      const whoLabel = critical.color === 'white' ? 'Brancas' : 'Pretas';
       const rawDrop = Math.min(Math.abs(critical.evalBefore - critical.evalAfter), 800);
       el('ig-critical-move').textContent = 'Lance '+((critical.index||0)+1)+' · '+whoLabel;
       el('ig-critical-desc').textContent = 'Queda de '+rawDrop.toFixed(0)+'cp';
@@ -72,8 +72,8 @@ const InsightsUI = (() => {
     const wInac         = movesData.filter(m=>m.color==='white'&&m.classification==='inaccuracy').length;
     const bInac         = movesData.filter(m=>m.color==='black'&&m.classification==='inaccuracy').length;
     el('ig-errors-total').innerHTML =
-      `<span style="color:#ddd">⬜ ${wBlunders}/${wMistakes}/${wInac}</span><br>`+
-      `<span style="color:#8888bb;font-size:15px">⬛ ${bBlunders}/${bMistakes}/${bInac}</span>`;
+      `<span style="color:#ddd">${wBlunders}/${wMistakes}/${wInac}</span><br>`+
+      `<span style="color:#8888bb;font-size:15px">${bBlunders}/${bMistakes}/${bInac}</span>`;
     el('ig-errors-sub').textContent = 'Gafes / Erros / Imprecisões';
 
     // ── Precisão por fase — SEPARADA por cor ──────────────────
@@ -108,7 +108,7 @@ const InsightsUI = (() => {
     // Maior erro
     const blunder = InsightsEngine.findBiggestBlunder(movesData);
     if (blunder) {
-      const whoStr = blunder.move.color === 'white' ? '⬜ Brancas' : '⬛ Pretas';
+      const whoStr = blunder.move.color === 'white' ? 'Brancas' : 'Pretas';
       el('bml-move').textContent   = 'Lance '+((blunder.move.index||0)+1)+' · '+whoStr;
       el('bml-loss').textContent   = blunder.loss.toFixed(0)+'cp';
       el('bml-played').textContent = blunder.move.san || '—';
@@ -132,8 +132,8 @@ const InsightsUI = (() => {
     // Mostrar rating por cor se disponível
     const ratingExtra = document.getElementById('ig-rating-extra');
     if (ratingExtra) {
-      const wStr = rating.wRating ? `⬜ ${rating.wRating}` : '';
-      const bStr = rating.bRating ? `⬛ ${rating.bRating}` : '';
+      const wStr = rating.wRating ? `${rating.wRating}` : '';
+      const bStr = rating.bRating ? `${rating.bRating}` : '';
       ratingExtra.textContent = [wStr, bStr].filter(Boolean).join('  ·  ');
     }
 

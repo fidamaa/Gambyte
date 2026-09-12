@@ -173,7 +173,9 @@ textarea#pgn-input::placeholder { color:var(--text3); }
 .player-card {
   background:var(--bg2); border:1px solid var(--border);
   border-radius:var(--radius-lg); padding:18px; position:relative; overflow:hidden;
+  transition:border-color .25s, transform .25s, box-shadow .25s;
 }
+.player-card:hover { border-color:var(--border2); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.25); }
 .player-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
 .player-card.white::before { background:linear-gradient(90deg,#e8e8e8,#aaa); }
 .player-card.black::before { background:linear-gradient(90deg,#4a4a5e,#2a2a3e); }
@@ -189,7 +191,7 @@ textarea#pgn-input::placeholder { color:var(--text3); }
 /* ── Main layout: board + analysis ── */
 .analysis-layout {
   display:grid;
-  grid-template-columns: auto 1fr 300px;
+  grid-template-columns: auto 1fr 340px;
   gap:18px;
   align-items:start;
 }
@@ -503,12 +505,13 @@ canvas#chart { width:100%; height:130px; display:block; }
 /* Cores por classificação */
 .cls-label.book       { background:rgba(136,144,168,.30); color:#8890a8; border:1px solid rgba(136,144,168,.5); }
 .cls-label.brilliant  { background:rgba(91,201,184,.30);  color:#5bc9b8; border:1px solid rgba(91,201,184,.6); }
+.cls-label.great      { background:rgba(155,125,224,.30); color:#9b7de0; border:1px solid rgba(155,125,224,.6); }
 .cls-label.excellent  { background:rgba(91,201,122,.30);  color:#5bc97a; border:1px solid rgba(91,201,122,.6); }
 .cls-label.best-move  { background:rgba(89,184,224,.30);  color:#59b8e0; border:1px solid rgba(89,184,224,.6); }
-.cls-label.very-good  { background:rgba(143,201,91,.30);  color:#8fc95b; border:1px solid rgba(143,201,91,.6); }
 .cls-label.good       { background:rgba(201,196,91,.30);  color:#c9c45b; border:1px solid rgba(201,196,91,.6); }
 .cls-label.inaccuracy { background:rgba(224,155,91,.30);  color:#e09b5b; border:1px solid rgba(224,155,91,.6); }
 .cls-label.mistake    { background:rgba(224,92,92,.30);   color:#e05c5c; border:1px solid rgba(224,92,92,.6); }
+.cls-label.miss       { background:rgba(224,120,91,.30);  color:#e0785b; border:1px solid rgba(224,120,91,.6); }
 .cls-label.blunder    { background:rgba(201,48,48,.35);   color:#e03030; border:1px solid rgba(201,48,48,.7); }
 @keyframes cls-pop {
   0%   { opacity:0; transform:scale(.55) translateY(-6px); }
@@ -604,35 +607,56 @@ canvas#chart { width:100%; height:130px; display:block; }
 }
 .btn-unlock-premium:hover { opacity:.88; transform:translateY(-1px); }
 
-/* ── Insights Panel ── */
+/* ── Insights Panel ──
+   Vive na sidebar (.summary-panel), ao lado do tabuleiro — não mais acima
+   de tudo cobrindo a análise. Altura MÁXIMA fixa + scroll interno: assim,
+   trocar de lance ou de aba muda o conteúdo mas nunca a altura da caixa,
+   o que evita reflow da página (o "piscar e mudar de tamanho" ao navegar
+   pelos lances vinha exatamente daqui — o conteúdo variava de altura e
+   empurrava todo o resto do layout junto). */
 .insights-section {
   background:var(--bg2); border:1px solid var(--border);
-  border-radius:var(--radius-lg); padding:20px;
-  margin-bottom:20px; display:none;
+  border-radius:var(--radius-lg); padding:18px;
+  display:none;
+  max-height: min(50vh, 520px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
 }
 .insights-section.visible { display:block; }
+@media (max-width:1100px) {
+  /* Layout empilha em telas estreitas — libera a altura pra caber tudo */
+  .insights-section { max-height:none; overflow-y:visible; }
+}
 
 .insights-tabs {
   display:flex; gap:4px; margin-bottom:18px;
   background:var(--bg3); border-radius:var(--radius); padding:4px;
 }
 .insights-tab {
-  flex:1; padding:7px 10px; border:none; border-radius:6px;
+  flex:1; padding:7px 6px; border:none; border-radius:6px;
   background:transparent; color:var(--text3); font-family:'Outfit',sans-serif;
   font-size:12px; font-weight:500; cursor:pointer; transition:all .2s; text-align:center;
+  white-space:nowrap;
 }
 .insights-tab.active {
   background:var(--bg2); color:var(--text); box-shadow:0 1px 4px rgba(0,0,0,.3);
 }
-.insights-tab-content { display:none; }
+.insights-tab-content { display:none; animation:insights-fade-in .25s ease both; }
 .insights-tab-content.active { display:block; }
+@keyframes insights-fade-in {
+  from { opacity:0; transform:translateY(3px); }
+  to   { opacity:1; transform:translateY(0); }
+}
 
 /* Global Insights */
 .insights-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; margin-bottom:16px; }
 .insight-card {
   background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius);
   padding:12px 14px; position:relative; overflow:hidden;
+  transition:border-color .2s, transform .2s;
 }
+.insight-card:hover { border-color:var(--border2); transform:translateY(-1px); }
 .insight-card::before {
   content:''; position:absolute; top:0; left:0; right:0; height:2px;
 }

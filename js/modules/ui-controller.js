@@ -67,8 +67,10 @@ const UIController = (() => {
 
   // ── Board size: responsive ──────────────────────────────────
   function getBoardSize() {
-    const maxW = Math.min(window.innerWidth * 0.25, 440);
-    return Math.max(240, Math.floor(maxW / 8) * 8);
+    // Tabuleiro como peça central da tela — proporcional à largura mas com
+    // teto generoso, não um selo pequeno perdido ao lado dos outros painéis.
+    const maxW = Math.min(window.innerWidth * 0.38, 560);
+    return Math.max(320, Math.floor(maxW / 8) * 8);
   }
 
   // ── Init board ─────────────────────────────────────────────

@@ -4,8 +4,8 @@
     {
       "name": "gambyte-server",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["dev-server.py", "8099"],
-      "port": 8099
+      "runtimeArgs": ["dev-server.py", "8122"],
+      "port": 8122
     }
   ]
 }
