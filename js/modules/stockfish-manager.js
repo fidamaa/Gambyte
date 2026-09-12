@@ -34,19 +34,20 @@ const StockfishManager = (() => {
       try {
         usingMulti = multiThreadSupported();
         const file = usingMulti ? 'stockfish-18-multi.js' : 'stockfish-18-single.js';
-        // Deixa 1 núcleo livre pra UI/navegador não travarem; teto de 4.
+        // Deixa 2 núcleos livres pra UI/navegador não travarem; teto de 8.
         // Lazy SMP (o algoritmo de paralelismo do Stockfish) tem retorno
-        // decrescente acima de poucas threads, e o overhead de sincronização
-        // via Atomics/SharedArrayBuffer em WASM é maior que numa build nativa
-        // — em hardware com poucos núcleos FÍSICOS reais (ou virtualizado/
-        // compartilhado, onde hardwareConcurrency reporta mais do que a
-        // máquina realmente entrega), mais threads pode ficar MAIS LENTO que
-        // 1 só, não mais rápido. Testado e confirmado neste projeto: 2
-        // threads já ficou ~65% mais lento que single-thread numa VM com
-        // CPU compartilhada. Em hardware desktop dedicado normal a tendência
-        // é ser mais rápido — mas por segurança o teto fica conservador.
+        // decrescente acima de ~8 threads, então subir além disso raramente
+        // compensa o overhead extra de sincronização via Atomics/
+        // SharedArrayBuffer. NOTA: em ambientes com CPU virtualizada/
+        // compartilhada (ex.: alguns sandboxes de CI/nuvem), threads podem
+        // custar mais do que ajudar — testado e confirmado no ambiente de
+        // desenvolvimento deste projeto. Em hardware desktop real (validado
+        // em produção com 16 núcleos físicos, sem erros, usando as 4 threads
+        // do teto anterior) o comportamento normal do Stockfish se aplica:
+        // mais threads = mais nós/s = busca mais forte na mesma janela de
+        // tempo. Ajustado pra 8 depois dessa validação.
         threadCount = usingMulti
-          ? Math.max(1, Math.min((navigator.hardwareConcurrency || 4) - 1, 4))
+          ? Math.max(1, Math.min((navigator.hardwareConcurrency || 4) - 2, 8))
           : 1;
         console.log(
           `[Stockfish] Criando Web Worker: ${file}` +
@@ -112,6 +113,13 @@ const StockfishManager = (() => {
     });
   }
 
+  // ── Log de tempo por análise, pra comparar single vs multi-thread ──
+  // _goStartTime marca quando o "go depth" foi enviado; ao receber o
+  // bestmove calculamos quanto levou. currentGoDepth guarda a profundidade
+  // pedida pra aparecer junto no log (útil pra filtrar/comparar por depth).
+  let _goStartTime = null;
+  let _currentGoDepth = null;
+
   // Chamado pelo worker.onmessage durante análise
   function handleMessage(data) {
     if (data.startsWith('info') && data.includes('score')) {
@@ -119,7 +127,12 @@ const StockfishManager = (() => {
     }
 
     if (data.startsWith('bestmove')) {
-      console.log('[Stockfish ←] bestmove recebido, linhas coletadas:', currentLines.length);
+      const elapsedMs = _goStartTime != null ? Math.round(performance.now() - _goStartTime) : null;
+      console.log(
+        `[Stockfish ←] bestmove recebido, linhas coletadas: ${currentLines.length}` +
+        ` | ⏱ ${elapsedMs}ms @ depth ${_currentGoDepth}` +
+        ` | engine=${usingMulti ? 'multi(' + threadCount + 't)' : 'single'}`
+      );
       const resolve = currentResolve;
       const lines = [...currentLines];
       currentResolve = null;
@@ -144,6 +157,8 @@ const StockfishManager = (() => {
       `[Stockfish →] go depth ${depth} | multipv ${multiPV} | fen: ${fen.slice(0, 40)}…` +
       (movesSuffix ? ` | +moves: ${movesUCI.join(' ')}` : '')
     );
+    _goStartTime  = performance.now();
+    _currentGoDepth = depth;
 
     currentLines = [];
     currentResolve = (result) => {

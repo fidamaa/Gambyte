@@ -498,5 +498,5 @@ const PGNParser = (() => {
     return pieceLetter + (isCapture ? 'x' : '') + to;
   }
 
-  return { parsePGN, INITIAL_FEN, fenToBoard, boardToFen, applyMoveUCI, uciToSan };
+  return { parsePGN, INITIAL_FEN, fenToBoard, boardToFen, applyMove, applyMoveUCI, uciToSan };
 })();

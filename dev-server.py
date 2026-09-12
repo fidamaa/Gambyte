@@ -19,6 +19,11 @@ from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 
 
 class COOPCOEPHandler(SimpleHTTPRequestHandler):
+    # HTTP/1.1 com keep-alive correto -- o http.server padrao usa HTTP/1.0,
+    # o que pode fazer o Chrome reaproveitar conexoes de forma inconsistente
+    # e devolver erros 400 esporadicos ao servir os .wasm grandes do Stockfish.
+    protocol_version = "HTTP/1.1"
+
     def end_headers(self):
         self.send_header("Cross-Origin-Opener-Policy", "same-origin")
         self.send_header("Cross-Origin-Embedder-Policy", "require-corp")

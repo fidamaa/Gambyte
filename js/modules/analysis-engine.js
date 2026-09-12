@@ -67,6 +67,9 @@ const AnalysisEngine = (() => {
    */
   async function analyze(parsedGame) {
     aborted = false;
+    const _analysisStartTime = performance.now();
+    const engineInfo = StockfishManager.getEngineInfo ? StockfishManager.getEngineInfo() : {};
+    console.log(`[AnalysisEngine] ⏱ Iniciando análise — engine=${engineInfo.usingMulti ? 'multi(' + engineInfo.threadCount + 't)' : 'single'}`);
 
     const { moves, fensBefore, fensAfter, headers } = parsedGame;
     const total = moves.length;
@@ -98,28 +101,17 @@ const AnalysisEngine = (() => {
       return result;
     }
 
-    // Set up book tracker usando a Trie do OpeningDetector (O(1) por lance)
-    // Caminha pela Trie conforme os lances são jogados; para ao sair do livro.
-    // FIX BOOK: marca como livro TODOS os lances enquanto ainda há nó filho correspondente
-    // (não apenas folhas), garantindo que sequências longas de abertura sejam reconhecidas.
-    OpeningDetector.build(); // garante que a Trie está pronta
-    let _bookNode   = OpeningDetector.getRootNode();
-    let _outOfBook  = false;
+    // Set up book tracker usando o índice de POSIÇÕES do OpeningDetector
+    // (tolerante a transposições — ver comentário em opening-detector.js).
+    // Uma vez fora do livro, fica fora (mesmo que uma posição futura
+    // coincida por acaso com uma linha teórica — a essa altura já é jogo
+    // próprio do jogador, não teoria seguida).
+    OpeningDetector.build(); // garante que o índice está pronto
+    let _outOfBook = false;
     const bookTracker = {
-      addMove(san) {
-        if (_outOfBook || !_bookNode) return false;
-        const clean = san.replace(/[+#!?]/g, '');
-        const next  = _bookNode.children.get(clean);
-        if (!next) {
-          // Antes de desistir, tenta normalizar promoção (ex: e8=Q → e8Q)
-          const altClean = clean.replace('=', '');
-          const altNext  = _bookNode.children.get(altClean);
-          if (!altNext) { _outOfBook = true; return false; }
-          _bookNode = altNext;
-        } else {
-          _bookNode = next;
-        }
-        // É livro se o nó existe na Trie (com ou sem dado de abertura no nó)
+      checkPosition(fen) {
+        if (_outOfBook) return false;
+        if (!OpeningDetector.isBookPosition(fen)) { _outOfBook = true; return false; }
         return true;
       }
     };
@@ -135,8 +127,9 @@ const AnalysisEngine = (() => {
       const fenBefore = fensBefore[i];
       const fenAfter  = fensAfter[i];
 
-      // Book detection
-      const inBook = bookTracker.addMove(moves[i]);
+      // Book detection — checa a posição RESULTANTE do lance (fenAfter),
+      // não a sequência de lances, pra tolerar transposições.
+      const inBook = bookTracker.checkPosition(fenAfter);
       movesData[i].isBook = inBook;
 
       // FIX 5: Detectar xeque-mate final — o lance contém '#' na notação SAN
@@ -370,6 +363,9 @@ const AnalysisEngine = (() => {
         movesData: [...movesData]
       });
     }
+
+    const _totalMs = Math.round(performance.now() - _analysisStartTime);
+    console.log(`[AnalysisEngine] ⏱ Análise concluída em ${_totalMs}ms (${(_totalMs/1000).toFixed(1)}s) — ${total} lances, engine=${engineInfo.usingMulti ? 'multi(' + engineInfo.threadCount + 't)' : 'single'}`);
 
     if (onComplete) onComplete([...movesData]);
   }
