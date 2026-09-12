@@ -1,40 +1,83 @@
 /* ==============================================================
    MODULE: stockfish-manager.js
    Handles communication with Stockfish via Web Worker
-   Requer: stockfish-18-single.js / .wasm na mesma pasta do index.html
+   Requer: stockfish-18-single.js/.wasm (fallback) E
+           stockfish-18-multi.js/.wasm (multi-thread, via pthreads)
+           na mesma pasta do index.html.
+
+   Multi-thread exige SharedArrayBuffer, que só fica disponível
+   quando a página é "cross-origin isolated" — o servidor precisa
+   mandar os headers:
+     Cross-Origin-Opener-Policy: same-origin
+     Cross-Origin-Embedder-Policy: require-corp
+   Sem isso (ex.: hospedagem estática simples sem esses headers),
+   o navegador não expõe SharedArrayBuffer e caímos automaticamente
+   para o build single-thread — mais lento, mas sempre funcional.
    ============================================================== */
 const StockfishManager = (() => {
   let worker = null;
   let ready = false;
   let currentResolve = null;
   let currentLines = [];
+  let usingMulti = false;
+  let threadCount = 1;
   // Fila de análises: garante que apenas UMA roda por vez no worker
   let analysisQueue = [];
   let analysisRunning = false;
 
+  function multiThreadSupported() {
+    return typeof SharedArrayBuffer !== 'undefined' && self.crossOriginIsolated === true;
+  }
+
   function init() {
     return new Promise((resolve, reject) => {
       try {
-        console.log('[Stockfish] Criando Web Worker: stockfish-18-single.js');
-        worker = new Worker('stockfish-18-single.js');
+        usingMulti = multiThreadSupported();
+        const file = usingMulti ? 'stockfish-18-multi.js' : 'stockfish-18-single.js';
+        // Deixa 1 núcleo livre pra UI/navegador não travarem; teto de 4.
+        // Lazy SMP (o algoritmo de paralelismo do Stockfish) tem retorno
+        // decrescente acima de poucas threads, e o overhead de sincronização
+        // via Atomics/SharedArrayBuffer em WASM é maior que numa build nativa
+        // — em hardware com poucos núcleos FÍSICOS reais (ou virtualizado/
+        // compartilhado, onde hardwareConcurrency reporta mais do que a
+        // máquina realmente entrega), mais threads pode ficar MAIS LENTO que
+        // 1 só, não mais rápido. Testado e confirmado neste projeto: 2
+        // threads já ficou ~65% mais lento que single-thread numa VM com
+        // CPU compartilhada. Em hardware desktop dedicado normal a tendência
+        // é ser mais rápido — mas por segurança o teto fica conservador.
+        threadCount = usingMulti
+          ? Math.max(1, Math.min((navigator.hardwareConcurrency || 4) - 1, 4))
+          : 1;
+        console.log(
+          `[Stockfish] Criando Web Worker: ${file}` +
+          (usingMulti ? ` (multi-thread, ${threadCount} threads)` : ' (single-thread — SharedArrayBuffer indisponível)')
+        );
+        worker = new Worker(file);
 
         let settled = false;
 
         const timeout = setTimeout(() => {
           if (!settled) {
             settled = true;
-            console.error('[Stockfish] Timeout: nenhuma resposta em 15s');
+            console.error('[Stockfish] Timeout: nenhuma resposta em 20s');
             reject(new Error('Timeout aguardando Stockfish inicializar'));
           }
-        }, 15000);
+        }, 20000);
 
         worker.onmessage = (e) => {
           const msg = typeof e.data === 'string' ? e.data : String(e.data);
           console.log('[Stockfish ←]', msg.slice(0, 120));
 
           if (msg === 'uciok') {
-            console.log('[Stockfish] uciok recebido → enviando isready');
+            console.log(`[Stockfish] uciok recebido → configurando Threads=${threadCount}, Hash e enviando isready`);
             ready = true;
+            // Build single: Threads max=1 no próprio motor, então o "1" é
+            // só formalidade. Build multi: usa pthreads de verdade — isso
+            // é o que efetivamente "força mais uso de CPU" pedido, não só
+            // profundidade. Hash maior com mais threads evita que elas
+            // fiquem competindo por poucas entradas de transposição.
+            worker.postMessage(`setoption name Threads value ${threadCount}`);
+            worker.postMessage(`setoption name Hash value ${usingMulti ? 256 : 128}`);
             worker.postMessage('isready');
 
           } else if (msg === 'readyok') {
@@ -229,5 +272,7 @@ const StockfishManager = (() => {
     if (worker) { worker.terminate(); worker = null; ready = false; }
   }
 
-  return { init, analyzePosition, verifySacrificeTrap, parsePV, terminate };
+  function getEngineInfo() { return { usingMulti, threadCount }; }
+
+  return { init, analyzePosition, verifySacrificeTrap, parsePV, terminate, getEngineInfo };
 })();

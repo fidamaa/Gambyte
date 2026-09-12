@@ -18,8 +18,8 @@ const App = (() => {
     } catch (err) {
       console.error('[App] Stockfish falhou:', err);
       UIController.showError(
-        'Não foi possível carregar Stockfish. Verifique se "stockfish-18-single.js" e ' +
-        '"stockfish-18-single.wasm" estão na mesma pasta que este HTML.'
+        'Não foi possível carregar Stockfish. Verifique se "stockfish-18-single.js/.wasm" ' +
+        'e "stockfish-18-multi.js/.wasm" estão na mesma pasta que este HTML.'
       );
     }
   }

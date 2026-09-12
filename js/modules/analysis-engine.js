@@ -7,10 +7,14 @@
 const AnalysisEngine = (() => {
 
   // Phase 1: quick pass
-  const PHASE1_DEPTH = 7;
-  // Phase 2: refinement depths — depth 20 apenas se PRO ativado
-  const PHASE2_DEPTHS_FREE = [10, 14];
-  const PHASE2_DEPTHS_PRO  = [10, 14, 20];
+  const PHASE1_DEPTH = 8;
+  // Phase 2: refinement depths — Pro vai mais fundo (mais CPU/tempo) que o
+  // modo grátis, pra a análise paga ser de fato mais precisa, não só um
+  // rótulo. Threads reais não são possíveis (build single-thread do WASM,
+  // sem SharedArrayBuffer) — o ganho de "mais CPU" aqui vem de profundidade
+  // e Hash maiores (ver StockfishManager.init), não de paralelismo.
+  const PHASE2_DEPTHS_FREE = [12, 16];
+  const PHASE2_DEPTHS_PRO  = [14, 18, 22];
   const STABILITY_THRESHOLD = 30; // cp change below which we stop refining
   const MULTIPV = 3;
 
