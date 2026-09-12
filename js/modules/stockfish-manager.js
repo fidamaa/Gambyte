@@ -1,58 +1,38 @@
 /* ==============================================================
    MODULE: stockfish-manager.js
    Handles communication with Stockfish via Web Worker
-   Requer: stockfish-18-single.js/.wasm (fallback) E
-           stockfish-18-multi.js/.wasm (multi-thread, via pthreads)
-           na mesma pasta do index.html.
+   Requer: stockfish-18-single.js/.wasm na mesma pasta do index.html.
 
-   Multi-thread exige SharedArrayBuffer, que só fica disponível
-   quando a página é "cross-origin isolated" — o servidor precisa
-   mandar os headers:
-     Cross-Origin-Opener-Policy: same-origin
-     Cross-Origin-Embedder-Policy: require-corp
-   Sem isso (ex.: hospedagem estática simples sem esses headers),
-   o navegador não expõe SharedArrayBuffer e caímos automaticamente
-   para o build single-thread — mais lento, mas sempre funcional.
+   NOTA — multi-thread tentado e revertido: existe também
+   stockfish-18-multi.js/.wasm (build com pthreads via
+   SharedArrayBuffer) no repositório, mas ele NÃO é usado por padrão.
+   Testado em dois ambientes reais diferentes (sandbox de
+   desenvolvimento e um PC real de 16 núcleos lógicos/Windows) e em
+   AMBOS o multi-thread produziu tempos por posição erráticos e piores
+   que o single-thread (ex.: mesma profundidade e complexidade de
+   posição variando de 3ms a 9200ms sem padrão) — contenção real entre
+   as threads de busca e o resto do processo do navegador (UI, DOM,
+   GC) competindo pelos mesmos núcleos físicos, anulando qualquer
+   ganho teórico de paralelismo nesse contexto (motor rodando dentro
+   de uma aba, não um benchmark isolado). Não vale o risco: o build
+   single-thread é consistente e previsível.
    ============================================================== */
 const StockfishManager = (() => {
   let worker = null;
   let ready = false;
   let currentResolve = null;
   let currentLines = [];
-  let usingMulti = false;
-  let threadCount = 1;
+  const usingMulti = false;
+  const threadCount = 1;
   // Fila de análises: garante que apenas UMA roda por vez no worker
   let analysisQueue = [];
   let analysisRunning = false;
 
-  function multiThreadSupported() {
-    return typeof SharedArrayBuffer !== 'undefined' && self.crossOriginIsolated === true;
-  }
-
   function init() {
     return new Promise((resolve, reject) => {
       try {
-        usingMulti = multiThreadSupported();
-        const file = usingMulti ? 'stockfish-18-multi.js' : 'stockfish-18-single.js';
-        // Deixa 2 núcleos livres pra UI/navegador não travarem; teto de 8.
-        // Lazy SMP (o algoritmo de paralelismo do Stockfish) tem retorno
-        // decrescente acima de ~8 threads, então subir além disso raramente
-        // compensa o overhead extra de sincronização via Atomics/
-        // SharedArrayBuffer. NOTA: em ambientes com CPU virtualizada/
-        // compartilhada (ex.: alguns sandboxes de CI/nuvem), threads podem
-        // custar mais do que ajudar — testado e confirmado no ambiente de
-        // desenvolvimento deste projeto. Em hardware desktop real (validado
-        // em produção com 16 núcleos físicos, sem erros, usando as 4 threads
-        // do teto anterior) o comportamento normal do Stockfish se aplica:
-        // mais threads = mais nós/s = busca mais forte na mesma janela de
-        // tempo. Ajustado pra 8 depois dessa validação.
-        threadCount = usingMulti
-          ? Math.max(1, Math.min((navigator.hardwareConcurrency || 4) - 2, 8))
-          : 1;
-        console.log(
-          `[Stockfish] Criando Web Worker: ${file}` +
-          (usingMulti ? ` (multi-thread, ${threadCount} threads)` : ' (single-thread — SharedArrayBuffer indisponível)')
-        );
+        const file = 'stockfish-18-single.js';
+        console.log(`[Stockfish] Criando Web Worker: ${file}`);
         worker = new Worker(file);
 
         let settled = false;
