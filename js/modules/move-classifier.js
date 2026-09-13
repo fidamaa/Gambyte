@@ -72,10 +72,20 @@ const MoveClassifier = (() => {
     return normCastle(playedMoveUCI) === normCastle(bestMoveUCI);
   }
 
+  // Margem dentro da qual uma posição já "empatada antes" não rende bônus
+  // por buscar o empate (não fugia de nada) — só perdas de verdade acima
+  // disso contam como "estava perdendo e salvou um empate".
+  const DRAW_EQUAL_MARGIN = 5;
+
   function checkDrawPenalty(evalBefore, isStalemate) {
     if (!isStalemate) return null;
+    // Estava ganhando e jogou fora a vantagem transformando em empate.
     if (evalBefore > 300) return 'blunder';
     if (evalBefore > 150) return 'mistake';
+    // Estava perdendo de verdade (além da margem de "já tava equilibrado")
+    // e conseguiu o empate — ex.: 1 dama contra 3 torres+dama e força
+    // afogamento/repetição. Isso é um resultado ÓTIMO, não neutro.
+    if (evalBefore < -DRAW_EQUAL_MARGIN) return 'great';
     return null;
   }
 
@@ -103,8 +113,17 @@ const MoveClassifier = (() => {
    * capturou neste mesmo lance). Só saldo líquido negativo relevante
    * conta como sacrifício de verdade.
    */
-  function isGenuineSacrifice(evalAfter, sacrificeValue) {
-    return (sacrificeValue ?? 0) >= BLUNDER_SWING_THRESHOLD && evalAfter >= -50;
+  function isGenuineSacrifice(evalAfter, sacrificeValue, pieceIsHanging, sacrificeIsRecapturable) {
+    // Se o próprio jogador recaptura na mesma casa na hora, é só uma troca
+    // (o material volta), não importa quão grande pareça o saldo momentâneo.
+    if (sacrificeIsRecapturable) return false;
+    if ((sacrificeValue ?? 0) >= BLUNDER_SWING_THRESHOLD && evalAfter >= -50) return true;
+    // "Sacrifício de mentirinha": a peça jogada fica geometricamente
+    // pendurada (atacável), mas o motor ainda considera o lance ótimo —
+    // ou seja, capturá-la seria ruim pro adversário. Não aparece no
+    // sacrificeValue porque o motor (corretamente) evita cair na armadilha.
+    if (pieceIsHanging && evalAfter >= -50) return true;
+    return false;
   }
 
   /**
@@ -115,10 +134,10 @@ const MoveClassifier = (() => {
    * (depth 7) a leitura tática é rasa demais e geraria falsos positivos.
    */
   function isBrilliantMove(params) {
-    const { playedIsBest, epLoss, evalBefore, evalAfter, sacrificeValue, depth } = params;
+    const { playedIsBest, epLoss, evalBefore, evalAfter, sacrificeValue, pieceIsHanging, sacrificeIsRecapturable, depth } = params;
     if ((depth ?? 0) < BRILLIANT_MIN_DEPTH) return false;
     if (!(playedIsBest || epLoss < EP_THRESHOLDS.excellent)) return false;
-    if (!isGenuineSacrifice(evalAfter, sacrificeValue)) return false;
+    if (!isGenuineSacrifice(evalAfter, sacrificeValue, pieceIsHanging, sacrificeIsRecapturable)) return false;
     if (Math.abs(evalBefore) >= 600) return false; // já ganhando de goleada: sac é trivial
     return true;
   }
@@ -191,6 +210,8 @@ const MoveClassifier = (() => {
       isCheckmate,
       immediateCaptureValue,
       sacrificeValue,
+      pieceIsHanging,
+      sacrificeIsRecapturable,
       mateForMover,
       opponentGetsMate,
       depth
@@ -203,6 +224,9 @@ const MoveClassifier = (() => {
       return 'best-move';
     }
 
+    // Pode retornar 'blunder'/'mistake' (jogou fora uma vantagem) ou
+    // 'great' (salvou um empate estando realmente perdendo — ver
+    // DRAW_EQUAL_MARGIN) — qualquer valor não-null já decide a classificação.
     const drawPenalty = checkDrawPenalty(evalBefore, !!isStalemate);
     if (drawPenalty) return drawPenalty;
 
@@ -214,7 +238,7 @@ const MoveClassifier = (() => {
     const epLoss   = Math.max(0, epBefore - epAfter);
 
     // ── BRILHANTE ──────────────────────────────────────────────
-    if (isBrilliantMove({ playedIsBest, epLoss, evalBefore, evalAfter, sacrificeValue, depth })) {
+    if (isBrilliantMove({ playedIsBest, epLoss, evalBefore, evalAfter, sacrificeValue, pieceIsHanging, sacrificeIsRecapturable, depth })) {
       return 'brilliant';
     }
 

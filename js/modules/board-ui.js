@@ -49,7 +49,8 @@ const BoardUI = (() => {
     hlFrom:   'rgba(20,170,90,0.45)',
     hlTo:     'rgba(20,170,90,0.55)',
     hlSelect: 'rgba(80,130,250,0.45)',
-    dot:      'rgba(0,0,0,0.18)',   // legal move dot
+    dot:      'rgba(0,0,0,0.18)',   // legal move dot (casa vazia)
+    capture:  'rgba(220,55,55,0.55)', // casa de captura — destaque vermelho, não mais ponto
   };
 
   let canvas   = null;
@@ -166,16 +167,29 @@ const BoardUI = (() => {
       }
     }
 
-    // Legal move dots
+    // Casas de movimento legal: captura = casa inteira em vermelho
+    // (bem visível), movimento simples = ponto tradicional.
     if (legalDots.length) {
-      ctx.fillStyle = THEME.dot;
       for (const sq of legalDots) {
         const { x, y } = sqToCanvas(sq);
-        ctx.beginPath();
-        ctx.arc(x + sqSize / 2, y + sqSize / 2, sqSize * 0.15, 0, Math.PI * 2);
-        ctx.fill();
+        if (_boardPieceAt(_lastBoard, sq)) {
+          ctx.fillStyle = THEME.capture;
+          ctx.fillRect(x, y, sqSize, sqSize);
+        } else {
+          ctx.fillStyle = THEME.dot;
+          ctx.beginPath();
+          ctx.arc(x + sqSize / 2, y + sqSize / 2, sqSize * 0.15, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
     }
+  }
+
+  function _boardPieceAt(board, sq) {
+    if (!board) return null;
+    const col = sq.charCodeAt(0) - 97;
+    const row = 8 - parseInt(sq[1], 10);
+    return (board[row] && board[row][col]) || null;
   }
 
   function drawPieces(board) {

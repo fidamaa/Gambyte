@@ -275,6 +275,85 @@ const PGNParser = (() => {
     return true;
   }
 
+  // ── Detecção de xeque (usada pelo Modo Livre para não permitir que o
+  //    próprio rei fique/permaneça em xeque — ver free-play.js) ─────────
+  function findKing(board, isWhite) {
+    const target = isWhite ? 'K' : 'k';
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        if (board[r][c] === target) return sqOf(r, c);
+      }
+    }
+    return null;
+  }
+
+  // A casa `sq` está sob ataque de alguma peça da cor `byWhite`?
+  function isSquareAttacked(board, sq, byWhite) {
+    const r = rowOf(sq), c = colOf(sq);
+
+    // Peões: um peão de `byWhite` ataca na diagonal "à frente" dele —
+    // então, visto de `sq`, o peão atacante está uma linha "atrás".
+    const pawnRow = r + (byWhite ? 1 : -1);
+    for (const dc of [-1, 1]) {
+      const pc = c + dc;
+      if (pawnRow >= 0 && pawnRow < 8 && pc >= 0 && pc < 8 &&
+          board[pawnRow][pc] === (byWhite ? 'P' : 'p')) return true;
+    }
+
+    // Cavalo
+    const knightDeltas = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+    for (const [dr, dc] of knightDeltas) {
+      const nr = r + dr, nc = c + dc;
+      if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8 &&
+          board[nr][nc] === (byWhite ? 'N' : 'n')) return true;
+    }
+
+    // Rei (casas adjacentes)
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if (dr === 0 && dc === 0) continue;
+        const nr = r + dr, nc = c + dc;
+        if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8 &&
+            board[nr][nc] === (byWhite ? 'K' : 'k')) return true;
+      }
+    }
+
+    // Peças deslizantes: torre/dama (ortogonal), bispo/dama (diagonal)
+    const orth = [[-1,0],[1,0],[0,-1],[0,1]];
+    const diag = [[-1,-1],[-1,1],[1,-1],[1,1]];
+    for (const [dr, dc] of orth) {
+      let nr = r + dr, nc = c + dc;
+      while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+        const p = board[nr][nc];
+        if (p) {
+          if (p === (byWhite ? 'R' : 'r') || p === (byWhite ? 'Q' : 'q')) return true;
+          break;
+        }
+        nr += dr; nc += dc;
+      }
+    }
+    for (const [dr, dc] of diag) {
+      let nr = r + dr, nc = c + dc;
+      while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+        const p = board[nr][nc];
+        if (p) {
+          if (p === (byWhite ? 'B' : 'b') || p === (byWhite ? 'Q' : 'q')) return true;
+          break;
+        }
+        nr += dr; nc += dc;
+      }
+    }
+
+    return false;
+  }
+
+  // O rei da cor `isWhiteKing` está em xeque nesta posição?
+  function isInCheck(board, isWhiteKing) {
+    const kingSq = findKing(board, isWhiteKing);
+    if (!kingSq) return false;
+    return isSquareAttacked(board, kingSq, !isWhiteKing);
+  }
+
   /**
    * Parse PGN headers and move list
    */
@@ -512,5 +591,8 @@ const PGNParser = (() => {
     return pieceLetter + (isCapture ? 'x' : '') + to;
   }
 
-  return { parsePGN, INITIAL_FEN, fenToBoard, boardToFen, applyMove, applyMoveUCI, uciToSan };
+  return {
+    parsePGN, INITIAL_FEN, fenToBoard, boardToFen, applyMove, applyMoveUCI, uciToSan,
+    findKing, isSquareAttacked, isInCheck
+  };
 })();

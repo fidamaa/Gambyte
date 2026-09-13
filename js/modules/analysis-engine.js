@@ -54,6 +54,38 @@ const AnalysisEngine = (() => {
     return pieceValueAtSquare(fenAfterOurMove, toSquare);
   }
 
+  // A peça que acabamos de mover está "pendurada" (a casa de destino está
+  // sob ataque de uma peça adversária)? Usado pelo Brilhante para pegar o
+  // caso clássico "sacrifício de mentirinha": a peça parece capturável de
+  // graça, mas capturá-la é ruim pro adversário (senão o motor não jogaria
+  // esse lance como o melhor). Puramente geométrico (ataque real via
+  // isSquareAttacked) — não depende do motor achar a captura na PV dele,
+  // que é justamente o que falha quando a captura é uma armadilha.
+  function isSquareHanging(fenAfterOurMove, playedMoveUCI) {
+    if (!playedMoveUCI) return false;
+    const toSquare = playedMoveUCI.slice(2, 4);
+    const value = pieceValueAtSquare(fenAfterOurMove, toSquare);
+    if (value < 300) return false; // só interessa peça de valor real (cavalo pra cima)
+    const state = PGNParser.fenToBoard(fenAfterOurMove);
+    const attackerIsWhite = state.turn === 'w'; // é a vez de quem poderia capturar agora
+    return PGNParser.isSquareAttacked(state.board, toSquare, attackerIsWhite);
+  }
+
+  // A captura que o adversário faz (opponentBestMoveUCI) pode ser
+  // recapturada imediatamente pelo próprio jogador, na mesma casa? Se sim,
+  // isso é só uma TROCA (o material volta na hora) — não um sacrifício de
+  // verdade, mesmo que o saldo momentâneo (sacrificeValue) pareça alto.
+  // Fixa o falso-positivo de Brilhante em sequências óbvias tipo "abro
+  // espaço pro adversário capturar minha dama, mas minha torre recaptura".
+  function isRecapturable(fenAfterOurMove, opponentBestMoveUCI, moverIsWhite) {
+    if (!opponentBestMoveUCI || !/^[a-h][1-8][a-h][1-8]/.test(opponentBestMoveUCI)) return false;
+    const state = PGNParser.fenToBoard(fenAfterOurMove);
+    const afterOppState = PGNParser.applyMoveUCI(state, opponentBestMoveUCI);
+    if (!afterOppState) return false;
+    const toSquare = opponentBestMoveUCI.slice(2, 4);
+    return PGNParser.isSquareAttacked(afterOppState.board, toSquare, moverIsWhite);
+  }
+
   function setCallbacks(callbacks) {
     onProgress = callbacks.onProgress;
     onMoveUpdate = callbacks.onMoveUpdate;
@@ -182,6 +214,13 @@ const AnalysisEngine = (() => {
         : 0;
       const sacrificeValue = immediateCaptureValue - capturedByMoverValue;
 
+      // Sinais extras pro Brilhante: a peça jogada ficou geometricamente
+      // "pendurada" (mesmo que o motor não capture de propósito, por ser
+      // armadilha)? E, se o adversário capturar mesmo assim, dá pra
+      // recapturar na hora (então é só troca, não sacrifício de verdade)?
+      const pieceIsHanging = isSquareHanging(fenAfter, playedMoveUCI);
+      const sacrificeIsRecapturable = isRecapturable(fenAfter, afterResult.bestMove, movesData[i].color === 'white');
+
       movesData[i].evalBefore    = evalBefore;
       movesData[i].evalAfter     = evalAfter;  // já na perspectiva do jogador
       movesData[i].bestEval      = bestEval;
@@ -200,9 +239,13 @@ const AnalysisEngine = (() => {
 
       // Classify
       if (!inBook) {
-        // Stalemate detection
-        const likelyStalemateOrDraw = (
-          evalBefore > 150 &&
+        // Detecção de empate: heurística por eval (posição decidida — pra
+        // QUALQUER lado, ganhando ou perdendo — que despenca perto de 0),
+        // OU o sinal definitivo — este é o último lance e o resultado
+        // oficial da partida foi empate ("1/2-1/2").
+        const isGameEndingDraw = (i === total - 1 && headers.Result === '1/2-1/2');
+        const likelyStalemateOrDraw = isGameEndingDraw || (
+          Math.abs(evalBefore) > 150 &&
           Math.abs(evalAfter) < 30 &&
           !moves[i].includes('+') && !moves[i].includes('#')
         );
@@ -222,6 +265,8 @@ const AnalysisEngine = (() => {
           isCheckmate:   isCheckmateMove,
           immediateCaptureValue,
           sacrificeValue,
+          pieceIsHanging,
+          sacrificeIsRecapturable,
           mateForMover,
           opponentGetsMate,
           depth: PHASE1_DEPTH
@@ -310,10 +355,13 @@ const AnalysisEngine = (() => {
           ? pieceValueAtSquare(fenBefore, m.playedMoveUCI.slice(2, 4))
           : 0;
         const sacrificeValue2   = m.immediateCaptureValue - capturedByMoverValue2;
+        const pieceIsHanging2   = isSquareHanging(fenAfter, m.playedMoveUCI);
+        const sacrificeIsRecapturable2 = isRecapturable(fenAfter, aRes.bestMove, m.color === 'white');
 
         // Reclassify
-        const likelyStalemateOrDraw2 = (
-          m.evalBefore > 150 &&
+        const isGameEndingDraw2 = (i === total - 1 && headers.Result === '1/2-1/2');
+        const likelyStalemateOrDraw2 = isGameEndingDraw2 || (
+          Math.abs(m.evalBefore) > 150 &&
           Math.abs(m.evalAfter) < 30 &&
           !moves[i].includes('+') && !moves[i].includes('#')
         );
@@ -333,6 +381,8 @@ const AnalysisEngine = (() => {
           isCheckmate:   m.isCheckmate,
           immediateCaptureValue: m.immediateCaptureValue,
           sacrificeValue: sacrificeValue2,
+          pieceIsHanging: pieceIsHanging2,
+          sacrificeIsRecapturable: sacrificeIsRecapturable2,
           mateForMover:  mateForMover2,
           opponentGetsMate: opponentGetsMate2,
           depth
@@ -369,5 +419,8 @@ const AnalysisEngine = (() => {
     if (onComplete) onComplete([...movesData]);
   }
 
-  return { analyze, setCallbacks, abort, pieceValueAtSquare, computeImmediateCaptureValue };
+  return {
+    analyze, setCallbacks, abort, pieceValueAtSquare, computeImmediateCaptureValue,
+    isSquareHanging, isRecapturable
+  };
 })();

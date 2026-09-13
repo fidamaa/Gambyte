@@ -42,6 +42,10 @@ const FreePlay = (() => {
   // (idx=-1 = nenhum, ou seja, a linha começa do zero).
   let _baseCtx = { idx: -1, moves: [], movesData: [] };
 
+  // Fim de jogo na posição atual (xeque-mate/afogamento/empate por regra) —
+  // null enquanto a partida segue. Ver _computeGameStatus().
+  let _gameStatus = null;
+
   // ── Público: quantos lances "Brilhante"/livro já apareceram ANTES do
   // índice dado nesta linha — usado pra classificar corretamente mesmo
   // depois de uma ramificação substituir o que vinha antes.
@@ -183,6 +187,7 @@ const FreePlay = (() => {
   // ── Click handler — called from UIController ───────────────
   function handleClick(sq) {
     if (!active || !sq) return;
+    if (_gameStatus) return; // xeque-mate/empate — a partida já acabou
 
     const state = PGNParser.fenToBoard(currentFEN);
     if (!state) return;
@@ -256,25 +261,32 @@ const FreePlay = (() => {
         }
       }
 
-      // Roque — apenas mostrar g1/c1 (ou g8/c8), NUNCA h1/a1/h8/a8
+      // Roque — apenas mostrar g1/c1 (ou g8/c8), NUNCA h1/a1/h8/a8.
+      // Regras: o rei não pode rocar estando em xeque, nem passar por, nem
+      // terminar numa casa atacada (e/f/g ou e/d/c, conforme o lado).
       const backRank = isWhiteTurn ? '1' : '8';
       const castling = state.castling || '-';
+      const kingInCheckNow = PGNParser.isInCheck(state.board, isWhiteTurn);
 
-      // Kingside: e→g (2 casas direita), requer f e g vazios e direito K/k
-      const ksRight = isWhiteTurn ? 'K' : 'k';
-      if (castling.includes(ksRight)) {
-        const f = 'f' + backRank, g = 'g' + backRank;
-        if (!_pieceAt(state.board, f) && !_pieceAt(state.board, g)) {
-          targets.push(g); // só g1/g8 — o destino do roque
+      if (!kingInCheckNow) {
+        // Kingside: e→g (2 casas direita), requer f e g vazios e direito K/k
+        const ksRight = isWhiteTurn ? 'K' : 'k';
+        if (castling.includes(ksRight)) {
+          const f = 'f' + backRank, g = 'g' + backRank;
+          if (!_pieceAt(state.board, f) && !_pieceAt(state.board, g) &&
+              !_squaresAttacked(state.board, [fromSq, f, g], isWhiteTurn)) {
+            targets.push(g); // só g1/g8 — o destino do roque
+          }
         }
-      }
 
-      // Queenside: e→c (2 casas esquerda), requer b, c, d vazios e direito Q/q
-      const qsRight = isWhiteTurn ? 'Q' : 'q';
-      if (castling.includes(qsRight)) {
-        const b = 'b' + backRank, c = 'c' + backRank, d = 'd' + backRank;
-        if (!_pieceAt(state.board, b) && !_pieceAt(state.board, c) && !_pieceAt(state.board, d)) {
-          targets.push(c); // só c1/c8 — o destino do roque
+        // Queenside: e→c (2 casas esquerda), requer b, c, d vazios e direito Q/q
+        const qsRight = isWhiteTurn ? 'Q' : 'q';
+        if (castling.includes(qsRight)) {
+          const b = 'b' + backRank, c = 'c' + backRank, d = 'd' + backRank;
+          if (!_pieceAt(state.board, b) && !_pieceAt(state.board, c) && !_pieceAt(state.board, d) &&
+              !_squaresAttacked(state.board, [fromSq, d, c], isWhiteTurn)) {
+            targets.push(c); // só c1/c8 — o destino do roque
+          }
         }
       }
 
@@ -299,9 +311,24 @@ const FreePlay = (() => {
     return targets;
   }
 
-  // Rei já tratado diretamente acima — este filter é no-op para o rei
+  // O xadrez exige proteger o próprio rei: nenhuma peça (nem o rei) pode
+  // fazer um lance que deixe (ou mantenha) o próprio rei em xeque — isso
+  // cobre pinos, "auto-xeque" do próprio rei, capturar o rei adversário
+  // (nunca deveria estar disponível) e a obrigação de responder ao xeque.
+  function _squaresAttacked(board, squares, isWhiteTurn) {
+    return squares.some(sq => PGNParser.isSquareAttacked(board, sq, !isWhiteTurn));
+  }
+
   function _filterKingTargets(targets, fromSq, state) {
-    return targets; // lógica do rei já foi feita em _getLegalTargets
+    const isWhiteTurn = state.turn === 'w';
+    const piece = _pieceAt(state.board, fromSq);
+    return targets.filter(toSq => {
+      const isPromo = (piece === 'P' && toSq[1] === '8') || (piece === 'p' && toSq[1] === '1');
+      const uci = fromSq + toSq + (isPromo ? 'q' : '');
+      const newState = PGNParser.applyMoveUCI(state, uci);
+      if (!newState) return false;
+      return !PGNParser.isInCheck(newState.board, isWhiteTurn);
+    });
   }
 
   function _makeMove(fromSq, toSq, state) {
@@ -415,11 +442,15 @@ const FreePlay = (() => {
         ? AnalysisEngine.pieceValueAtSquare(fenBefore, playedMoveUCI.slice(2, 4))
         : 0;
       const sacrificeValue = immediateCaptureValue - capturedByMoverValue;
+      const pieceIsHanging = AnalysisEngine.isSquareHanging(fenAfter, playedMoveUCI);
+      const sacrificeIsRecapturable = AnalysisEngine.isRecapturable(fenAfter, afterRes.bestMove, isWhite);
 
-      const likelyStalemateOrDraw = (
-        evalBefore > 150 && Math.abs(evalAfter) < 30 &&
-        !san.includes('+') && !san.includes('#')
-      );
+      // Empate de verdade nesta posição (xeque-mate/afogamento já tratado
+      // por isCheckmateMove; aqui pegamos afogamento e as regras de
+      // empate automático) — usa a mesma detecção real do Modo Livre,
+      // não mais uma heurística por eval.
+      const realStatus = _computeGameStatus(fenAfter);
+      const isRealDraw = !!realStatus && realStatus.type !== 'checkmate';
 
       const cls = MoveClassifier.classify({
         san, evalBefore, evalAfter, bestEval,
@@ -429,9 +460,10 @@ const FreePlay = (() => {
         isBook: false, isWhite,
         brilliantsUsed: _brilliantsBefore(i),
         moveIndex: i,
-        isStalemate: likelyStalemateOrDraw,
+        isStalemate: isRealDraw,
         isCheckmate: isCheckmateMove,
         immediateCaptureValue, sacrificeValue,
+        pieceIsHanging, sacrificeIsRecapturable,
         mateForMover, opponentGetsMate,
         depth
       });
@@ -472,9 +504,98 @@ const FreePlay = (() => {
     return b;
   }
 
+  // ── Fim de jogo: xeque-mate, afogamento e as três regras de empate
+  //    automático (repetição tripla, 50 lances, material insuficiente) ──
+  const FILES = 'abcdefgh';
+
+  function _hasAnyLegalMove(state, isWhiteTurn) {
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const piece = state.board[r][c];
+        if (!piece) continue;
+        const isOwn = isWhiteTurn ? piece === piece.toUpperCase() : piece === piece.toLowerCase();
+        if (!isOwn) continue;
+        const fromSq = FILES[c] + (8 - r);
+        const raw = _getLegalTargets(fromSq, state, isWhiteTurn);
+        if (_filterKingTargets(raw, fromSq, state).length) return true;
+      }
+    }
+    return false;
+  }
+
+  // Material insuficiente para dar mate por qualquer sequência de lances:
+  // rei-contra-rei, rei+peça-menor-contra-rei, ou rei+bispo-contra-rei+bispo
+  // com os dois bispos de casas da mesma cor.
+  function _hasInsufficientMaterial(board) {
+    const pieces = [];
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const p = board[r][c];
+        if (p && p.toUpperCase() !== 'K') pieces.push({ piece: p, r, c });
+      }
+    }
+    if (pieces.length === 0) return true;
+    if (pieces.length === 1) return /^[bn]$/i.test(pieces[0].piece);
+    if (pieces.length === 2 &&
+        pieces.every(p => /^b$/i.test(p.piece)) &&
+        pieces[0].piece !== pieces[1].piece) {
+      const colorOf = p => (p.r + p.c) % 2;
+      return colorOf(pieces[0]) === colorOf(pieces[1]);
+    }
+    return false;
+  }
+
+  // Assinatura de posição para repetição tripla: tabuleiro + quem joga +
+  // direitos de roque + casa de en passant — ignora os relógios de lance.
+  function _posSignature(fen) {
+    return fen.split(' ').slice(0, 4).join(' ');
+  }
+
+  // Recalcula o status de fim de jogo de uma posição desta linha do Modo
+  // Livre (por padrão, currentFEN — a ponta atual). Aceita outro FEN para
+  // reclassificar um lance específico de forma correta mesmo que o
+  // ponteiro já tenha avançado (ver _classifyMove).
+  function _computeGameStatus(fen) {
+    const targetFEN = fen || currentFEN;
+    const state = PGNParser.fenToBoard(targetFEN);
+    if (!state) return null;
+    const isWhiteTurn = state.turn === 'w';
+    const inCheck = PGNParser.isInCheck(state.board, isWhiteTurn);
+
+    if (!_hasAnyLegalMove(state, isWhiteTurn)) {
+      return inCheck
+        ? { type: 'checkmate', winner: isWhiteTurn ? 'black' : 'white' }
+        : { type: 'stalemate' };
+    }
+    if (state.half >= 100) return { type: 'fifty-move' };
+    if (_hasInsufficientMaterial(state.board)) return { type: 'insufficient-material' };
+
+    const sig = _posSignature(targetFEN);
+    let count = 0;
+    for (const f of fens) if (_posSignature(f) === sig) count++;
+    if (count >= 3) return { type: 'repetition' };
+
+    return null;
+  }
+
+  const GAME_STATUS_LABELS = {
+    checkmate: w => `Xeque-mate — ${w === 'white' ? 'brancas vencem' : 'pretas vencem'}`,
+    stalemate: () => 'Empate — afogamento (sem lances legais)',
+    'fifty-move': () => 'Empate — regra dos 50 lances',
+    'insufficient-material': () => 'Empate — material insuficiente para mate',
+    repetition: () => 'Empate — posição repetida 3 vezes'
+  };
+
   function _updateTurnLabel() {
+    _gameStatus = _computeGameStatus();
+    const el = document.getElementById('free-play-turn');
+    if (_gameStatus) {
+      el.textContent = GAME_STATUS_LABELS[_gameStatus.type](_gameStatus.winner);
+      return;
+    }
     const isWhite = currentFEN.split(' ')[1] === 'w';
-    document.getElementById('free-play-turn').textContent = isWhite ? 'Vez das brancas' : 'Vez das pretas';
+    el.textContent = (PGNParser.isInCheck(PGNParser.fenToBoard(currentFEN).board, isWhite) ? 'Xeque — ' : '') +
+      (isWhite ? 'Vez das brancas' : 'Vez das pretas');
   }
 
   // Profundidade de análise em tempo real no Modo Livre: usuários Free ficam
