@@ -4,3 +4,11 @@ node_modules/
 .DS_Store
 .supabase/
 supabase/.temp/
+
+# O .wasm do Stockfish (~108MB) e o build multi-thread (não usado) ficam
+# só localmente + no bucket R2 (ver STOCKFISH_WASM_CDN_BASE_URL em
+# index.html) — não fazem mais parte do repositório git, pra não gastar
+# a cota de banda do Git LFS a cada clone/deploy.
+stockfish-18-single.wasm
+stockfish-18-multi.js
+stockfish-18-multi.wasm

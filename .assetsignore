@@ -1,16 +1,6 @@
 # Cloudflare Pages: arquivos listados aqui ficam no repositório git
 # normalmente, mas NÃO são enviados como parte do deploy do site.
 #
-# Os .wasm do Stockfish (~108MB cada) estouram de longe o limite de
-# 25MB por arquivo do Cloudflare Pages — por isso stockfish-18-single.wasm
-# precisa ser hospedado à parte (ver STOCKFISH_WASM_CDN_BASE_URL em
-# index.html). O build multi-thread (.js + .wasm) nem chega a ser usado
-# pelo site (ver js/modules/stockfish-manager.js) — não faz sentido
-# deployá-lo em lugar nenhum.
-stockfish-18-single.wasm
-stockfish-18-multi.js
-stockfish-18-multi.wasm
-
 # Backend (Supabase Edge Functions) e scripts de desenvolvimento — não
 # fazem parte do site estático servido ao público.
 supabase/
