@@ -62,8 +62,10 @@ const AuthUI = (() => {
 
   function init() {
     renderHeader();
-    // Listen for premium activation from other tabs
-    window.addEventListener('storage', () => renderHeader());
+    // Re-renderiza sempre que o login/logout ou o status premium mudar
+    // (login em outra aba, webhook do Mercado Pago confirmando o
+    // pagamento em tempo real via Firestore, etc.)
+    AuthSystem.onChange(() => renderHeader());
   }
 
   return { init, renderHeader, handleProToggleClick, openPremiumPage, showToast };

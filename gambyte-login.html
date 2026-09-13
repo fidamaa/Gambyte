@@ -435,42 +435,12 @@ body::before {
 
 <div id="toast-area"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/modules/supabase-config.js"></script>
+<script src="js/modules/auth-system.js"></script>
 <script>
-/* ── Auth System (mesma lógica do analyzer) ── */
-const AuthSystem = (() => {
-  const USERS_KEY   = 'chesslens_users';
-  const SESSION_KEY = 'chesslens_session';
-  function getUsers()    { try { return JSON.parse(localStorage.getItem(USERS_KEY)||'{}'); } catch(e){return{};} }
-  function saveUsers(u)  { localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
-  function getSession()  { try { return JSON.parse(localStorage.getItem(SESSION_KEY)||'null'); } catch(e){return null;} }
-  function saveSession(s){ localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
-  function clearSession(){ localStorage.removeItem(SESSION_KEY); }
-
-  function register(email, password, name) {
-    const users = getUsers();
-    if (users[email]) return { ok:false, msg:'Email já cadastrado. Tente fazer login.' };
-    if (password.length < 6) return { ok:false, msg:'A senha deve ter pelo menos 6 caracteres.' };
-    users[email] = { email, password: btoa(password), name, premium:false, createdAt:Date.now() };
-    saveUsers(users);
-    saveSession({ email, name, premium:false });
-    return { ok:true };
-  }
-
-  function login(email, password) {
-    const users = getUsers();
-    const u = users[email];
-    if (!u) return { ok:false, msg:'Email não encontrado. Verifique ou crie uma conta.' };
-    if (u.password !== btoa(password)) return { ok:false, msg:'Senha incorreta. Tente novamente.' };
-    saveSession({ email, name:u.name, premium:u.premium });
-    return { ok:true };
-  }
-
-  function logout() { clearSession(); }
-  function currentSession() { return getSession(); }
-  function isPremium() { const s=getSession(); return s&&s.premium; }
-
-  return { register, login, logout, currentSession, isPremium };
-})();
+/* AuthSystem vem de js/modules/auth-system.js (Supabase Auth de verdade —
+   mesma conta usada no analisador, sem duplicar lógica localStorage). */
 
 /* ── UI Logic ── */
 function switchTab(tab) {
@@ -528,26 +498,24 @@ function showToast(msg, type='info') {
   setTimeout(()=>t.remove(), 3500);
 }
 
-function doLogin() {
+async function doLogin() {
   hideErr('login-error');
   const email = document.getElementById('login-email').value.trim();
   const pw    = document.getElementById('login-password').value;
   if (!email || !pw) { showErr('login-error','Preencha todos os campos.'); return; }
   const btn = document.getElementById('btn-login');
   btn.disabled = true; btn.textContent = 'Entrando…';
-  setTimeout(() => {
-    const res = AuthSystem.login(email, pw);
-    btn.disabled = false; btn.textContent = 'Entrar na conta';
-    if (res.ok) {
-      showToast('✅ Login realizado!', 'success');
-      setTimeout(() => window.location.href = 'index.html', 800);
-    } else {
-      showErr('login-error', res.msg);
-    }
-  }, 600);
+  const res = await AuthSystem.login(email, pw);
+  btn.disabled = false; btn.textContent = 'Entrar na conta';
+  if (res.ok) {
+    showToast('✅ Login realizado!', 'success');
+    setTimeout(() => window.location.href = 'index.html', 800);
+  } else {
+    showErr('login-error', res.msg);
+  }
 }
 
-function doRegister() {
+async function doRegister() {
   hideErr('register-error');
   const name    = document.getElementById('reg-name').value.trim();
   const email   = document.getElementById('reg-email').value.trim();
@@ -558,20 +526,18 @@ function doRegister() {
   if (pw.length < 6)          { showErr('register-error','A senha deve ter pelo menos 6 caracteres.'); return; }
   const btn = document.getElementById('btn-register');
   btn.disabled = true; btn.textContent = 'Criando conta…';
-  setTimeout(() => {
-    const res = AuthSystem.register(email, pw, name);
-    btn.disabled = false; btn.textContent = 'Criar conta grátis';
-    if (res.ok) {
-      showToast('🎉 Conta criada com sucesso!', 'success');
-      setTimeout(() => window.location.href = 'index.html', 900);
-    } else {
-      showErr('register-error', res.msg);
-    }
-  }, 600);
+  const res = await AuthSystem.register(email, pw, name);
+  btn.disabled = false; btn.textContent = 'Criar conta grátis';
+  if (res.ok) {
+    showToast('🎉 Conta criada com sucesso!', 'success');
+    setTimeout(() => window.location.href = 'index.html', 900);
+  } else {
+    showErr('register-error', res.msg);
+  }
 }
 
-function doLogout() {
-  AuthSystem.logout();
+async function doLogout() {
+  await AuthSystem.logout();
   showToast('Sessão encerrada.', 'info');
   setTimeout(() => location.reload(), 600);
 }
@@ -603,9 +569,7 @@ function spawnPieces() {
 }
 
 /* ── Init ── */
-function init() {
-  spawnPieces();
-  const sess = AuthSystem.currentSession();
+function renderSession(sess) {
   if (sess) {
     // Show logged-in panel
     document.getElementById('auth-tabs').style.display  = 'none';
@@ -625,7 +589,20 @@ function init() {
       badge.textContent = 'Conta Gratuita';
       badge.className   = 'logged-in-badge free';
     }
+  } else {
+    document.getElementById('auth-tabs').style.display  = '';
+    document.getElementById('auth-forms').style.display = '';
+    document.getElementById('logged-in-panel').classList.remove('visible');
   }
+}
+
+function init() {
+  spawnPieces();
+  // onChange já dispara uma vez com o estado atual (mesmo antes do
+  // Supabase Auth resolver) e de novo sempre que login/logout/premium
+  // mudar — assim o painel não fica preso no estado de quando a página
+  // carregou.
+  AuthSystem.onChange(renderSession);
 }
 
 document.addEventListener('DOMContentLoaded', init);

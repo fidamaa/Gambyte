@@ -29,12 +29,31 @@ const StockfishManager = (() => {
   let analysisQueue = [];
   let analysisRunning = false;
 
+  // O .wasm do Stockfish tem ~108MB — passa de longe do limite de 25MB
+  // por arquivo do Cloudflare Pages/Workers. Em produção ele fica num
+  // bucket R2 à parte (bandwidth grátis, sem limite de tamanho); o site
+  // continua servindo só o .js (esse sim, pequeno) normalmente.
+  // Defina STOCKFISH_WASM_CDN_BASE_URL (ex. em index.html, antes deste
+  // script) com a URL pública do bucket pra ativar isso; deixe vazio/
+  // undefined pra servir tudo local (uso em desenvolvimento).
+  const WASM_CDN_BASE_URL = (typeof STOCKFISH_WASM_CDN_BASE_URL !== 'undefined' && STOCKFISH_WASM_CDN_BASE_URL) || '';
+
+  // stockfish-18-single.js (biblioteca de terceiros, nmrugg/stockfish.js)
+  // lê a URL do .wasm a partir do fragmento (#) da própria URL do
+  // Worker, se houver um — é o mecanismo que ela já expõe pra hospedar
+  // o .wasm em outro lugar, sem precisar tocar no arquivo dela.
+  function _workerUrl(file) {
+    if (!WASM_CDN_BASE_URL) return file;
+    const wasmUrl = WASM_CDN_BASE_URL.replace(/\/$/, '') + '/' + file.replace(/\.js$/, '.wasm');
+    return file + '#' + encodeURIComponent(wasmUrl);
+  }
+
   function init() {
     return new Promise((resolve, reject) => {
       try {
         const file = 'stockfish-18-single.js';
-        console.log(`[Stockfish] Criando Web Worker: ${file}`);
-        worker = new Worker(file);
+        console.log(`[Stockfish] Criando Web Worker: ${file}` + (WASM_CDN_BASE_URL ? ` (wasm via CDN: ${WASM_CDN_BASE_URL})` : ''));
+        worker = new Worker(_workerUrl(file));
 
         let settled = false;
 

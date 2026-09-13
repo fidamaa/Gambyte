@@ -1,0 +1,15 @@
+# Config do projeto Supabase do Gambyte.
+# Referência completa: https://supabase.com/docs/guides/local-development/cli/config
+
+project_id = "gambyte"
+
+# webhook-mp é chamada pelo Mercado Pago (servidor a servidor), não pelo
+# navegador — ele nunca vai mandar um JWT do Supabase, então essa função
+# precisa ter a verificação de JWT desligada. A verificação "de verdade"
+# dela é a assinatura HMAC (ver supabase/functions/webhook-mp/index.ts).
+[functions.webhook-mp]
+verify_jwt = false
+
+# As demais (criar-pagamento, verificar-premium, cancelar-assinatura) são
+# chamadas pelo frontend com o usuário já logado — mantêm o padrão
+# (verify_jwt = true), então nem precisam aparecer aqui.

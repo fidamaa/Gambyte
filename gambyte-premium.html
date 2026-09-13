@@ -650,65 +650,17 @@ header {
           </div>
         </div>
 
-        <!-- Payment methods -->
-        <div class="pay-section-title">Forma de pagamento</div>
-        <div class="pay-methods">
-          <div class="pay-method active" id="pm-pix" onclick="selectPayMethod('pix')">
-            <span class="pay-method-icon">🏦</span>
-            Pix
-          </div>
-          <div class="pay-method" id="pm-card" onclick="selectPayMethod('card')">
-            <span class="pay-method-icon">💳</span>
-            Cartão
-          </div>
-          <div class="pay-method" id="pm-boleto" onclick="selectPayMethod('boleto')">
-            <span class="pay-method-icon">📄</span>
-            Boleto
-          </div>
-        </div>
-
-        <!-- Pix form -->
-        <div id="pix-form">
-          <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5;">
-            Após clicar em pagar, um QR Code Pix será gerado. Aprovação instantânea.
-          </div>
-        </div>
-
-        <!-- Card form -->
-        <div id="card-form" style="display:none">
-          <div class="form-group">
-            <label class="form-label">Número do Cartão</label>
-            <input class="form-input" type="text" id="card-number" placeholder="0000 0000 0000 0000" maxlength="19" oninput="fmtCard(this)">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Nome no Cartão</label>
-            <input class="form-input" type="text" id="card-name" placeholder="Nome como no cartão">
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Validade</label>
-              <input class="form-input" type="text" id="card-exp" placeholder="MM/AA" maxlength="5" oninput="fmtExp(this)">
-            </div>
-            <div class="form-group">
-              <label class="form-label">CVV</label>
-              <input class="form-input" type="text" id="card-cvv" placeholder="000" maxlength="4">
-            </div>
-          </div>
-        </div>
-
-        <!-- Boleto info -->
-        <div id="boleto-form" style="display:none">
-          <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5;">
-            Um boleto será gerado e enviado para seu email cadastrado. Prazo de vencimento: 3 dias úteis.
-          </div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5;">
+          Você escolhe Pix, cartão ou boleto na próxima tela, direto no
+          ambiente seguro do Mercado Pago.
         </div>
 
         <div class="form-error" id="payment-error" style="margin-bottom:14px"></div>
 
         <button class="btn-pay" id="btn-pay" onclick="doPayment()">
-          🔒 Pagar R$9,90 e ativar Gambyte Pro
+          🔒 Ir para pagamento seguro (Mercado Pago)
         </button>
-        <div class="pay-security">🔒 Pagamento 100% seguro com SSL · Cancele quando quiser</div>
+        <div class="pay-security">🔒 Pagamento processado pelo Mercado Pago · Cancele quando quiser</div>
       </div>
 
       <!-- Step: Success -->
@@ -731,37 +683,14 @@ header {
 
 <div id="toast-area"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/modules/supabase-config.js"></script>
+<script src="js/modules/auth-system.js"></script>
 <script>
-/* ── Auth System ── */
-const AuthSystem = (() => {
-  const USERS_KEY   = 'chesslens_users';
-  const SESSION_KEY = 'chesslens_session';
-  function getUsers()    { try { return JSON.parse(localStorage.getItem(USERS_KEY)||'{}'); } catch(e){return{};} }
-  function saveUsers(u)  { localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
-  function getSession()  { try { return JSON.parse(localStorage.getItem(SESSION_KEY)||'null'); } catch(e){return null;} }
-  function saveSession(s){ localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
-
-  function activatePremium() {
-    const sess = getSession();
-    if (!sess) return false;
-    const users = getUsers();
-    if (users[sess.email]) {
-      users[sess.email].premium = true;
-      saveUsers(users);
-    }
-    sess.premium = true;
-    saveSession(sess);
-    return true;
-  }
-
-  function currentSession() { return getSession(); }
-  function isPremium() { const s=getSession(); return s&&s.premium; }
-  return { activatePremium, currentSession, isPremium };
-})();
+/* AuthSystem vem de js/modules/auth-system.js — conta e status premium de
+   verdade (Supabase Auth + Postgres/RLS), mesma sessão usada no analisador. */
 
 /* ── UI ── */
-let currentPayMethod = 'pix';
-
 function showToast(msg, type='info') {
   const c = document.getElementById('toast-area');
   const t = document.createElement('div');
@@ -789,6 +718,7 @@ function openCheckout() {
   } else {
     showStep('step-payment');
     document.getElementById('modal-title-text').textContent = 'Finalizar Assinatura';
+    document.getElementById('payment-error').style.display = 'none';
   }
 }
 
@@ -813,105 +743,92 @@ function goToLogin() {
   window.location.href = 'gambyte-login.html';
 }
 
-function selectPayMethod(method) {
-  currentPayMethod = method;
-  ['pix','card','boleto'].forEach(m => {
-    document.getElementById(`pm-${m}`)?.classList.toggle('active', m===method);
-    const form = document.getElementById(`${m}-form`);
-    if (form) form.style.display = m===method ? 'block' : 'none';
-  });
-}
-
-function fmtCard(inp) {
-  let v = inp.value.replace(/\D/g,'').substring(0,16);
-  inp.value = v.replace(/(.{4})/g,'$1 ').trim();
-}
-function fmtExp(inp) {
-  let v = inp.value.replace(/\D/g,'');
-  if (v.length >= 3) v = v.substring(0,2)+'/'+v.substring(2,4);
-  inp.value = v;
-}
-
-function doPayment() {
+// Redireciona pro Checkout Pro do Mercado Pago — o pagamento em si (Pix,
+// cartão, boleto) acontece 100% no ambiente deles, nunca aqui. O Gambyte
+// só sabe que virou Premium quando o webhook (functions/index.js)
+// confirmar o pagamento aprovado; não existe mais "ativar premium" client-side.
+async function doPayment() {
   const btn = document.getElementById('btn-pay');
-  const errEl = document.getElementById('payment-error');
-  errEl.style.display = 'none';
-
-  // Validate card fields
-  if (currentPayMethod === 'card') {
-    const num  = document.getElementById('card-number')?.value.replace(/\s/g,'');
-    const name = document.getElementById('card-name')?.value.trim();
-    const exp  = document.getElementById('card-exp')?.value;
-    const cvv  = document.getElementById('card-cvv')?.value;
-    if (!num || num.length < 16) { showPayErr('Número de cartão inválido.'); return; }
-    if (!name) { showPayErr('Nome no cartão obrigatório.'); return; }
-    if (!exp || exp.length < 5)  { showPayErr('Validade inválida.'); return; }
-    if (!cvv || cvv.length < 3)  { showPayErr('CVV inválido.'); return; }
-  }
-
   btn.disabled = true;
-  btn.textContent = '⏳ Processando…';
+  btn.textContent = '⏳ Gerando pagamento…';
+  showPayErr(null);
 
-  // Simulate payment processing
-  setTimeout(() => {
-    const success = Math.random() > 0.05; // 95% success rate simulation
-    if (success) {
-      AuthSystem.activatePremium();
-      btn.disabled = false;
-      btn.textContent = '🔒 Pagar R$9,90 e ativar Gambyte Pro';
-      document.getElementById('modal-title-text').textContent = '✅ Assinatura Ativada';
-      showStep('step-success');
-      showToast('⭐ Gambyte Pro ativado com sucesso!', 'success');
-    } else {
-      btn.disabled = false;
-      btn.textContent = '🔒 Pagar R$9,90 e ativar Gambyte Pro';
-      showPayErr('Pagamento recusado. Verifique os dados e tente novamente.');
-    }
-  }, 1800);
+  try {
+    const { init_point, sandbox_init_point } = await AuthSystem.startCheckout();
+    // Em produção (Access Token real) init_point é o link de verdade;
+    // sandbox_init_point só existe testando com credenciais de teste.
+    window.location.href = init_point || sandbox_init_point;
+  } catch (err) {
+    console.error('[doPayment]', err);
+    btn.disabled = false;
+    btn.textContent = '🔒 Ir para pagamento seguro (Mercado Pago)';
+    showPayErr(err.message || 'Não foi possível iniciar o pagamento. Tente novamente.');
+  }
 }
 
 function showPayErr(msg) {
   const el = document.getElementById('payment-error');
+  if (!msg) { el.style.display = 'none'; return; }
   el.textContent = msg;
   el.style.display = 'block';
 }
 
-function reloadAnalyzer() {
-  // Ensure premium flag is current when returning to analyzer
-  setTimeout(() => {}, 100);
-}
-
 /* ── User status bar ── */
-function renderUserBar() {
+function renderUserBar(sess) {
   const bar = document.getElementById('user-status-bar');
   if (!bar) return;
-  const sess = AuthSystem.currentSession();
   if (sess) {
     bar.innerHTML = `
       <span class="ubar-name">${sess.name || sess.email.split('@')[0]}</span>
       ${sess.premium ? '<span class="ubar-badge">PRO</span>' : ''}
     `;
+  } else {
+    bar.innerHTML = '';
   }
 }
 
-/* ── Check redirect intent ── */
-function checkRedirect() {
+/* ── Check redirect intent (voltou do login pra terminar a assinatura) ── */
+function checkRedirect(sess) {
   const intent = sessionStorage.getItem('gambyte_redirect');
   if (intent === 'premium') {
     sessionStorage.removeItem('gambyte_redirect');
-    const sess = AuthSystem.currentSession();
-    if (sess && !sess.premium) {
-      setTimeout(openCheckout, 400);
-    }
+    if (sess && !sess.premium) setTimeout(openCheckout, 400);
+  }
+}
+
+// status=success/failure/pending vem do back_urls configurado em
+// criarPagamento (functions/index.js) — o pagamento pode levar alguns
+// segundos pra ser confirmado pelo webhook, então isso é só feedback
+// visual; quem manda de verdade é o Firestore (via AuthSystem.onChange).
+function checkPaymentReturn() {
+  const status = new URLSearchParams(location.search).get('status');
+  if (status === 'success') {
+    showToast('Pagamento recebido! Confirmando sua assinatura…', 'success');
+  } else if (status === 'pending') {
+    showToast('Pagamento em análise (comum no boleto/Pix). Assim que aprovado, o Premium ativa sozinho.', 'info');
+  } else if (status === 'failure') {
+    showToast('Pagamento não foi concluído. Você pode tentar de novo quando quiser.', 'error');
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  renderUserBar();
-  checkRedirect();
-  // Initialize card form visibility
-  document.getElementById('card-form').style.display   = 'none';
-  document.getElementById('boleto-form').style.display = 'none';
+  checkPaymentReturn();
+  let redirectChecked = false;
+  AuthSystem.onChange(sess => {
+    renderUserBar(sess);
+    if (!redirectChecked && AuthSystem.isReady()) {
+      redirectChecked = true;
+      checkRedirect(sess);
+    }
+    // Se o modal de checkout estiver aberto e o Firestore confirmar
+    // premium em tempo real (webhook do MP chegou), avança pro sucesso.
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay.classList.contains('visible') && sess && sess.premium) {
+      document.getElementById('modal-title-text').textContent = '✅ Assinatura Ativada';
+      showStep('step-success');
+      showToast('⭐ Gambyte Pro ativado com sucesso!', 'success');
+    }
+  });
 });
 
 // Keyboard close

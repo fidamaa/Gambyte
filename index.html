@@ -585,6 +585,13 @@
 <script src="js/modules/pgn-parser.js"></script>
 <script src="js/modules/rating-model.js"></script>
 <script src="js/modules/move-classifier.js"></script>
+<script>
+  // O .wasm do Stockfish (~108MB) fica hospedado à parte, num bucket
+  // R2 (o Cloudflare Pages recusa qualquer arquivo acima de 25MB). Em
+  // desenvolvimento local, deixe vazio — o .wasm é servido pelo próprio
+  // dev-server.py, na mesma pasta do .js.
+  const STOCKFISH_WASM_CDN_BASE_URL = ''; // ex.: 'https://assets.gambyte.com.br'
+</script>
 <script src="js/modules/stockfish-manager.js"></script>
 <script src="js/modules/analysis-engine.js"></script>
 
@@ -595,6 +602,9 @@
 <script src="js/modules/pgn-exporter.js"></script>
 
 <!-- Contas / Premium / Insights -->
+<!-- Supabase (Auth + Postgres + Edge Functions) — necessário pro auth-system.js -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/modules/supabase-config.js"></script>
 <script src="js/modules/auth-system.js"></script>
 <script src="js/modules/insights-engine.js"></script>
 <script src="js/modules/insights-ui.js"></script>
