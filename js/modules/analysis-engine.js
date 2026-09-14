@@ -55,17 +55,25 @@ const AnalysisEngine = (() => {
   }
 
   // A peça que acabamos de mover está "pendurada" (a casa de destino está
-  // sob ataque de uma peça adversária)? Usado pelo Brilhante para pegar o
+  // sob ataque de uma peça adversária) E o adversário NÃO a captura de
+  // verdade na resposta real do motor? Usado pelo Brilhante para pegar o
   // caso clássico "sacrifício de mentirinha": a peça parece capturável de
-  // graça, mas capturá-la é ruim pro adversário (senão o motor não jogaria
-  // esse lance como o melhor). Puramente geométrico (ataque real via
-  // isSquareAttacked) — não depende do motor achar a captura na PV dele,
-  // que é justamente o que falha quando a captura é uma armadilha.
-  function isSquareHanging(fenAfterOurMove, playedMoveUCI) {
+  // graça, mas capturá-la é ruim pro adversário (senão o motor jogaria
+  // essa captura). Se o motor JÁ captura ali de verdade
+  // (opponentBestMoveUCI mira a mesma casa), isso não é uma armadilha —
+  // é uma troca normal, e quem decide se vale a pena é o sacrificeValue
+  // (saldo líquido), não este sinal. Sem essa checagem, qualquer captura
+  // recapturada de volta (ex.: Nxd4 Nxd4, ou tomar uma dama pendurada e
+  // ser retomado por uma torre) seria confundida com sacrifício.
+  function isSquareHanging(fenAfterOurMove, playedMoveUCI, opponentBestMoveUCI) {
     if (!playedMoveUCI) return false;
     const toSquare = playedMoveUCI.slice(2, 4);
     const value = pieceValueAtSquare(fenAfterOurMove, toSquare);
     if (value < 300) return false; // só interessa peça de valor real (cavalo pra cima)
+    const opponentActuallyCapturesThere = !!opponentBestMoveUCI &&
+      /^[a-h][1-8][a-h][1-8]/.test(opponentBestMoveUCI) &&
+      opponentBestMoveUCI.slice(2, 4) === toSquare;
+    if (opponentActuallyCapturesThere) return false;
     const state = PGNParser.fenToBoard(fenAfterOurMove);
     const attackerIsWhite = state.turn === 'w'; // é a vez de quem poderia capturar agora
     return PGNParser.isSquareAttacked(state.board, toSquare, attackerIsWhite);
@@ -218,7 +226,7 @@ const AnalysisEngine = (() => {
       // "pendurada" (mesmo que o motor não capture de propósito, por ser
       // armadilha)? E, se o adversário capturar mesmo assim, dá pra
       // recapturar na hora (então é só troca, não sacrifício de verdade)?
-      const pieceIsHanging = isSquareHanging(fenAfter, playedMoveUCI);
+      const pieceIsHanging = isSquareHanging(fenAfter, playedMoveUCI, afterResult.bestMove);
       const sacrificeIsRecapturable = isRecapturable(fenAfter, afterResult.bestMove, movesData[i].color === 'white');
 
       movesData[i].evalBefore    = evalBefore;
@@ -355,7 +363,7 @@ const AnalysisEngine = (() => {
           ? pieceValueAtSquare(fenBefore, m.playedMoveUCI.slice(2, 4))
           : 0;
         const sacrificeValue2   = m.immediateCaptureValue - capturedByMoverValue2;
-        const pieceIsHanging2   = isSquareHanging(fenAfter, m.playedMoveUCI);
+        const pieceIsHanging2   = isSquareHanging(fenAfter, m.playedMoveUCI, aRes.bestMove);
         const sacrificeIsRecapturable2 = isRecapturable(fenAfter, aRes.bestMove, m.color === 'white');
 
         // Reclassify

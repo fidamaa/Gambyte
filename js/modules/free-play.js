@@ -442,7 +442,7 @@ const FreePlay = (() => {
         ? AnalysisEngine.pieceValueAtSquare(fenBefore, playedMoveUCI.slice(2, 4))
         : 0;
       const sacrificeValue = immediateCaptureValue - capturedByMoverValue;
-      const pieceIsHanging = AnalysisEngine.isSquareHanging(fenAfter, playedMoveUCI);
+      const pieceIsHanging = AnalysisEngine.isSquareHanging(fenAfter, playedMoveUCI, afterRes.bestMove);
       const sacrificeIsRecapturable = AnalysisEngine.isRecapturable(fenAfter, afterRes.bestMove, isWhite);
 
       // Empate de verdade nesta posição (xeque-mate/afogamento já tratado
