@@ -60,14 +60,32 @@ const AnalysisEngine = (() => {
   // o motor às vezes ordena uma recaptura óbvia como #2/#3 em vez de #1
   // mesmo quando ela é claramente boa — o que fazia uma troca banal
   // (Nxd4 Nxd4) escapar da detecção e ser confundida com sacrifício.
-  function opponentHasCaptureAmongTopReplies(afterResult, toSquare) {
+  function opponentHasCaptureAmongTopReplies(afterResult, toSquare, fenAfterOurMove) {
     if (!afterResult || !afterResult.pvLines) return false;
     const bestEval = afterResult.evals ? afterResult.evals[0] : null;
+    const beforeState = PGNParser.fenToBoard(fenAfterOurMove);
     for (let k = 0; k < afterResult.pvLines.length; k++) {
       const pv = afterResult.pvLines[k];
       if (!pv) continue;
-      const firstMove = pv.split(' ')[0];
+      const plies = pv.split(' ');
+      const firstMove = plies[0];
       if (!firstMove || firstMove.length < 4 || firstMove.slice(2, 4) !== toSquare) continue;
+
+      // Se a PRÓPRIA continuação prevista pelo motor mostra o jogador
+      // recapturando algo valioso logo a seguir (2º lance da linha), essa
+      // captura do adversário já está sendo refutada ali mesmo — não conta
+      // como resposta real, mesmo que a avaliação numérica pareça parecida
+      // (comum quando a posição já está tão decidida que perder mais
+      // material quase não move o ponteiro de avaliação).
+      const moverReply = plies[1];
+      if (moverReply && moverReply.length >= 4 && beforeState) {
+        const afterOppState = PGNParser.applyMoveUCI(beforeState, firstMove);
+        if (afterOppState) {
+          const replyValue = pieceValueAtSquare(PGNParser.boardToFen(afterOppState), moverReply.slice(2, 4));
+          if (replyValue >= 300) continue; // refutada pela própria PV — não conta, tenta a próxima linha
+        }
+      }
+
       const thisEval = afterResult.evals ? afterResult.evals[k] : null;
       // Sem dado pra comparar (raro) — assume que é uma linha real.
       if (thisEval == null || bestEval == null) return true;
@@ -92,7 +110,7 @@ const AnalysisEngine = (() => {
     const toSquare = playedMoveUCI.slice(2, 4);
     const value = pieceValueAtSquare(fenAfterOurMove, toSquare);
     if (value < 300) return false; // só interessa peça de valor real (cavalo pra cima)
-    if (opponentHasCaptureAmongTopReplies(afterResult, toSquare)) return false;
+    if (opponentHasCaptureAmongTopReplies(afterResult, toSquare, fenAfterOurMove)) return false;
     const state = PGNParser.fenToBoard(fenAfterOurMove);
     const attackerIsWhite = state.turn === 'w'; // é a vez de quem poderia capturar agora
     if (!PGNParser.isSquareAttacked(state.board, toSquare, attackerIsWhite)) return false;
