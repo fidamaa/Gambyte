@@ -54,29 +54,55 @@ const AnalysisEngine = (() => {
     return pieceValueAtSquare(fenAfterOurMove, toSquare);
   }
 
+  // Alguma das linhas MultiPV do adversário (não só a #1) captura de
+  // verdade na casa `toSquare`, com uma avaliação competitiva (perto da
+  // melhor linha dele)? Checar só a #1 não bastava: em profundidade rasa
+  // o motor às vezes ordena uma recaptura óbvia como #2/#3 em vez de #1
+  // mesmo quando ela é claramente boa — o que fazia uma troca banal
+  // (Nxd4 Nxd4) escapar da detecção e ser confundida com sacrifício.
+  function opponentHasCaptureAmongTopReplies(afterResult, toSquare) {
+    if (!afterResult || !afterResult.pvLines) return false;
+    const bestEval = afterResult.evals ? afterResult.evals[0] : null;
+    for (let k = 0; k < afterResult.pvLines.length; k++) {
+      const pv = afterResult.pvLines[k];
+      if (!pv) continue;
+      const firstMove = pv.split(' ')[0];
+      if (!firstMove || firstMove.length < 4 || firstMove.slice(2, 4) !== toSquare) continue;
+      const thisEval = afterResult.evals ? afterResult.evals[k] : null;
+      // Sem dado pra comparar (raro) — assume que é uma linha real.
+      if (thisEval == null || bestEval == null) return true;
+      // Dentro de ~1 peão da melhor linha: é uma opção competitiva de
+      // verdade pro adversário, não uma linha claramente descartada.
+      if (Math.abs(bestEval - thisEval) <= 100) return true;
+    }
+    return false;
+  }
+
   // A peça que acabamos de mover está "pendurada" (a casa de destino está
-  // sob ataque de uma peça adversária) E o adversário NÃO a captura de
-  // verdade na resposta real do motor? Usado pelo Brilhante para pegar o
-  // caso clássico "sacrifício de mentirinha": a peça parece capturável de
-  // graça, mas capturá-la é ruim pro adversário (senão o motor jogaria
-  // essa captura). Se o motor JÁ captura ali de verdade
-  // (opponentBestMoveUCI mira a mesma casa), isso não é uma armadilha —
-  // é uma troca normal, e quem decide se vale a pena é o sacrificeValue
-  // (saldo líquido), não este sinal. Sem essa checagem, qualquer captura
-  // recapturada de volta (ex.: Nxd4 Nxd4, ou tomar uma dama pendurada e
-  // ser retomado por uma torre) seria confundida com sacrifício.
-  function isSquareHanging(fenAfterOurMove, playedMoveUCI, opponentBestMoveUCI) {
+  // sob ataque de uma peça adversária) E o adversário NÃO tem, entre suas
+  // melhores respostas reais, uma captura ali? Usado pelo Brilhante para
+  // pegar o caso clássico "sacrifício de mentirinha": a peça parece
+  // capturável de graça, mas capturá-la é ruim pro adversário (por isso
+  // nenhuma das linhas boas do motor captura ali). Se alguma resposta
+  // competitiva do motor JÁ captura naquela casa, isso não é uma
+  // armadilha — é uma troca normal, e quem decide se vale a pena é o
+  // sacrificeValue (saldo líquido), não este sinal.
+  function isSquareHanging(fenAfterOurMove, playedMoveUCI, afterResult) {
     if (!playedMoveUCI) return false;
     const toSquare = playedMoveUCI.slice(2, 4);
     const value = pieceValueAtSquare(fenAfterOurMove, toSquare);
     if (value < 300) return false; // só interessa peça de valor real (cavalo pra cima)
-    const opponentActuallyCapturesThere = !!opponentBestMoveUCI &&
-      /^[a-h][1-8][a-h][1-8]/.test(opponentBestMoveUCI) &&
-      opponentBestMoveUCI.slice(2, 4) === toSquare;
-    if (opponentActuallyCapturesThere) return false;
+    if (opponentHasCaptureAmongTopReplies(afterResult, toSquare)) return false;
     const state = PGNParser.fenToBoard(fenAfterOurMove);
     const attackerIsWhite = state.turn === 'w'; // é a vez de quem poderia capturar agora
-    return PGNParser.isSquareAttacked(state.board, toSquare, attackerIsWhite);
+    if (!PGNParser.isSquareAttacked(state.board, toSquare, attackerIsWhite)) return false;
+    // Só conta como "pendurada" se o PRÓPRIO jogador não tiver defensor ali.
+    // Uma peça atacada mas defendida (ex.: cavalo que recuou pra uma casa
+    // vigiada por um bispo próprio) é só uma troca disponível, não um
+    // sacrifício — capturá-la não ganha material de graça pro adversário.
+    const moverIsWhite = !attackerIsWhite;
+    const defendedByMover = PGNParser.isSquareAttacked(state.board, toSquare, moverIsWhite);
+    return !defendedByMover;
   }
 
   // A captura que o adversário faz (opponentBestMoveUCI) pode ser
@@ -226,7 +252,7 @@ const AnalysisEngine = (() => {
       // "pendurada" (mesmo que o motor não capture de propósito, por ser
       // armadilha)? E, se o adversário capturar mesmo assim, dá pra
       // recapturar na hora (então é só troca, não sacrifício de verdade)?
-      const pieceIsHanging = isSquareHanging(fenAfter, playedMoveUCI, afterResult.bestMove);
+      const pieceIsHanging = isSquareHanging(fenAfter, playedMoveUCI, afterResult);
       const sacrificeIsRecapturable = isRecapturable(fenAfter, afterResult.bestMove, movesData[i].color === 'white');
 
       movesData[i].evalBefore    = evalBefore;
@@ -363,7 +389,7 @@ const AnalysisEngine = (() => {
           ? pieceValueAtSquare(fenBefore, m.playedMoveUCI.slice(2, 4))
           : 0;
         const sacrificeValue2   = m.immediateCaptureValue - capturedByMoverValue2;
-        const pieceIsHanging2   = isSquareHanging(fenAfter, m.playedMoveUCI, aRes.bestMove);
+        const pieceIsHanging2   = isSquareHanging(fenAfter, m.playedMoveUCI, aRes);
         const sacrificeIsRecapturable2 = isRecapturable(fenAfter, aRes.bestMove, m.color === 'white');
 
         // Reclassify

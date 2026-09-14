@@ -136,7 +136,12 @@ const MoveClassifier = (() => {
   function isBrilliantMove(params) {
     const { playedIsBest, epLoss, evalBefore, evalAfter, sacrificeValue, pieceIsHanging, sacrificeIsRecapturable, depth } = params;
     if ((depth ?? 0) < BRILLIANT_MIN_DEPTH) return false;
-    if (!(playedIsBest || epLoss < EP_THRESHOLDS.excellent)) return false;
+    // Brilhante NÃO precisa ser o melhor lance do motor — só precisa ser
+    // bom o bastante pra o sacrifício valer a pena (o compromisso real é
+    // com isGenuineSacrifice/evalAfter, não com bater exatamente a #1).
+    // Por isso a margem aqui é a de "Boa" (mais larga), não a de
+    // "Excelente" — só descarta o que já seria Imprecisão/Erro/Gafe.
+    if (!(playedIsBest || epLoss < EP_THRESHOLDS.good)) return false;
     if (!isGenuineSacrifice(evalAfter, sacrificeValue, pieceIsHanging, sacrificeIsRecapturable)) return false;
     if (Math.abs(evalBefore) >= 600) return false; // já ganhando de goleada: sac é trivial
     return true;
