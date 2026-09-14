@@ -143,7 +143,13 @@ const MoveClassifier = (() => {
     // "Excelente" — só descarta o que já seria Imprecisão/Erro/Gafe.
     if (!(playedIsBest || epLoss < EP_THRESHOLDS.good)) return false;
     if (!isGenuineSacrifice(evalAfter, sacrificeValue, pieceIsHanging, sacrificeIsRecapturable)) return false;
-    if (Math.abs(evalBefore) >= 600) return false; // já ganhando de goleada: sac é trivial
+    // "Já ganhando de goleada, sacrifício é de graça" só vale pra vantagem
+    // material normal — não pra mate forçado (cp >= 29000 na nossa
+    // convenção). Um sacrifício que é justamente o que FORÇA o mate (ex.:
+    // abrir o rei com um xeque de torre pra depois dar mate com a dama) é
+    // o caso clássico de Brilhante, mesmo com mate já garantido antes dele.
+    const evalBeforeIsMateScore = Math.abs(evalBefore) >= 29000;
+    if (!evalBeforeIsMateScore && Math.abs(evalBefore) >= 600) return false;
     return true;
   }
 
