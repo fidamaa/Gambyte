@@ -55,31 +55,18 @@ function goToLogin() {
   window.location.href = 'gambyte-login.html';
 }
 
-// Redireciona pro Checkout Pro do Mercado Pago — o pagamento em si (Pix,
-// cartão, boleto) acontece 100% no ambiente deles, nunca aqui. O Gambyte
-// só sabe que virou Premium quando o webhook (functions/index.js)
-// confirmar o pagamento aprovado; não existe mais "ativar premium" client-side.
-async function doPayment() {
-  const btn = document.getElementById('btn-pay');
-  btn.disabled = true;
-  btn.textContent = ' Gerando pagamento…';
-  showPayErr(null);
-
-  try {
-    const { init_point, sandbox_init_point } = await AuthSystem.startCheckout();
-    // Em produção (Access Token real) init_point é o link de verdade;
-    // sandbox_init_point só existe testando com credenciais de teste.
-    const checkoutUrl = new URL(init_point || sandbox_init_point);
-    if (checkoutUrl.protocol !== 'https:' || !['www.mercadopago.com.br', 'sandbox.mercadopago.com.br'].includes(checkoutUrl.hostname)) {
-      throw new Error('Endereço de pagamento inválido.');
-    }
-    window.location.href = checkoutUrl.href;
-  } catch (err) {
-    console.error('[doPayment]', err);
-    btn.disabled = false;
-    btn.textContent = ' Ir para pagamento seguro (Mercado Pago)';
-    showPayErr(err.message || 'Não foi possível iniciar o pagamento. Tente novamente.');
-  }
+// O Pix é solicitado pelo WhatsApp; nenhuma cobrança é criada pelo site.
+function doPayment() {
+  const session = AuthSystem.currentSession();
+  if (!session) { showStep('step-auth-check'); return; }
+  const message = 'Olá! Quero ativar o Gambyte Pro por um mês (R$ 9,90), pagando via Pix no Nubank. Meu e-mail da conta Gambyte: ' + session.email;
+  const link = document.createElement('a');
+  link.href = 'https://wa.me/5521986996374?text=' + encodeURIComponent(message);
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 function showPayErr(msg) {
@@ -112,23 +99,7 @@ function checkRedirect(sess) {
   }
 }
 
-// status=success/failure/pending vem do back_urls configurado em
-// criarPagamento (functions/index.js) — o pagamento pode levar alguns
-// segundos pra ser confirmado pelo webhook, então isso é só feedback
-// visual; quem manda de verdade é o Firestore (via AuthSystem.onChange).
-function checkPaymentReturn() {
-  const status = new URLSearchParams(location.search).get('status');
-  if (status === 'success') {
-    showToast('Pagamento recebido! Confirmando sua assinatura…', 'success');
-  } else if (status === 'pending') {
-    showToast('Pagamento em análise (comum no boleto/Pix). Assim que aprovado, o Premium ativa sozinho.', 'info');
-  } else if (status === 'failure') {
-    showToast('Pagamento não foi concluído. Você pode tentar de novo quando quiser.', 'error');
-  }
-}
-
 document.addEventListener('DOMContentLoaded', () => {
-  checkPaymentReturn();
   let redirectChecked = false;
   AuthSystem.onChange(sess => {
     renderUserBar(sess);
@@ -136,8 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
       redirectChecked = true;
       checkRedirect(sess);
     }
-    // Se o modal de checkout estiver aberto e o Firestore confirmar
-    // premium em tempo real (webhook do MP chegou), avança pro sucesso.
+    // O acesso só muda quando o perfil é atualizado no servidor.
     const overlay = document.getElementById('modal-overlay');
     if (overlay.classList.contains('visible') && sess && sess.premium) {
       document.getElementById('modal-title-text').textContent = ' Assinatura Ativada';

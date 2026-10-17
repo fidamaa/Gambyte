@@ -138,13 +138,6 @@ const AuthSystem = (() => {
   function isPremium() { return !!(_session && activePremium({ premium: _session.premium, proximo_vencimento: _session.expiresAt })); }
 
   // ── Pagamento — chama as Edge Functions, nunca ativa premium local ──
-  async function startCheckout() {
-    if (!_session) throw new Error('Faça login antes de assinar.');
-    const { data, error } = await supabaseClient.functions.invoke('criar-pagamento');
-    if (error) throw new Error((data && data.error) || error.message || 'Erro ao iniciar pagamento.');
-    if (data && data.error) throw new Error(data.error);
-    return data; // { init_point, sandbox_init_point, preference_id }
-  }
 
   async function refreshPremiumStatus() {
     if (!_session) return { premium: false };
@@ -161,6 +154,6 @@ const AuthSystem = (() => {
 
   return {
     register, login, logout, currentSession, isPremium,
-    onChange, isReady, startCheckout, refreshPremiumStatus, cancelSubscription, escapeHTML,
+    onChange, isReady, refreshPremiumStatus, cancelSubscription, escapeHTML,
   };
 })();
