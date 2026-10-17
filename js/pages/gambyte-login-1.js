@@ -12,8 +12,8 @@ function switchTab(tab) {
 
 function togglePw(id, btn) {
   const inp = document.getElementById(id);
-  if (inp.type === 'password') { inp.type='text'; btn.textContent='🙈'; }
-  else                         { inp.type='password'; btn.textContent='👁'; }
+  if (inp.type === 'password') { inp.type='text'; btn.textContent='Ocultar'; btn.setAttribute('aria-label','Ocultar senha'); btn.setAttribute('aria-pressed','true'); }
+  else                         { inp.type='password'; btn.textContent='Mostrar'; btn.setAttribute('aria-label','Mostrar senha'); btn.setAttribute('aria-pressed','false'); }
 }
 
 function checkPwStrength(pw) {
@@ -146,7 +146,7 @@ function renderSession(sess) {
     document.getElementById('li-email').textContent  = sess.email;
     const badge = document.getElementById('li-badge');
     if (sess.premium) {
-      badge.textContent = '⭐ Gambyte Pro';
+      badge.textContent = 'Gambyte Pro';
       badge.className   = 'logged-in-badge premium';
       document.getElementById('li-promo').style.display = 'none';
     } else {

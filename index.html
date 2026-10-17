@@ -3,15 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gambyte — Análise Profissional</title>
+<title>Gambyte — Análise de partidas de xadrez</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 <meta name="google-adsense-account" content="ca-pub-7858747311725137">
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7858747311725137"
-     crossorigin="anonymous"></script>
+<!-- Veiculação de anúncios desativada durante a preparação para avaliação. -->
+<link rel="stylesheet" href="site-info.css?v=1">
+<meta name="description" content="Analise partidas de xadrez em PGN com Stockfish e aprenda a interpretar avaliações, precisão e momentos críticos."><link rel="canonical" href="https://gambyte.com.br/"><meta property="og:title" content="Gambyte — Analisar partida"><meta property="og:description" content="Analise partidas de xadrez em PGN com Stockfish e aprenda a interpretar avaliações, precisão e momentos críticos."><meta property="og:url" content="https://gambyte.com.br/"><meta property="og:type" content="website">
 </head>
-<body>
+<body data-site="gambyte">
+<nav class="info-nav" aria-label="Navegação do Gambyte"><a class="info-brand" href="index.html">Gambyte</a><div><a href="index.html">Analisar partida</a><a href="como-usar.html">Como usar</a><a href="guia.html">Guia de análise</a><a href="sobre.html">Sobre</a><a href="contato.html">Contato</a></div></nav>
 <div class="container">
 
   <!-- Header -->
@@ -30,7 +32,8 @@
     </div>
   </header>
 
-  <!-- PGN Input -->
+  <section class="info-intro" aria-labelledby="tool-title"><h1 id="tool-title">Entenda os momentos decisivos da sua partida.</h1><p>Cole o PGN de uma partida concluída e revise avaliações, precisão e alternativas com Stockfish. Os cálculos acontecem no seu navegador. <a href="como-usar.html" style="color:var(--info-accent)">Veja como começar.</a></p></section>
+<!-- PGN Input -->
   <section class="input-section">
     <div class="section-label">Cole seu PGN</div>
     <textarea id="pgn-input" placeholder='[Event "Rated Blitz game"]
@@ -569,6 +572,7 @@
     <script src="js/pages/index-4.js"></script>
   </div>
 
+<section class="info-home" aria-labelledby="learn-title"><h2 id="learn-title">Da análise ao estudo</h2><p>Uma boa revisão não termina na porcentagem de precisão. Escolha um momento em que a avaliação mudou, tente explicar o motivo e teste uma alternativa no tabuleiro. O gráfico serve para localizar a decisão; a aprendizagem está em entender a ameaça e as opções que você tinha.</p><div class="info-grid"><div><h3>Como interpretar o resultado</h3><p>ACPL, precisão e rating estimado resumem aspectos diferentes de uma única partida. Eles não são uma nota oficial nem uma prova de trapaça. Compare os lances e o contexto antes de tirar conclusões.</p><a href="guia.html">Entender os indicadores</a></div><div><h3>Revise antes de jogar outra</h3><p>Anote um erro recorrente, como uma peça indefesa ou uma ameaça de mate. Refaça a posição sem consultar o motor. Encontrar o motivo de um lance vale mais do que decorar a alternativa sugerida.</p><a href="como-usar.html">Seguir o roteiro de análise</a></div><div><h3>Uma ferramenta independente</h3><p>Gambyte organiza sua revisão usando Stockfish e critérios próprios de classificação. As estimativas variam com a profundidade da busca e não substituem o estudo ou a orientação de um treinador.</p><a href="sobre.html">Conhecer o projeto e os limites</a></div></div></section>
 </div><!-- /container -->
 
 <div id="toast-container"></div>
@@ -615,5 +619,6 @@
 <script src="js/app.js"></script>
 
 <script src="js/pages/index-events.js"></script>
+<footer class="info-footer"><div><strong>Gambyte</strong><p>Projeto independente de Rampini. Aprender com a prática.</p></div><nav aria-label="Informações institucionais"><a href="sobre.html">Sobre</a><a href="como-usar.html">Como usar</a><a href="guia.html">Guia de análise</a><a href="contato.html">Contato</a><a href="privacidade.html">Privacidade</a><a href="termos.html">Termos de Uso</a><a href="licencas.html">Créditos e licença</a></nav><small>© 2026 Rampini · <a href="mailto:ebezerrarampini1@gmail.com">ebezerrarampini1@gmail.com</a></small></footer>
 </body>
 </html>

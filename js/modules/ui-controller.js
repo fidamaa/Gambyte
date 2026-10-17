@@ -74,8 +74,18 @@ const UIController = (() => {
   function getBoardSize() {
     // Tabuleiro como peça central da tela — proporcional à largura mas com
     // teto generoso, não um selo pequeno perdido ao lado dos outros painéis.
-    const maxW = Math.min(window.innerWidth * 0.38, 560);
-    return Math.max(320, Math.floor(maxW / 8) * 8);
+    const panel = document.querySelector('.board-panel');
+    const width = panel && panel.clientWidth ? panel.clientWidth : Math.min(window.innerWidth - 32, 560);
+    const available = Math.max(160, width - 48);
+    return Math.floor(Math.min(560, available) / 8) * 8;
+  }
+
+  function resizeBoard() {
+    const board = document.getElementById("board-canvas");
+    if (!board) return;
+    BoardUI.init(board, getBoardSize());
+    ArrowSystem.init(document.getElementById("arrow-canvas"), board, BoardUI.sqSize);
+    BoardUI._forceRedraw();
   }
 
   // ── Init board ─────────────────────────────────────────────
@@ -741,6 +751,6 @@ const UIController = (() => {
   return {
     showError, hideError, setAnalyzing, showResults,
     initMovesList, updateMoveElement, updateProgress,
-    updatePlayerStats, updateChart, showEmptyBoard
+    updatePlayerStats, updateChart, showEmptyBoard, resizeBoard
   };
 })();

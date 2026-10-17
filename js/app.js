@@ -29,6 +29,7 @@ const App = (() => {
     window.addEventListener('resize', () => {
       clearTimeout(t);
       t = setTimeout(() => {
+        UIController.resizeBoard();
         if (currentMovesData.length > 0) UIController.updateChart(currentMovesData);
       }, 200);
     });

@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /supabase/
+Disallow: /.git/
+Sitemap: https://gambyte.com.br/sitemap.xml

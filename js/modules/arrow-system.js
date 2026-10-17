@@ -17,13 +17,16 @@ const ArrowSystem = (() => {
   // Drag state
   let dragging  = false;
   let dragFrom  = null;
+  const boundBoards = new WeakSet();
 
   function init(arrowCanvas, boardCanvas, sqSizeGetter) {
     canvas    = arrowCanvas;
     sqSizeFn  = sqSizeGetter;
     ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
-    ctx.scale(dpr, dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (boundBoards.has(boardCanvas)) return;
+    boundBoards.add(boardCanvas);
 
     // Right-click drag on board canvas
     boardCanvas.addEventListener('contextmenu', e => e.preventDefault());
