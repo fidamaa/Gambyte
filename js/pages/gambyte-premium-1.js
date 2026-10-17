@@ -55,13 +55,12 @@ function goToLogin() {
   window.location.href = 'gambyte-login.html';
 }
 
-// O Pix é solicitado pelo WhatsApp; nenhuma cobrança é criada pelo site.
+// Abre somente a cobrança oficial fornecida pelo titular; não confirma pagamento.
 function doPayment() {
   const session = AuthSystem.currentSession();
   if (!session) { showStep('step-auth-check'); return; }
-  const message = 'Olá! Quero ativar o Gambyte Pro por um mês (R$ 9,90), pagando via Pix no Nubank. Meu e-mail da conta Gambyte: ' + session.email;
   const link = document.createElement('a');
-  link.href = 'https://wa.me/5521986996374?text=' + encodeURIComponent(message);
+  link.href = 'https://nubank.com.br/cobrar/54sp2d/6ad303d5-0da2-4794-b326-64203c26e6c9';
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
   document.body.appendChild(link);
