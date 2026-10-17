@@ -1,0 +1,11 @@
+document.querySelector('[data-onclick="gambyte-login-1"]').addEventListener('click', function(event) { switchTab('login') });
+document.querySelector('[data-onclick="gambyte-login-2"]').addEventListener('click', function(event) { switchTab('register') });
+document.querySelector('[data-onclick="gambyte-login-3"]').addEventListener('click', function(event) { togglePw('login-password',this) });
+document.querySelector('[data-onclick="gambyte-login-4"]').addEventListener('click', function(event) { doLogin() });
+document.querySelector('[data-onclick="gambyte-login-5"]').addEventListener('click', function(event) { window.open('gambyte-premium.html','_blank') });
+document.querySelector('[data-oninput="gambyte-login-6"]').addEventListener('input', function(event) { checkPwStrength(this.value) });
+document.querySelector('[data-onclick="gambyte-login-7"]').addEventListener('click', function(event) { togglePw('reg-password',this) });
+document.querySelector('[data-onclick="gambyte-login-8"]').addEventListener('click', function(event) { togglePw('reg-confirm',this) });
+document.querySelector('[data-onclick="gambyte-login-9"]').addEventListener('click', function(event) { doRegister() });
+document.querySelector('[data-onclick="gambyte-login-10"]').addEventListener('click', function(event) { doLogout() });
+document.querySelector('[data-onclick="gambyte-login-11"]').addEventListener('click', function(event) { window.open('gambyte-premium.html','_blank') });

@@ -20,17 +20,17 @@ const AuthUI = (() => {
     if (sess) {
       const initials = (sess.name || sess.email).charAt(0).toUpperCase();
       area.innerHTML = `
-        ${!sess.premium ? `<button class="btn-premium-header" onclick="AuthUI.openPremiumPage()">⭐ Assinar Gambyte Pro</button>` : ''}
+        ${!sess.premium ? `<button class="btn-premium-header" data-auth-action="premium">Assinar Gambyte Pro</button>` : ''}
         <a class="user-avatar-btn" href="gambyte-login.html" title="Perfil">
-          <div class="user-avatar">${initials}</div>
-          <span class="user-name-display">${sess.name || sess.email.split('@')[0]}</span>
+          <div class="user-avatar">${AuthSystem.escapeHTML(initials)}</div>
+          <span class="user-name-display">${AuthSystem.escapeHTML(sess.name || sess.email.split('@')[0])}</span>
           ${sess.premium ? '<span class="user-premium-badge">Gambyte Pro</span>' : ''}
         </a>
       `;
     } else {
       area.innerHTML = `
-        <button class="btn-login-header" onclick="window.location.href='gambyte-login.html'">Entrar</button>
-        <button class="btn-premium-header" onclick="AuthUI.openPremiumPage()">⭐ Premium</button>
+        <button class="btn-login-header" data-auth-action="login">Entrar</button>
+        <button class="btn-premium-header" data-auth-action="premium">Premium</button>
       `;
     }
     // Update pro toggle
@@ -61,6 +61,7 @@ const AuthUI = (() => {
   }
 
   function init() {
+    document.addEventListener("click", event => { const button = event.target.closest("[data-auth-action]"); if (!button) return; if (button.dataset.authAction === "premium") openPremiumPage(); else window.location.href = "gambyte-login.html"; });
     renderHeader();
     // Re-renderiza sempre que o login/logout ou o status premium mudar
     // (login em outra aba, webhook do Mercado Pago confirmando o

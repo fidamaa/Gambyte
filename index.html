@@ -42,7 +42,7 @@
     <div class="input-actions">
       <button id="btn-analyze" class="btn-primary">Analisar Partida</button>
       <button id="btn-clear" class="btn-secondary" title="Reinicia o tabuleiro e limpa a análise atual">Limpar</button>
-      <label class="pro-toggle-wrap" title="Análise profunda até depth 22 (apenas Gambyte Pro)" id="pro-toggle-wrap" onclick="AuthUI.handleProToggleClick(event)">
+      <label class="pro-toggle-wrap" title="Análise profunda até depth 22 (apenas Gambyte Pro)" id="pro-toggle-wrap" data-onclick="index-1">
         <span class="pro-badge">Gambyte Pro</span>
         <span class="pro-toggle-label">Análise Profunda</span>
         <span class="pro-switch">
@@ -122,9 +122,7 @@
            data-ad-slot="5539241407"
            data-ad-format="auto"
            data-full-width-responsive="true"></ins>
-      <script>
-           (adsbygoogle = window.adsbygoogle || []).push({});
-      </script>
+      <script src="js/pages/index-1.js"></script>
     </div>
 
     <!-- Analysis layout: Board | Chart+Moves | Summary -->
@@ -222,9 +220,7 @@
                data-ad-slot="6876373804"
                data-ad-format="auto"
                data-full-width-responsive="true"></ins>
-          <script>
-               (adsbygoogle = window.adsbygoogle || []).push({});
-          </script>
+          <script src="js/pages/index-2.js"></script>
         </div>
       </div>
 
@@ -249,9 +245,7 @@
                data-ad-slot="6954421548"
                data-ad-format="auto"
                data-full-width-responsive="true"></ins>
-          <script>
-               (adsbygoogle = window.adsbygoogle || []).push({});
-          </script>
+          <script src="js/pages/index-3.js"></script>
         </div>
 
         <div class="moves-section">
@@ -265,9 +259,9 @@
         <!-- INSIGHTS PREMIUM SECTION -->
         <div id="insights-section" class="insights-section">
           <div class="insights-tabs">
-            <button class="insights-tab active" onclick="InsightsUI.switchTab('global',this)" title="Resumo da Partida">🧠 Resumo</button>
-            <button class="insights-tab" onclick="InsightsUI.switchTab('move',this)" title="Análise por Lance">🔄 Lances</button>
-            <button class="insights-tab" onclick="InsightsUI.switchTab('dna',this)" title="DNA do Jogador">🧬 DNA</button>
+            <button class="insights-tab active" data-onclick="index-2" title="Resumo da Partida">🧠 Resumo</button>
+            <button class="insights-tab" data-onclick="index-3" title="Análise por Lance">🔄 Lances</button>
+            <button class="insights-tab" data-onclick="index-4" title="DNA do Jogador">🧬 DNA</button>
           </div>
 
           <!-- Banner de análise parcial (depth 18 pronta, depth 22 ainda processando) -->
@@ -419,10 +413,10 @@
                   <div class="insight-wide-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
                     <span>💡 Sugestões Personalizadas</span>
                     <div style="display:flex;gap:4px;background:var(--bg3);border-radius:6px;padding:3px;">
-                      <button id="sugg-tab-w" onclick="InsightsUI.switchSuggTab('white')"
+                      <button id="sugg-tab-w" data-onclick="index-5"
                         style="padding:3px 10px;border:none;border-radius:4px;font-size:11px;cursor:pointer;
                         background:var(--bg2);color:#ddd;font-family:'Outfit',sans-serif;">Brancas</button>
-                      <button id="sugg-tab-b" onclick="InsightsUI.switchSuggTab('black')"
+                      <button id="sugg-tab-b" data-onclick="index-6"
                         style="padding:3px 10px;border:none;border-radius:4px;font-size:11px;cursor:pointer;
                         background:transparent;color:var(--text3);font-family:'Outfit',sans-serif;">Pretas</button>
                     </div>
@@ -436,7 +430,7 @@
               <div class="premium-blur-overlay">
                 <div style="font-size:28px">🔒</div>
                 <span>Gambyte Pro — insights completos</span>
-                <button class="btn-unlock-premium" onclick="AuthUI.openPremiumPage()">
+                <button class="btn-unlock-premium" data-onclick="index-7">
                   Assinar Gambyte Pro — R$9,90/mês
                 </button>
               </div>
@@ -481,7 +475,7 @@
               <div class="premium-blur-overlay">
                 <div style="font-size:28px">🔒</div>
                 <span>Análise por lance — exclusivo Gambyte Pro</span>
-                <button class="btn-unlock-premium" onclick="AuthUI.openPremiumPage()">
+                <button class="btn-unlock-premium" data-onclick="index-8">
                   Desbloquear Gambyte Pro
                 </button>
               </div>
@@ -506,7 +500,7 @@
               <div class="premium-blur-overlay">
                 <div style="font-size:28px">🔒</div>
                 <span>DNA do Jogador — exclusivo Gambyte Pro</span>
-                <button class="btn-unlock-premium" onclick="AuthUI.openPremiumPage()">
+                <button class="btn-unlock-premium" data-onclick="index-9">
                   Desbloquear Gambyte Pro
                 </button>
               </div>
@@ -572,9 +566,7 @@
          data-ad-slot="7229753719"
          data-ad-format="auto"
          data-full-width-responsive="true"></ins>
-    <script>
-         (adsbygoogle = window.adsbygoogle || []).push({});
-    </script>
+    <script src="js/pages/index-4.js"></script>
   </div>
 
 </div><!-- /container -->
@@ -597,13 +589,7 @@
 <script src="js/modules/pgn-parser.js"></script>
 <script src="js/modules/rating-model.js"></script>
 <script src="js/modules/move-classifier.js"></script>
-<script>
-  // O .wasm do Stockfish (~108MB) fica hospedado à parte, num bucket
-  // R2 (o Cloudflare Pages recusa qualquer arquivo acima de 25MB). Em
-  // desenvolvimento local, deixe vazio — o .wasm é servido pelo próprio
-  // dev-server.py, na mesma pasta do .js.
-  const STOCKFISH_WASM_CDN_BASE_URL = 'https://pub-94a7965d8e8b4ad78fa49c8be7a840b7.r2.dev';
-</script>
+<script src="js/pages/index-5.js"></script>
 <script src="js/modules/stockfish-manager.js"></script>
 <script src="js/modules/analysis-engine.js"></script>
 
@@ -615,7 +601,7 @@
 
 <!-- Contas / Premium / Insights -->
 <!-- Supabase (Auth + Postgres + Edge Functions) — necessário pro auth-system.js -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/vendor/supabase-2.118.0.js"></script>
 <script src="js/modules/supabase-config.js"></script>
 <script src="js/modules/auth-system.js"></script>
 <script src="js/modules/insights-engine.js"></script>
@@ -628,5 +614,6 @@
 <!-- Orquestrador principal + bootstrap -->
 <script src="js/app.js"></script>
 
+<script src="js/pages/index-events.js"></script>
 </body>
 </html>

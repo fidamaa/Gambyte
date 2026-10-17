@@ -1,0 +1,9 @@
+document.querySelector('[data-onclick="index-1"]').addEventListener('click', function(event) { AuthUI.handleProToggleClick(event) });
+document.querySelector('[data-onclick="index-2"]').addEventListener('click', function(event) { InsightsUI.switchTab('global',this) });
+document.querySelector('[data-onclick="index-3"]').addEventListener('click', function(event) { InsightsUI.switchTab('move',this) });
+document.querySelector('[data-onclick="index-4"]').addEventListener('click', function(event) { InsightsUI.switchTab('dna',this) });
+document.querySelector('[data-onclick="index-5"]').addEventListener('click', function(event) { InsightsUI.switchSuggTab('white') });
+document.querySelector('[data-onclick="index-6"]').addEventListener('click', function(event) { InsightsUI.switchSuggTab('black') });
+document.querySelector('[data-onclick="index-7"]').addEventListener('click', function(event) { AuthUI.openPremiumPage() });
+document.querySelector('[data-onclick="index-8"]').addEventListener('click', function(event) { AuthUI.openPremiumPage() });
+document.querySelector('[data-onclick="index-9"]').addEventListener('click', function(event) { AuthUI.openPremiumPage() });
