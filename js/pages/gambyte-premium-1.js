@@ -104,7 +104,7 @@ function renderUserBar(sess) {
   if (bar) {
     bar.innerHTML = sess ? `
       <span class="ubar-name">${AuthSystem.escapeHTML(sess.name || sess.email.split('@')[0])}</span>
-      ${sess.premium ? '<span class="ubar-badge">PRO</span>' : ''}` : '';
+      ${sess.premium ? '<span class="ubar-badge">PRO</span>' : ''}` : '<a class="nav-pro" href="gambyte-login.html">Entrar</a>';
   }
 
   const status = document.getElementById('pro-status');

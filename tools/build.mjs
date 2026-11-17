@@ -205,9 +205,10 @@ for (const a of artigos) for (const s of [...a.corpo.matchAll(/href="\/aprender\
   if (!porSlug[s]) falha(a.meta.slug, `link para artigo inexistente: ${s}`);
 
 /* ── Molde das páginas ─────────────────────────────────────────── */
-const NAV = atual => `<nav class="info-nav" aria-label="Navegação do Gambyte"><div>`
+const NAV = atual => `<nav class="info-nav" aria-label="Navegação do Gambyte"><a class="info-brand" href="/" aria-label="Gambyte: página inicial"><img src="/logo.png" alt="" width="32" height="32"><span>Gambyte</span></a><div class="info-links">`
   + [['/', 'Analisar partida'], ['/aprender/', 'Aprender xadrez'], ['/como-usar.html', 'Como usar'], ['/guia.html', 'Guia de análise'], ['/sobre.html', 'Sobre'], ['/contato.html', 'Contato']]
-    .map(([h, t]) => `<a href="${h}"${h === atual ? ' aria-current="page"' : ''}>${t}</a>`).join('') + `</div></nav>`;
+    .map(([h, t]) => `<a href="${h}"${h === atual ? ' aria-current="page"' : ''}>${t}</a>`).join('')
+  + `</div><div class="info-nav-side"><a class="nav-pro" href="/gambyte-premium.html">Gambyte Pro</a></div></nav>`;
 const FOOTER = `<footer class="info-footer"><div><strong>Gambyte</strong><p>Projeto independente de Rampini. Aprender com a prática.</p></div><nav aria-label="Informações institucionais"><a href="/sobre.html">Sobre</a><a href="/aprender/">Aprender xadrez</a><a href="/como-usar.html">Como usar</a><a href="/guia.html">Guia de análise</a><a href="/gambyte-premium.html">Gambyte Pro</a><a href="/contato.html">Contato</a><a href="/privacidade.html">Privacidade</a><a href="/termos.html">Termos de Uso</a><a href="/licencas.html">Créditos e licença</a></nav><small>© 2026 Rampini · <a href="mailto:ebezerrarampini1@gmail.com">ebezerrarampini1@gmail.com</a></small></footer>`;
 const head = ({ titulo, descricao, url, tipo, ld }) => `<!doctype html>
 <html lang="pt-BR">
@@ -229,8 +230,8 @@ const head = ({ titulo, descricao, url, tipo, ld }) => `<!doctype html>
 <link rel="icon" href="/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/site-info.css?v=3">
-<link rel="stylesheet" href="/aprender.css?v=2">
+<link rel="stylesheet" href="/site-info.css?v=4">
+<link rel="stylesheet" href="/aprender.css?v=3">
 <script type="application/ld+json">${JSON.stringify(ld)}</script>
 </head>
 <!-- Página gerada por tools/build.mjs — edite o fragmento em tools/artigos/ e rode o build. -->`;

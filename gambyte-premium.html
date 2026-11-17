@@ -26,7 +26,7 @@
   --red:     #e05c5c;
   --blue:    #5b8fe0;
   --purple:  #9b7de0;
-  --gold:    #ffbe3c;
+  --gold:    #e8c97a;
   --radius:  8px;
   --radius-lg: 14px;
 }
@@ -44,7 +44,7 @@ body::before {
   content: '';
   position: fixed; inset: 0;
   background:
-    radial-gradient(ellipse 80% 60% at 10% -10%, rgba(255,190,60,0.10) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 60% at 10% -10%, rgba(232,201,122,0.10) 0%, transparent 50%),
     radial-gradient(ellipse 60% 50% at 90% 110%, rgba(91,143,224,0.08) 0%, transparent 50%),
     radial-gradient(ellipse 50% 40% at 50% 50%, rgba(155,125,224,0.04) 0%, transparent 55%);
   pointer-events: none;
@@ -95,8 +95,8 @@ header {
 .hero-badge {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 5px 16px; border-radius: 99px;
-  background: rgba(255,190,60,.12); color: var(--gold);
-  border: 1px solid rgba(255,190,60,.3);
+  background: rgba(232,201,122,.12); color: var(--gold);
+  border: 1px solid rgba(232,201,122,.3);
   font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
   margin-bottom: 20px;
   animation: fadeInDown .5s ease both;
@@ -156,8 +156,8 @@ header {
 }
 .pricing-card:hover { transform: translateY(-3px); }
 .pricing-card.featured {
-  border-color: rgba(255,190,60,.4);
-  background: linear-gradient(160deg, rgba(255,190,60,.06), rgba(13,15,20,0));
+  border-color: rgba(232,201,122,.4);
+  background: linear-gradient(160deg, rgba(232,201,122,.06), rgba(13,15,20,0));
 }
 .pricing-card.featured::before {
   content: 'MAIS POPULAR';
@@ -194,11 +194,11 @@ header {
 .btn-plan.premium-cta {
   background: linear-gradient(135deg, var(--gold), var(--accent2));
   color: #0d0f14;
-  box-shadow: 0 4px 20px rgba(255,190,60,.3);
+  box-shadow: 0 4px 20px rgba(232,201,122,.3);
 }
 .btn-plan.premium-cta:hover {
   opacity: .92; transform: translateY(-1px);
-  box-shadow: 0 8px 28px rgba(255,190,60,.4);
+  box-shadow: 0 8px 28px rgba(232,201,122,.4);
 }
 
 /* ── Features Grid ── */
@@ -217,8 +217,8 @@ header {
   display: inline-block; margin-top: 8px;
   font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
   padding: 2px 7px; border-radius: 4px;
-  background: rgba(255,190,60,.12); color: var(--gold);
-  border: 1px solid rgba(255,190,60,.3);
+  background: rgba(232,201,122,.12); color: var(--gold);
+  border: 1px solid rgba(232,201,122,.3);
 }
 
 /* ── Checkout Modal ── */
@@ -313,9 +313,9 @@ header {
   color: #0d0f14; font-family: 'Outfit', sans-serif;
   font-size: 15px; font-weight: 800; cursor: pointer;
   transition: all .2s; letter-spacing: .3px;
-  box-shadow: 0 4px 20px rgba(255,190,60,.3);
+  box-shadow: 0 4px 20px rgba(232,201,122,.3);
 }
-.btn-pay:hover { opacity: .92; transform: translateY(-1px); box-shadow: 0 8px 28px rgba(255,190,60,.4); }
+.btn-pay:hover { opacity: .92; transform: translateY(-1px); box-shadow: 0 8px 28px rgba(232,201,122,.4); }
 .btn-pay:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
 
 .pay-security {
@@ -332,7 +332,7 @@ header {
   background: linear-gradient(135deg, var(--gold), var(--accent2));
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 36px; margin-bottom: 20px;
-  box-shadow: 0 8px 32px rgba(255,190,60,.4);
+  box-shadow: 0 8px 32px rgba(232,201,122,.4);
   animation: popIn .5s cubic-bezier(.17,.89,.32,1.28) both;
 }
 @keyframes popIn {
@@ -400,8 +400,8 @@ header {
 .ubar-name { font-size: 13px; color: var(--text2); }
 .ubar-badge {
   font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px;
-  background: rgba(255,190,60,.15); color: var(--gold);
-  border: 1px solid rgba(255,190,60,.35); letter-spacing: .5px;
+  background: rgba(232,201,122,.15); color: var(--gold);
+  border: 1px solid rgba(232,201,122,.35); letter-spacing: .5px;
 }
 
 /* Pix QR placeholder */
@@ -424,7 +424,9 @@ header {
 
 /* ── Ajustes da versão atual da página ── */
 :root { --text2:#a6afc5; --text3:#7c86a3; }
-h2.section-title { margin-top:0; font-size:13px; color:#b4bdd0; }
+h2.section-title { margin-top:0; font-family:'DM Serif Display',Georgia,serif; font-weight:400; font-size:30px; letter-spacing:-.3px; text-transform:none; color:var(--text); }
+.hero { padding-top:48px; }
+.container { max-width:960px; }
 .hero-sub { max-width:600px; }
 .hero-stat { max-width:190px; }
 .hero-stat-label { line-height:1.5; }
@@ -452,7 +454,7 @@ h2.section-title { margin-top:0; font-size:13px; color:#b4bdd0; }
 .faq-answer { font-size:14.5px; }
 .faq-item.open .faq-answer { max-height:420px; }
 .pro-status { margin:22px 0 0; padding:14px 18px; border-radius:var(--radius-lg); border:1px solid rgba(91,201,122,.4); background:rgba(91,201,122,.08); color:#cfe9d7; font-size:14.5px; line-height:1.6; text-align:center; }
-.pro-status.ending { border-color:rgba(255,190,60,.45); background:rgba(255,190,60,.08); color:#f3e2b4; }
+.pro-status.ending { border-color:rgba(232,201,122,.45); background:rgba(232,201,122,.08); color:#f3e2b4; }
 .pro-status[hidden] { display:none; }
 .pay-steps { margin:0 0 16px; padding-left:20px; font-size:14px; line-height:1.65; color:var(--text2); }
 .pay-steps li { margin-bottom:6px; }
@@ -463,21 +465,12 @@ h2.section-title { margin-top:0; font-size:13px; color:#b4bdd0; }
 .toast { max-width:340px; line-height:1.45; }
 @media (prefers-reduced-motion:reduce) { .hero-badge,.hero-title,.hero-sub,.hero-stats,.pricing-section,.features-section,.faq-section { animation:none; } body::before { animation:none; } }
 </style>
-<link rel="stylesheet" href="site-info.css?v=3">
+<link rel="stylesheet" href="site-info.css?v=4">
 </head>
 <body data-site="gambyte">
-<nav class="info-nav" aria-label="Navegação do Gambyte"><div><a href="index.html">Analisar partida</a><a href="aprender/">Aprender xadrez</a><a href="como-usar.html">Como usar</a><a href="guia.html">Guia de análise</a><a href="sobre.html">Sobre</a><a href="contato.html">Contato</a></div></nav>
+<nav class="info-nav" aria-label="Navegação do Gambyte"><a class="info-brand" href="index.html" aria-label="Gambyte: página inicial"><img src="logo.png" alt="" width="32" height="32"><span>Gambyte</span></a><div class="info-links"><a href="index.html">Analisar partida</a><a href="aprender/">Aprender xadrez</a><a href="como-usar.html">Como usar</a><a href="guia.html">Guia de análise</a><a href="sobre.html">Sobre</a><a href="contato.html">Contato</a></div><div class="info-nav-side user-status-bar" id="user-status-bar"></div></nav>
 
 <div class="container">
-  <!-- Header -->
-  <header>
-    <a class="back-btn" href="index.html">← Voltar ao analisador</a>
-    <div class="logo-area">
-      <div class="logo-icon"><img src="logo.png" alt="Gambyte"></div>
-      <div class="logo-text">Gambyte</div>
-    </div>
-    <div class="user-status-bar" id="user-status-bar"></div>
-  </header>
 
   <!-- Aviso para quem já é assinante (preenchido pelo script) -->
   <div class="pro-status" id="pro-status" hidden></div>
@@ -745,7 +738,7 @@ h2.section-title { margin-top:0; font-size:13px; color:#b4bdd0; }
 <script src="js/vendor/supabase-2.118.0.js"></script>
 <script src="js/modules/supabase-config.js"></script>
 <script src="js/modules/auth-system.js"></script>
-<script src="js/pages/gambyte-premium-1.js?v=pro-3"></script>
+<script src="js/pages/gambyte-premium-1.js?v=pro-4"></script>
 <script src="js/pages/gambyte-premium-events.js?v=pro-3"></script>
 <footer class="info-footer"><div><strong>Gambyte</strong><p>Projeto independente de Rampini. Aprender com a prática.</p></div><nav aria-label="Informações institucionais"><a href="sobre.html">Sobre</a><a href="aprender/">Aprender xadrez</a><a href="como-usar.html">Como usar</a><a href="guia.html">Guia de análise</a><a href="gambyte-premium.html">Gambyte Pro</a><a href="contato.html">Contato</a><a href="privacidade.html">Privacidade</a><a href="termos.html">Termos de Uso</a><a href="licencas.html">Créditos e licença</a></nav><small>© 2026 Rampini · <a href="mailto:ebezerrarampini1@gmail.com">ebezerrarampini1@gmail.com</a></small></footer>
 </body>
