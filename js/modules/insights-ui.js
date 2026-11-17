@@ -112,10 +112,11 @@ const InsightsUI = (() => {
       el('bml-move').textContent   = 'Lance '+((blunder.move.index||0)+1)+' · '+whoStr;
       el('bml-loss').textContent   = blunder.loss.toFixed(0)+'cp';
       el('bml-played').textContent = blunder.move.san || '—';
-      el('bml-best').textContent   = blunder.move.bestMoveUCI || '—';
+      const melhorSan = (typeof ProTools !== 'undefined') ? ProTools.bestSan(blunder.move) : (blunder.move.bestMoveUCI || '—');
+      el('bml-best').textContent   = melhorSan;
       el('bml-explanation').textContent =
-        `${whoStr}: ao jogar ${blunder.move.san}, perdeu ${blunder.loss.toFixed(0)} centipawns de vantagem. `
-        + `O lance correto era ${blunder.move.bestMoveUCI||'outro'}, que mantinha a vantagem.`;
+        `${whoStr}: o lance ${blunder.move.san} custou ${(blunder.loss/100).toFixed(2)} de avaliação. `
+        + `O motor preferia ${melhorSan}. Volte a este lance, olhe a seta e tente explicar o que ela evita ou ameaça.`;
     }
 
     // Chart insights
@@ -238,7 +239,7 @@ const InsightsUI = (() => {
     const bmGainEl = document.getElementById('mi-best-gain');
     if (bmsEl && moveData.bestMoveUCI && moveData.playedMoveUCI !== moveData.bestMoveUCI) {
       bmsEl.style.display = 'flex';
-      if (bmMoveEl) bmMoveEl.textContent = moveData.bestMoveUCI;
+      if (bmMoveEl) bmMoveEl.textContent = (typeof ProTools !== 'undefined') ? ProTools.bestSan(moveData) : moveData.bestMoveUCI;
       if (bmGainEl && insight.loss > 0) bmGainEl.textContent = `(+${insight.loss.toFixed(0)}cp)`;
     } else if (bmsEl) {
       bmsEl.style.display = 'none';

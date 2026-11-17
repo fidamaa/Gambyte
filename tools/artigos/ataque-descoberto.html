@@ -1,0 +1,39 @@
+<!--meta {"titulo":"Ataque descoberto e xeque duplo","descricao":"Como uma peça que sai do caminho cria duas ameaças de uma vez, por que o xeque duplo é o lance mais forçado do xadrez e como detectar a bateria antes que ela dispare.","categoria":"tatica","ordem":12,"relacionados":["cravada-e-espeto","padroes-de-mate"]}-->
+<p>No ataque descoberto, a peça que se move não é a que ataca. Ela sai do caminho e <strong>revela</strong> o ataque de uma peça de longo alcance que estava atrás. Como a peça que saiu também pode criar uma ameaça própria, um único lance gera dois ataques vindos de duas peças diferentes, e isso é mais difícil de responder do que um garfo.</p>
+
+<h2 id="a-mecanica">A mecânica: uma peça na frente, outra atrás</h2>
+<p>Todo ataque descoberto precisa de três elementos alinhados: uma peça de linha (bispo, torre ou dama), um alvo na mesma linha e uma peça sua entre os dois. Esse arranjo é chamado de <strong>bateria</strong>. Enquanto a peça da frente não se move, nada acontece; quando ela sai, o alvo fica atacado.</p>
+<p>O melhor lance para a peça da frente é quase sempre um que crie a maior ameaça possível: um xeque, uma captura ou um ataque à dama. O adversário tem um lance para responder a duas coisas.</p>
+[[tab lances="1. e4 e6 2. d4 d5 3. e5 c5 4. c3 Nc6 5. Nf3 Qb6 6. Bd3 cxd4 7. cxd4 Nxd4 8. Nxd4 Qxd4" marca="d1 d3 d4" leg="A dama preta capturou em d4. Entre ela e a dama branca só existe o bispo de d3."]]
+<p>As pretas contaram atacantes e defensores do peão de d4 e concluíram que ele podia ser capturado. A conta estava certa, mas ignorou o alinhamento na coluna d. Depois de [[l 1. e4 e6 2. d4 d5 3. e5 c5 4. c3 Nc6 5. Nf3 Qb6 6. Bd3 cxd4 7. cxd4 Nxd4 8. Nxd4 Qxd4 9. Bb5+]], o bispo dá xeque e a dama branca passa a atacar a dama preta. O xeque precisa ser respondido, e a dama de d4 é capturada no lance seguinte.</p>
+<div class="ap-erro"><strong>O erro por trás do erro</strong><p>Contar atacantes e defensores funciona para trocas na mesma casa. A contagem não enxerga peças que estão alinhadas com a sua depois da captura. Antes de capturar com a dama, olhe as linhas que saem da casa de destino.</p></div>
+
+<h2 id="xeque-descoberto">Xeque descoberto</h2>
+<p>Quando o alvo revelado é o rei, temos um xeque descoberto. Aqui a peça que se move ganha uma liberdade enorme: ela pode ir a praticamente qualquer casa, inclusive uma casa atacada, porque o adversário é obrigado a tratar do xeque primeiro. Uma peça que dá xeque descoberto pode capturar uma dama protegida e voltar para casa no lance seguinte.</p>
+<p>Uma sequência de xeques descobertos repetidos, em que uma peça vai e volta capturando material enquanto a outra dá xeque, é chamada de <strong>moinho</strong>. É rara, mas quando aparece costuma limpar uma fileira inteira.</p>
+
+<h2 id="xeque-duplo">Xeque duplo: só o rei pode responder</h2>
+<p>Se a peça que sai também dá xeque, o rei está em xeque de duas peças ao mesmo tempo. As três respostas normais a um xeque são capturar a peça que ataca, colocar algo na frente ou mover o rei. Contra dois atacantes, as duas primeiras deixam de existir: não dá para capturar duas peças nem bloquear duas linhas com um lance. <strong>Em xeque duplo, o rei é obrigado a se mover.</strong> Se ele não tem casa, é mate, mesmo que as duas peças atacantes estejam penduradas.</p>
+<p>A demonstração mais conhecida é uma miniatura jogada por Richard Réti contra Savielly Tartakower em Viena, em 1910. Depois de oito lances, chegou-se a esta posição:</p>
+[[tab lances="1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Nf6 5. Qd3 e5 6. dxe5 Qa5+ 7. Bd2 Qxe5 8. O-O-O Nxe4" marca="d3 d2 d1 e8" leg="Dama, bispo e torre brancos estão na coluna d, apontando para a casa d8. As pretas acabaram de capturar um cavalo."]]
+<p>As pretas ganharam uma peça e ameaçam a dama. Réti respondeu com um sacrifício de dama: [[l 1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Nf6 5. Qd3 e5 6. dxe5 Qa5+ 7. Bd2 Qxe5 8. O-O-O Nxe4 9. Qd8+ Kxd8 10. Bg5+]]. O bispo dá xeque pela diagonal e, ao sair de d2, descobre o xeque da torre pela coluna.</p>
+[[tab lances="1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Nf6 5. Qd3 e5 6. dxe5 Qa5+ 7. Bd2 Qxe5 8. O-O-O Nxe4 9. Qd8+ Kxd8 10. Bg5+" marca="g5 d1 d8" leg="Xeque duplo. As pretas têm dama, cavalo e bispos por perto, mas nenhum deles pode ajudar: o rei precisa se mover."]]
+<p>O rei só tem duas casas, e as duas perdem na hora: [[l 1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Nf6 5. Qd3 e5 6. dxe5 Qa5+ 7. Bd2 Qxe5 8. O-O-O Nxe4 9. Qd8+ Kxd8 10. Bg5+ Kc7 11. Bd8#]], ou então [[l 1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Nf6 5. Qd3 e5 6. dxe5 Qa5+ 7. Bd2 Qxe5 8. O-O-O Nxe4 9. Qd8+ Kxd8 10. Bg5+ Ke8 11. Rd8#]]. As pretas tinham dama e cavalo a mais e não puderam usar nenhum dos dois.</p>
+
+<h2 id="como-encontrar">Como encontrar ataques descobertos</h2>
+<p>O padrão visual é sempre uma peça sua “atrapalhando” outra peça sua. Em vez de lamentar que o bispo está bloqueado pelo cavalo, pergunte o que existe do outro lado da linha.</p>
+<ol>
+<li><strong>Trace as linhas das suas peças de longo alcance através das suas próprias peças.</strong> Se a linha continua até uma peça adversária valiosa, você tem uma bateria armada.</li>
+<li><strong>Liste os lances da peça da frente que criam uma ameaça.</strong> Xeques primeiro, depois capturas, depois ataques à dama.</li>
+<li><strong>Confira se o alvo revelado está indefeso ou vale mais que a peça que o ataca.</strong> Um ataque descoberto de torre contra uma torre protegida não ganha nada.</li>
+</ol>
+<p>Quando a bateria ainda não existe, dá para construí-la. Colocar uma torre na mesma coluna da dama adversária, mesmo com duas peças no meio, cria um problema permanente para ela: toda vez que uma dessas peças se mover, a outra fica cravada ou a linha se abre.</p>
+
+<h2 id="como-defender">Como se defender</h2>
+<p>A defesa começa antes do lance. Ataques descobertos precisam de alinhamento, então o remédio é desfazer o alinhamento enquanto ainda há tempo:</p>
+<ul>
+<li><strong>Não deixe a dama na mesma coluna de uma torre adversária</strong> nem na mesma diagonal de um bispo, mesmo que haja peças no meio. Um lance de dama para a casa ao lado costuma bastar.</li>
+<li><strong>Tire o rei de linhas semiabertas.</strong> Um rei em e8 com a coluna e parcialmente aberta e uma torre branca em e1 é um convite.</li>
+<li><strong>Antes de capturar, olhe o que fica atrás da casa de destino.</strong> No primeiro exemplo deste artigo, a captura em d4 colocou a dama na frente de uma bateria pronta.</li>
+</ul>
+<p>Na revisão das suas partidas com o Gambyte, ataques descobertos sofridos têm uma assinatura parecida com a dos garfos: uma gafe marcada em um lance de captura que parecia seguro. A diferença aparece ao seguir a seta do melhor lance do adversário. Se ela aponta para uma peça que se move e a ameaça real vem de <em>outra</em> peça, você encontrou uma bateria que não tinha visto.</p>

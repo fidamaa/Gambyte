@@ -1,0 +1,54 @@
+<!--meta {"titulo":"Finais de rei e peão: regra do quadrado, oposição e casas-chave","descricao":"Como saber em segundos se um peão promove, o que é ter a oposição, quais casas o rei precisa ocupar para ganhar e a defesa que garante o empate.","categoria":"finais","ordem":20,"relacionados":["finais-de-torre","valor-das-pecas"]}-->
+<p>Finais de rei e peão contra rei parecem simples e são a base de todos os outros. Toda vez que você decide trocar a última peça, está apostando que sabe o resultado do final de peões que sobra. Três ideias resolvem a grande maioria dos casos: a regra do quadrado, a oposição e as casas-chave.</p>
+
+<h2 id="regra-do-quadrado">A regra do quadrado</h2>
+<p>Quando o peão corre sozinho para a promoção e o rei adversário tenta alcançá-lo, não é preciso contar lance por lance. Desenhe mentalmente um quadrado cujo lado vai da casa do peão até a casa de promoção. <strong>Se o rei defensor está dentro do quadrado, ou consegue entrar nele no seu lance, ele alcança o peão.</strong> Se não, o peão promove.</p>
+[[tab fen="8/8/8/8/P4k2/8/8/7K w - -" marca="a4 e4 e8 a8" leg="O quadrado do peão de a4 tem os cantos em a4, e4, e8 e a8. O rei preto, em f4, está uma coluna fora dele."]]
+<p>Com as brancas jogando, o peão avança e o quadrado encolhe junto: [[l fen="8/8/8/8/P4k2/8/8/7K w - -" 1. a5 Ke5 2. a6 Kd6 3. a7 Kc7 4. a8=Q]]. O rei chegou um lance atrasado.</p>
+<p>Na mesma posição com as pretas jogando, o rei entra no quadrado imediatamente e o resultado se inverte: [[l fen="8/8/8/8/P4k2/8/8/7K b - -" 1... Ke5 2. a5 Kd6 3. a6 Kc7 4. a7 Kb7 5. a8=Q+ Kxa8]].</p>
+<div class="ap-nota"><strong>Dois detalhes</strong><p>Um peão na casa inicial pode avançar duas casas, então conte o quadrado como se ele já estivesse na terceira fileira. E a regra só vale quando nada atrapalha o caminho do rei: um peão ou o rei adversário na diagonal pode custar o lance que faltava.</p></div>
+
+<h2 id="oposicao">A oposição</h2>
+<p>Quando os dois reis estão frente a frente na mesma coluna, com uma casa entre eles, nenhum pode avançar: as três casas à frente de cada um são controladas pelo outro. Quem tem de jogar é obrigado a sair da frente e ceder passagem. Por isso se diz que <strong>tem a oposição quem <em>não</em> tem a vez de jogar</strong>.</p>
+<p>A oposição decide a posição mais importante deste final. O rei branco está à frente do seu peão e os reis se encaram:</p>
+[[tab fen="8/3k4/8/3K4/3P4/8/8/8 b - -" marca="d5 d7" leg="As pretas jogam, logo as brancas têm a oposição. O rei preto vai ter de escolher um lado."]]
+<p>Qualquer lance do rei preto deixa o rei branco avançar pelo lado oposto: [[l fen="8/3k4/8/3K4/3P4/8/8/8 b - -" 1... Ke7 2. Kc6 Kd8 3. Kd6 Kc8 4. Ke7 Kc7 5. d5 Kc8 6. d6 Kb7 7. d7 Kc7 8. d8=Q+]]. Repare no terceiro lance das brancas: o rei toma a oposição de novo, uma fileira acima, e repete a manobra. O peão só começou a andar quando o rei já controlava a casa de promoção.</p>
+<p>Agora a mesma posição, mas com as brancas jogando. São as pretas que têm a oposição, e o rei branco não consegue passar:</p>
+[[tab fen="8/3k4/8/3K4/3P4/8/8/8 w - -" lances="1. Ke5 Ke7 2. d5 Kd7 3. d6 Kd8 4. Ke6 Ke8 5. d7+ Kd8 6. Kd6" marca="d8 d7 d6" leg="O rei preto não está em xeque e não tem nenhum lance legal. É empate por afogamento."]]
+<p>Uma única diferença, quem tinha a vez, transformou uma posição ganha em empate. É por isso que em finais de peões se contam tempos com tanto cuidado.</p>
+
+<h2 id="casas-chave">Casas-chave: o atalho para não calcular</h2>
+<p>O exemplo acima pode ser resumido em uma regra. Cada peão tem um conjunto de <strong>casas-chave</strong>: se o rei atacante ocupar uma delas, o final está ganho, não importa quem joga.</p>
+<div class="ap-tabela-wrap"><table class="ap-tabela">
+<thead><tr><th>Peão na</th><th>Casas-chave</th><th>Exemplo com peão em d</th></tr></thead>
+<tbody>
+<tr><td>2ª, 3ª ou 4ª fileira</td><td>As três casas duas fileiras à frente do peão</td><td>Peão em d4: c6, d6 e e6</td></tr>
+<tr><td>5ª ou 6ª fileira</td><td>As três casas imediatamente à frente e as três da fileira seguinte</td><td>Peão em d5: c6, d6, e6, c7, d7 e e7</td></tr>
+</tbody></table></div>
+<p>No primeiro diagrama da oposição, o rei branco em d5 ainda não estava em uma casa-chave do peão de d4. Com a oposição, ele conseguiu chegar a c6. Sem ela, ficou barrado.</p>
+<p>A segunda linha da tabela explica uma regra prática muito usada: <strong>rei na sexta fileira à frente do próprio peão ganha sempre</strong>.</p>
+[[tab fen="3k4/8/3K4/3P4/8/8/8/8 w - -" marca="d6" leg="O rei branco já ocupa uma casa-chave. As brancas ganham jogando ou não."]]
+<p>Com as brancas jogando, uma das linhas é [[l fen="3k4/8/3K4/3P4/8/8/8/8 w - -" 1. Ke6 Ke8 2. d6 Kd8 3. d7 Kc7 4. Ke7]], e o peão promove no lance seguinte. Com as pretas jogando, o rei preto sai para um lado e o branco avança pelo outro.</p>
+
+<h2 id="a-defesa">A defesa correta</h2>
+<p>Do lado de quem defende, a técnica tem três passos:</p>
+<ol>
+<li><strong>Coloque o rei na frente do peão</strong>, o mais perto dele possível.</li>
+<li><strong>Quando for obrigado a recuar, recue em linha reta</strong>, na mesma coluna do peão. Recuar na diagonal entrega a oposição.</li>
+<li><strong>Quando o rei atacante avançar para o lado do peão, fique de frente para ele</strong>, tomando a oposição.</li>
+</ol>
+<p>Um teste rápido para o momento final: se o peão chega à sétima fileira <strong>dando xeque</strong>, o defensor empata, porque o rei volta para a frente do peão e fica afogado, como no diagrama acima. Se o peão chega à sétima <strong>sem xeque</strong>, o defensor é obrigado a sair da frente e o peão promove.</p>
+
+<h2 id="peao-de-torre">A exceção do peão de torre</h2>
+<p>Peões nas colunas a e h têm uma desvantagem: o rei atacante só pode apoiá-los por um lado. Se o rei defensor chega ao canto de promoção, ou à casa ao lado dele, <strong>o final é empate</strong>, mesmo com o rei atacante bem colocado. O defensor fica indo e voltando entre as duas casas do canto e, quando o peão chega à sétima, está afogado.</p>
+<p>Isso tem uma consequência importante para as trocas: com um peão de torre a mais, trocar tudo costuma jogar a vitória fora. Com um peão central a mais, trocar tudo costuma garanti-la.</p>
+
+<h2 id="na-pratica">Como usar isso em uma partida</h2>
+<ul>
+<li><strong>Antes de trocar a última peça</strong>, pergunte: o meu rei chega a uma casa-chave? O rei dele chega à frente do peão? Se você não souber responder, mantenha as peças.</li>
+<li><strong>Avance o rei antes do peão.</strong> O erro mais comum de quem está ganhando é empurrar o peão cedo demais. O rei vai na frente abrindo caminho, e o peão segue atrás.</li>
+<li><strong>Guarde lances de peão de reserva.</strong> Em posições de oposição, um lance de peão que não muda nada serve para passar a vez ao adversário.</li>
+<li><strong>Com peões nos dois lados do tabuleiro</strong>, um peão passado distante funciona como isca: o rei adversário precisa ir buscá-lo, e o seu rei aproveita para capturar os peões do outro lado.</li>
+</ul>
+<p>Quando esses finais aparecem nas suas partidas analisadas, a avaliação do motor muda de “ganho” para 0,00 em um único lance, sem nenhuma captura envolvida. Se você vir uma queda dessas em um final de peões, o motivo quase sempre é a oposição ou um rei que deixou de alcançar uma casa-chave. Vale montar a posição e jogar as duas continuações até o fim para fixar o padrão.</p>
+<p>O passo seguinte no estudo de finais são as posições com torres, que aparecem com muito mais frequência: veja <a href="/aprender/finais-de-torre.html">finais de torre: Lucena e Philidor</a>.</p>

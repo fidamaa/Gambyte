@@ -1,0 +1,85 @@
+<!--meta {"titulo":"Notação algébrica e PGN: como ler e escrever uma partida","descricao":"As casas, as letras das peças em português e em inglês, os símbolos de captura, xeque e roque, e a estrutura de um arquivo PGN.","categoria":"fundamentos","ordem":1,"relacionados":["exportar-pgn","glossario"]}-->
+<p>A notação algébrica é a forma padrão de registrar uma partida de xadrez. Com ela, qualquer jogo pode ser reproduzido lance a lance, por uma pessoa ou por um programa. O PGN, formato que o Gambyte recebe, é a notação algébrica dentro de um arquivo de texto com algumas informações extras. Entender os dois leva poucos minutos.</p>
+
+<h2 id="as-casas">As casas do tabuleiro</h2>
+<p>Cada casa tem um nome formado por uma letra e um número. As <strong>colunas</strong> (verticais) vão de <strong>a</strong> até <strong>h</strong>, da esquerda para a direita do ponto de vista das brancas. As <strong>fileiras</strong> (horizontais) vão de <strong>1</strong> a <strong>8</strong>, começando do lado das brancas.</p>
+[[tab lances="1. e4 e5 2. Nf3 Nc6" marca="e4 e5 f3 c6" vez="nao" leg="Posição depois de 1. e4 e5 2. Nf3 Nc6. As letras ficam na borda de baixo e os números na lateral."]]
+<p>O rei branco começa em e1 e o preto em e8. A casa do canto inferior direito, h1, é sempre uma casa clara. Se o seu tabuleiro físico estiver com uma casa escura ali, ele está virado.</p>
+
+<h2 id="as-pecas">As letras das peças</h2>
+<p>Cada peça é representada por uma letra maiúscula. O peão não tem letra: um lance de peão é escrito só com a casa de destino. As letras mudam conforme o idioma, e esta é a principal fonte de confusão para quem lê livros em português e exporta partidas de sites em inglês:</p>
+<div class="ap-tabela-wrap"><table class="ap-tabela">
+<thead><tr><th>Peça</th><th>Português</th><th>Inglês (padrão do PGN)</th></tr></thead>
+<tbody>
+<tr><td>Rei</td><td>R</td><td>K (king)</td></tr>
+<tr><td>Dama</td><td>D</td><td>Q (queen)</td></tr>
+<tr><td>Torre</td><td>T</td><td>R (rook)</td></tr>
+<tr><td>Bispo</td><td>B</td><td>B (bishop)</td></tr>
+<tr><td>Cavalo</td><td>C</td><td>N (knight)</td></tr>
+<tr><td>Peão</td><td>sem letra</td><td>sem letra</td></tr>
+</tbody></table></div>
+<p>Repare na armadilha: <strong>R é rei em português e torre em inglês</strong>. O padrão PGN exige as letras em inglês, e é assim que Chess.com, Lichess e praticamente todos os programas exportam. Por isso os artigos do Gambyte usam K, Q, R, B e N nas sequências de lances: são exatamente os caracteres que você vai ver no seu arquivo.</p>
+
+<h2 id="os-lances">Como um lance é escrito</h2>
+<p>A forma básica é <strong>letra da peça + casa de destino</strong>. A casa de origem não aparece, porque normalmente só uma peça daquele tipo consegue chegar ao destino.</p>
+<ul>
+<li>[[l 1. e4]] — um peão vai para e4.</li>
+<li>[[l 1. Nf3]] — um cavalo vai para f3.</li>
+<li>[[l 1. e4 e5 2. Nf3 Nc6 3. Bb5]] — três lances completos. O número indica o lance; o primeiro movimento depois dele é das brancas e o segundo é das pretas.</li>
+</ul>
+<p>Quando só o lance das pretas é citado, usa-se reticências depois do número: 2... Nc6.</p>
+
+<h2 id="simbolos">Símbolos que aparecem junto dos lances</h2>
+<div class="ap-tabela-wrap"><table class="ap-tabela">
+<thead><tr><th>Símbolo</th><th>Significado</th><th>Exemplo</th></tr></thead>
+<tbody>
+<tr><td>x</td><td>Captura</td><td>Bxc6 (bispo captura em c6); exd5 (o peão da coluna e captura em d5)</td></tr>
+<tr><td>+</td><td>Xeque</td><td>Bb5+</td></tr>
+<tr><td>#</td><td>Xeque-mate</td><td>Qxf7#</td></tr>
+<tr><td>O-O</td><td>Roque pequeno (lado do rei)</td><td>O-O</td></tr>
+<tr><td>O-O-O</td><td>Roque grande (lado da dama)</td><td>O-O-O</td></tr>
+<tr><td>=</td><td>Promoção</td><td>e8=Q (o peão chega a e8 e vira dama)</td></tr>
+</tbody></table></div>
+<p>Nas capturas de peão, a letra antes do “x” é a coluna de onde o peão saiu. A captura <em>en passant</em> é escrita como uma captura comum de peão, indicando a casa em que o peão que captura termina.</p>
+
+<h2 id="ambiguidade">Quando duas peças iguais podem ir para a mesma casa</h2>
+<p>Se dois cavalos (ou duas torres) conseguem chegar ao mesmo destino, a notação acrescenta a coluna de origem logo depois da letra da peça. Se as duas estiverem na mesma coluna, usa-se a fileira.</p>
+[[tab lances="1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Nbd7" marca="d7 f6" vez="nao" leg="Os cavalos de b8 e de f6 podiam ir a d7. O lance foi escrito como Nbd7: o cavalo que estava na coluna b."]]
+<p>Outros exemplos: Rad1 significa “a torre da coluna a vai para d1” e R1e2 significa “a torre que está na fileira 1 vai para e2”. É raro precisar de coluna e fileira ao mesmo tempo, mas pode acontecer com três damas ou três cavalos no tabuleiro.</p>
+
+<h2 id="comentarios">Sinais de avaliação</h2>
+<p>Comentaristas acrescentam sinais depois do lance para dar uma opinião rápida. Eles não fazem parte do lance e não mudam a posição.</p>
+<ul>
+<li><strong>!</strong> lance bom &nbsp;·&nbsp; <strong>!!</strong> lance excelente e difícil de encontrar</li>
+<li><strong>?</strong> erro &nbsp;·&nbsp; <strong>??</strong> erro grave</li>
+<li><strong>!?</strong> lance interessante &nbsp;·&nbsp; <strong>?!</strong> lance duvidoso</li>
+</ul>
+<p>As classificações do Gambyte (brilhante, imprecisão, erro, gafe e as demais) cumprem um papel parecido, com a diferença de que são calculadas a partir da avaliação do motor. O critério de cada uma está descrito em <a href="/aprender/como-o-gambyte-classifica.html">como o Gambyte classifica cada lance</a>.</p>
+
+<h2 id="pgn">A estrutura de um arquivo PGN</h2>
+<p>PGN é a sigla de <em>Portable Game Notation</em>. Um arquivo PGN tem duas partes: os <strong>cabeçalhos</strong>, entre colchetes, e a <strong>sequência de lances</strong>.</p>
+<pre>[Event "Partida de estudo"]
+[Site "Lichess"]
+[Date "2026.11.16"]
+[White "Brancas"]
+[Black "Pretas"]
+[Result "1-0"]
+
+1. e4 e5 2. Bc4 Nc6 3. Qh5 Nf6 4. Qxf7# 1-0</pre>
+<p>Os cabeçalhos guardam nomes dos jogadores, data, local e resultado. O resultado aparece duas vezes: no cabeçalho <em>Result</em> e no fim dos lances. Os valores possíveis são <strong>1-0</strong> (vitória das brancas), <strong>0-1</strong> (vitória das pretas), <strong>1/2-1/2</strong> (empate) e <strong>*</strong> (partida em andamento ou resultado desconhecido).</p>
+<p>Um PGN também pode conter <strong>comentários</strong> entre chaves, como <code>{boa ideia}</code>, <strong>variantes</strong> entre parênteses e marcações de relógio como <code>{[%clk 0:02:31]}</code>. Sites de xadrez costumam incluir essas informações na exportação.</p>
+<div class="ap-nota"><strong>O que o Gambyte faz com isso</strong><p>O analisador lê os cabeçalhos para mostrar os nomes dos jogadores e usa a linha principal de lances. Comentários, variantes e marcações de relógio são ignorados, então você pode colar o PGN exatamente como o site exportou. Cole uma partida por vez.</p></div>
+
+<h2 id="fen">E o FEN?</h2>
+<p>Enquanto o PGN registra a partida inteira, o <strong>FEN</strong> descreve uma única posição em uma linha de texto: onde está cada peça, quem joga, quais roques ainda são possíveis. A posição inicial em FEN é:</p>
+<pre>rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1</pre>
+<p>Letras minúsculas são peças pretas, maiúsculas são brancas, e os números indicam casas vazias em sequência. O FEN é útil para compartilhar um problema ou uma posição de final. Para analisar uma partida completa, o formato certo é o PGN.</p>
+
+<h2 id="erros-comuns">Erros comuns ao digitar uma partida</h2>
+<ul>
+<li><strong>Usar letras em português</strong> (C, T, D) em um programa que espera o padrão em inglês. Troque por N, R e Q.</li>
+<li><strong>Escrever o roque com zeros</strong> (0-0). O padrão PGN usa a letra O maiúscula, embora muitos programas, incluindo o Gambyte, aceitem as duas formas.</li>
+<li><strong>Esquecer a desambiguação.</strong> Se dois cavalos podem ir a d7, “Nd7” sozinho é ambíguo e o leitor pode escolher o cavalo errado.</li>
+<li><strong>Pular um lance.</strong> Como cada lance depende da posição anterior, um lance faltando torna ilegais todos os seguintes. Se a análise parar no meio, confira o lance em que ela parou.</li>
+</ul>
+<p>Se você joga online, não precisa digitar nada: o site gera o PGN para você. O passo a passo está em <a href="/aprender/exportar-pgn.html">como exportar o PGN das suas partidas</a>.</p>

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Valor das peças: a tabela de pontos e quando ela engana | Gambyte</title>
+<meta name="description" content="Os valores de referência de cada peça, como contar atacantes e defensores, quando trocar, o que é a qualidade e por que a avaliação do motor não é só material.">
+<meta name="author" content="Rampini">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://gambyte.com.br/aprender/valor-das-pecas">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Valor das peças: a tabela de pontos e quando ela engana | Gambyte">
+<meta property="og:description" content="Os valores de referência de cada peça, como contar atacantes e defensores, quando trocar, o que é a qualidade e por que a avaliação do motor não é só material.">
+<meta property="og:url" content="https://gambyte.com.br/aprender/valor-das-pecas">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:site_name" content="Gambyte">
+<meta name="google-adsense-account" content="ca-pub-7858747311725137">
+<link rel="icon" href="/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site-info.css?v=3">
+<link rel="stylesheet" href="/aprender.css?v=2">
+<script type="application/ld+json">[{"@context":"https://schema.org","@type":"Article","headline":"Valor das peças: a tabela de pontos e quando ela engana","description":"Os valores de referência de cada peça, como contar atacantes e defensores, quando trocar, o que é a qualidade e por que a avaliação do motor não é só material.","inLanguage":"pt-BR","datePublished":"2026-11-16","dateModified":"2026-11-16","mainEntityOfPage":"https://gambyte.com.br/aprender/valor-das-pecas","author":{"@type":"Person","name":"Rampini","url":"https://gambyte.com.br/sobre"},"publisher":{"@type":"Organization","name":"Gambyte","logo":{"@type":"ImageObject","url":"https://gambyte.com.br/logo.png"}},"articleSection":"Fundamentos","wordCount":1143},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Gambyte","item":"https://gambyte.com.br/"},{"@type":"ListItem","position":2,"name":"Aprender xadrez","item":"https://gambyte.com.br/aprender/"},{"@type":"ListItem","position":3,"name":"Valor das peças: a tabela de pontos e quando ela engana","item":"https://gambyte.com.br/aprender/valor-das-pecas"}]}]</script>
+</head>
+<!-- Página gerada por tools/build.mjs — edite o fragmento em tools/artigos/ e rode o build. -->
+<body class="info-page ap-page" data-site="gambyte">
+<nav class="info-nav" aria-label="Navegação do Gambyte"><div><a href="/">Analisar partida</a><a href="/aprender/" aria-current="page">Aprender xadrez</a><a href="/como-usar.html">Como usar</a><a href="/guia.html">Guia de análise</a><a href="/sobre.html">Sobre</a><a href="/contato.html">Contato</a></div></nav>
+<main class="info-content ap-content">
+<article>
+<p class="info-kicker"><a href="/aprender/">Aprender xadrez</a> / Fundamentos</p>
+<h1>Valor das peças: a tabela de pontos e quando ela engana</h1>
+<p class="info-summary">Os valores de referência de cada peça, como contar atacantes e defensores, quando trocar, o que é a qualidade e por que a avaliação do motor não é só material.</p>
+<p class="ap-meta">Por Rampini · Atualizado em 16 de novembro de 2026 · 6 min de leitura</p>
+<p class="ap-notacao">Os lances usam a notação do PGN: K é rei, Q dama, R torre, B bispo e N cavalo. <a href="/aprender/notacao-algebrica.html">Como ler a notação</a></p>
+<nav class="ap-toc" aria-label="Neste artigo"><strong>Neste artigo</strong><ol><li><a href="#a-tabela">A tabela de referência</a></li><li><a href="#trocas-comuns">O que a tabela diz sobre as trocas mais comuns</a></li><li><a href="#contando">Contando atacantes e defensores</a></li><li><a href="#quando-trocar">Quando trocar e quando evitar</a></li><li><a href="#quando-engana">Quando a tabela engana</a></li><li><a href="#centipeoes">Pontos, centipeões e a avaliação do motor</a></li><li><a href="#resumo">Resumo para levar ao tabuleiro</a></li></ol></nav>
+<p>Toda decisão de troca no xadrez parte de uma pergunta: o que eu entrego vale mais ou menos do que o que eu recebo? A tabela de pontos existe para responder isso rápido. Ela é uma boa aproximação, usada por jogadores de todos os níveis, mas tem limites que é preciso conhecer.</p>
+
+<h2 id="a-tabela">A tabela de referência</h2>
+<div class="ap-tabela-wrap"><table class="ap-tabela">
+<thead><tr><th>Peça</th><th>Valor</th><th>Observação</th></tr></thead>
+<tbody>
+<tr><td>Peão</td><td>1</td><td>A unidade de medida. O valor cresce conforme ele avança.</td></tr>
+<tr><td>Cavalo</td><td>3</td><td>Melhor em posições fechadas e em casas avançadas protegidas por peão.</td></tr>
+<tr><td>Bispo</td><td>3</td><td>Melhor em posições abertas. Muitos autores o colocam um pouco acima do cavalo.</td></tr>
+<tr><td>Torre</td><td>5</td><td>Precisa de colunas abertas para render o que vale.</td></tr>
+<tr><td>Dama</td><td>9</td><td>Combina os movimentos de torre e bispo.</td></tr>
+<tr><td>Rei</td><td>—</td><td>Não pode ser trocado. Como peça de luta no final, age com a força aproximada de uma peça menor.</td></tr>
+</tbody></table></div>
+<p>Cavalo e bispo são chamados de <strong>peças menores</strong>; torre e dama, de <strong>peças maiores</strong>. Esses números são uma convenção didática antiga. Programas de xadrez usam valores mais finos e que mudam conforme a posição, mas as proporções são parecidas.</p>
+
+<h2 id="trocas-comuns">O que a tabela diz sobre as trocas mais comuns</h2>
+<ul>
+<li><strong>Peça menor por três peões:</strong> igualdade nominal. Na prática, a peça costuma ser melhor no meio-jogo, quando pode atacar, e os peões ganham força no final, quando podem promover.</li>
+<li><strong>Torre por peça menor:</strong> diferença de dois pontos. Essa diferença tem nome próprio, a <strong>qualidade</strong>. Quem troca um bispo ou cavalo por uma torre “ganha a qualidade”.</li>
+<li><strong>Duas peças menores por torre e peão:</strong> seis contra seis na conta, mas as duas peças costumam valer mais no meio-jogo, porque são duas unidades atacando contra uma.</li>
+<li><strong>Dama por duas torres:</strong> nove contra dez. As torres são melhores quando estão coordenadas e o rei delas está seguro; a dama é melhor quando há peões soltos e alvos espalhados para atacar.</li>
+<li><strong>Dama por três peças menores:</strong> igualdade nominal, e normalmente as três peças são preferíveis se estiverem bem coordenadas.</li>
+</ul>
+
+<h2 id="contando">Contando atacantes e defensores</h2>
+<p>Antes de capturar em uma casa disputada, conte quantas peças de cada lado apontam para ela. A regra básica: <strong>se os atacantes são mais numerosos que os defensores, a captura ganha material</strong>, desde que as peças entrem na ordem certa, da menos valiosa para a mais valiosa.</p>
+<figure class="tab-fig"><div class="tab" role="img" aria-label="Diagrama de xadrez: torre preta em a8, bispo preto em c8, dama preta em d8, rei preto em e8, bispo preto em f8, torre preta em h8, peão preto em a7, peão preto em b7, peão preto em c7, peão preto em d7, peão preto em f7, peão preto em g7, peão preto em h7, cavalo preto em c6, cavalo preto em f6, peão preto em e5, cavalo branco em g5, bispo branco em c4, peão branco em e4, peão branco em a2, peão branco em b2, peão branco em c2, peão branco em d2, peão branco em f2, peão branco em g2, peão branco em h2, torre branca em a1, cavalo branco em b1, bispo branco em c1, dama branca em d1, rei branco em e1, torre branca em h1."><span class="c cl" data-r="8"><img src="/pieces/rook-b.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cd"></span><span class="c cl"><img src="/pieces/bishop-b.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cd"><img src="/pieces/queen-b.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cl"><img src="/pieces/king-b.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cd"><img src="/pieces/bishop-b.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cl"></span><span class="c cd"><img src="/pieces/rook-b.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cd" data-r="7"><img src="/pieces/pawn-b.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cl"><img src="/pieces/pawn-b.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cd"><img src="/pieces/pawn-b.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cl"><img src="/pieces/pawn-b.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cd"></span><span class="c cl m"><img src="/pieces/pawn-b.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cd"><img src="/pieces/pawn-b.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cl"><img src="/pieces/pawn-b.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cl" data-r="6"></span><span class="c cd"></span><span class="c cl"><img src="/pieces/knight-b.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cd"></span><span class="c cl"></span><span class="c cd"><img src="/pieces/knight-b.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cl"></span><span class="c cd"></span><span class="c cd" data-r="5"></span><span class="c cl"></span><span class="c cd"></span><span class="c cl"></span><span class="c cd"><img src="/pieces/pawn-b.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cl"></span><span class="c cd m"><img src="/pieces/knight-w.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cl"></span><span class="c cl" data-r="4"></span><span class="c cd"></span><span class="c cl m"><img src="/pieces/bishop-w.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cd"></span><span class="c cl"><img src="/pieces/pawn-w.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cd"></span><span class="c cl"></span><span class="c cd"></span><span class="c cd" data-r="3"></span><span class="c cl"></span><span class="c cd"></span><span class="c cl"></span><span class="c cd"></span><span class="c cl"></span><span class="c cd"></span><span class="c cl"></span><span class="c cl" data-r="2"><img src="/pieces/pawn-w.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cd"><img src="/pieces/pawn-w.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cl"><img src="/pieces/pawn-w.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cd"><img src="/pieces/pawn-w.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cl"></span><span class="c cd"><img src="/pieces/pawn-w.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cl"><img src="/pieces/pawn-w.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cd"><img src="/pieces/pawn-w.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cd" data-r="1" data-f="a"><img src="/pieces/rook-w.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cl" data-f="b"><img src="/pieces/knight-w.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cd" data-f="c"><img src="/pieces/bishop-w.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cl" data-f="d"><img src="/pieces/queen-w.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cd" data-f="e"><img src="/pieces/king-w.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span><span class="c cl" data-f="f"></span><span class="c cd" data-f="g"></span><span class="c cl" data-f="h"><img src="/pieces/rook-w.svg" alt="" width="60" height="60" loading="lazy" decoding="async"></span></div><figcaption><span class="tab-vez vp">Jogam as pretas</span><span>O peão de f7 é atacado por bispo e cavalo e defendido apenas pelo rei: dois atacantes contra um defensor.</span></figcaption></figure>
+<p>Nesta posição conhecida da Defesa dos Dois Cavalos, as brancas ameaçam capturar em f7 com o cavalo, atacando dama e torre ao mesmo tempo. As pretas não conseguem acrescentar um defensor a f7 de forma satisfatória. A resposta correta é <em>bloquear um dos atacantes</em>: <span class="lances">1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. Ng5 d5</span> fecha a diagonal do bispo, e a contagem volta a um contra um.</p>
+<p>A contagem tem dois refinamentos importantes:</p>
+<ol>
+<li><strong>O valor de quem captura primeiro importa.</strong> Se uma torre sua está defendida três vezes e é atacada por um único peão, você perde a qualidade mesmo com mais defensores. Vale a mesma coisa para qualquer peça atacada por algo mais barato.</li>
+<li><strong>Peças atrás de outras também contam.</strong> Uma dama atrás de uma torre na mesma coluna entra na conta depois que a torre captura. São os chamados atacantes “em bateria”.</li>
+</ol>
+
+<h2 id="quando-trocar">Quando trocar e quando evitar</h2>
+<p>A tabela diz quanto as peças valem. Ela não diz quando uma troca de valor igual é boa para você. Algumas regras práticas:</p>
+<ul>
+<li><strong>Com material a mais, troque peças.</strong> Um peão de vantagem com todas as peças no tabuleiro é pouco; o mesmo peão em um final de reis costuma decidir.</li>
+<li><strong>Com material a menos, troque peões e mantenha as peças.</strong> Menos peões significa menos chances de promoção para o adversário, e alguns finais sem peões são empate mesmo com uma peça a mais.</li>
+<li><strong>Sob ataque, troque as peças que atacam.</strong> Uma troca de damas costuma esvaziar um ataque ao rei.</li>
+<li><strong>Com menos espaço, trocas ajudam.</strong> Quem está apertado precisa de casas, e cada troca libera algumas.</li>
+<li><strong>Não troque sua peça boa pela peça ruim dele.</strong> Um bispo preso atrás dos próprios peões vale menos que três pontos na prática.</li>
+</ul>
+
+<h2 id="quando-engana">Quando a tabela engana</h2>
+<p>O valor real de uma peça depende do que ela consegue fazer naquela posição. Quatro fatores alteram a conta com frequência:</p>
+<h3>Atividade</h3>
+<p>Uma torre trancada no canto atrás dos próprios peões não vale cinco. Um cavalo em uma casa avançada, protegido por peão e impossível de expulsar, pode valer tanto quanto uma torre. Antes de trocar, pergunte quantas casas úteis cada peça controla.</p>
+<h3>O par de bispos</h3>
+<p>Dois bispos juntos cobrem casas das duas cores e se complementam. Em posições abertas, o par costuma valer cerca de meio ponto a mais do que a soma simples sugere. Trocar um deles por um cavalo sem necessidade é uma concessão pequena, mas real.</p>
+<h3>Segurança do rei</h3>
+<p>Material a mais não serve de nada se o rei leva mate. Sacrifícios em h7 ou f7, que destroem o abrigo do rei, podem ser corretos mesmo entregando uma peça inteira. O inverso também vale: capturar um peão “envenenado” com a dama e passar cinco lances fugindo com ela costuma custar mais do que o peão rendeu.</p>
+<h3>Peões passados</h3>
+<p>Um peão sem peões adversários à sua frente ganha valor a cada casa que avança. Na sétima fileira, a um passo da promoção, ele pode prender uma torre ou até uma dama adversária só para vigiá-lo. Esse tema é detalhado no guia de <a href="/aprender/estrutura-de-peoes.html">estrutura de peões</a>.</p>
+
+<h2 id="centipeoes">Pontos, centipeões e a avaliação do motor</h2>
+<p>Os motores de xadrez expressam a avaliação em <strong>centipeões</strong>: cem centipeões equivalem a um peão. Uma avaliação de +1,00 significa que o motor considera a posição das brancas tão boa quanto se tivessem um peão a mais.</p>
+<p>O ponto que mais confunde quem começa a usar análise: <strong>a avaliação não é contagem de material</strong>. Ela junta material, atividade, segurança do rei, estrutura de peões e tudo o que o motor enxerga calculando à frente. Uma posição pode estar materialmente igual e ser avaliada em +2,00 porque um lado tem um ataque forte. E você pode estar com uma peça a mais e ver 0,00 porque o adversário tem xeque perpétuo.</p>
+<div class="ap-dica"><strong>Na prática</strong><p>Quando o gráfico de vantagem do Gambyte mostra uma queda de três pontos em um lance seu e você não perdeu nenhuma peça naquele momento, o motor viu uma perda que acontece alguns lances depois. Siga a linha sugerida até o material realmente cair para entender o que foi.</p></div>
+
+<h2 id="resumo">Resumo para levar ao tabuleiro</h2>
+<ol>
+<li>Use 1, 3, 3, 5, 9 como primeira aproximação em qualquer troca.</li>
+<li>Em casas disputadas, conte atacantes e defensores e confira o valor de quem captura primeiro.</li>
+<li>Com vantagem material, simplifique. Com desvantagem, complique e mantenha peças.</li>
+<li>Antes de aceitar uma troca “igual”, compare a atividade das duas peças envolvidas.</li>
+</ol>
+<aside class="ap-cta"><div><strong>Veja isso acontecer nas suas partidas</strong><p>Cole o PGN de um jogo seu e o Gambyte mostra, lance a lance, onde a avaliação mudou. É gratuito e roda no seu navegador.</p></div><a class="btn-ap btn-ap-solid" href="/">Analisar uma partida</a></aside>
+</article>
+<section class="ap-rel" aria-labelledby="rel-t"><h2 id="rel-t">Continue estudando</h2><div class="ap-grid"><a class="ap-card" href="/aprender/pecas-indefesas.html"><span class="ap-card-cat">Tática</span><strong>Peças indefesas e o checklist de 10 segundos antes de cada lance</strong><span class="ap-card-desc">Por que quase toda tática começa com uma peça solta, os quatro tipos de peça mal defendida e uma rotina curta para cortar gafes pela metade.</span><span class="ap-card-min">5 min de leitura</span></a><a class="ap-card" href="/aprender/estrutura-de-peoes.html"><span class="ap-card-cat">Estratégia e estudo</span><strong>Estrutura de peões: isolado, dobrado, atrasado e passado</strong><span class="ap-card-desc">Como reconhecer cada tipo de peão, o que ele oferece a cada lado e como a estrutura indica o plano quando não há tática na posição.</span><span class="ap-card-min">6 min de leitura</span></a><a class="ap-card" href="/aprender/notacao-algebrica.html"><span class="ap-card-cat">Fundamentos</span><strong>Notação algébrica e PGN: como ler e escrever uma partida</strong><span class="ap-card-desc">As casas, as letras das peças em português e em inglês, os símbolos de captura, xeque e roque, e a estrutura de um arquivo PGN.</span><span class="ap-card-min">6 min de leitura</span></a></div></section>
+</main>
+<footer class="info-footer"><div><strong>Gambyte</strong><p>Projeto independente de Rampini. Aprender com a prática.</p></div><nav aria-label="Informações institucionais"><a href="/sobre.html">Sobre</a><a href="/aprender/">Aprender xadrez</a><a href="/como-usar.html">Como usar</a><a href="/guia.html">Guia de análise</a><a href="/gambyte-premium.html">Gambyte Pro</a><a href="/contato.html">Contato</a><a href="/privacidade.html">Privacidade</a><a href="/termos.html">Termos de Uso</a><a href="/licencas.html">Créditos e licença</a></nav><small>© 2026 Rampini · <a href="mailto:ebezerrarampini1@gmail.com">ebezerrarampini1@gmail.com</a></small></footer>
+</body>
+</html>

@@ -435,8 +435,8 @@ const UIController = (() => {
 
     const headers = parsedGame.headers;
     els.resultsSection.classList.add('visible');
-    els.whiteName.textContent    = headers.White || 'White';
-    els.blackName.textContent    = headers.Black || 'Black';
+    els.whiteName.textContent    = headers.White || 'Brancas';
+    els.blackName.textContent    = headers.Black || 'Pretas';
     els.accWhiteName.textContent = headers.White || 'Brancas';
     els.accBlackName.textContent = headers.Black || 'Pretas';
 

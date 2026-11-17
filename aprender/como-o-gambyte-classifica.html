@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Como o Gambyte classifica cada lance: os critérios por dentro | Gambyte</title>
+<meta name="description" content="As fases da análise, a conversão de centipeões em chance de vitória, os limites de cada classificação e como são calculados a precisão, o ACPL e o rating estimado.">
+<meta name="author" content="Rampini">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://gambyte.com.br/aprender/como-o-gambyte-classifica">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Como o Gambyte classifica cada lance: os critérios por dentro | Gambyte">
+<meta property="og:description" content="As fases da análise, a conversão de centipeões em chance de vitória, os limites de cada classificação e como são calculados a precisão, o ACPL e o rating estimado.">
+<meta property="og:url" content="https://gambyte.com.br/aprender/como-o-gambyte-classifica">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:site_name" content="Gambyte">
+<meta name="google-adsense-account" content="ca-pub-7858747311725137">
+<link rel="icon" href="/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site-info.css?v=3">
+<link rel="stylesheet" href="/aprender.css?v=2">
+<script type="application/ld+json">[{"@context":"https://schema.org","@type":"Article","headline":"Como o Gambyte classifica cada lance: os critérios por dentro","description":"As fases da análise, a conversão de centipeões em chance de vitória, os limites de cada classificação e como são calculados a precisão, o ACPL e o rating estimado.","inLanguage":"pt-BR","datePublished":"2026-11-16","dateModified":"2026-11-16","mainEntityOfPage":"https://gambyte.com.br/aprender/como-o-gambyte-classifica","author":{"@type":"Person","name":"Rampini","url":"https://gambyte.com.br/sobre"},"publisher":{"@type":"Organization","name":"Gambyte","logo":{"@type":"ImageObject","url":"https://gambyte.com.br/logo.png"}},"articleSection":"Por dentro do Gambyte","wordCount":1678},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Gambyte","item":"https://gambyte.com.br/"},{"@type":"ListItem","position":2,"name":"Aprender xadrez","item":"https://gambyte.com.br/aprender/"},{"@type":"ListItem","position":3,"name":"Como o Gambyte classifica cada lance: os critérios por dentro","item":"https://gambyte.com.br/aprender/como-o-gambyte-classifica"}]}]</script>
+</head>
+<!-- Página gerada por tools/build.mjs — edite o fragmento em tools/artigos/ e rode o build. -->
+<body class="info-page ap-page" data-site="gambyte">
+<nav class="info-nav" aria-label="Navegação do Gambyte"><div><a href="/">Analisar partida</a><a href="/aprender/" aria-current="page">Aprender xadrez</a><a href="/como-usar.html">Como usar</a><a href="/guia.html">Guia de análise</a><a href="/sobre.html">Sobre</a><a href="/contato.html">Contato</a></div></nav>
+<main class="info-content ap-content">
+<article>
+<p class="info-kicker"><a href="/aprender/">Aprender xadrez</a> / Por dentro do Gambyte</p>
+<h1>Como o Gambyte classifica cada lance: os critérios por dentro</h1>
+<p class="info-summary">As fases da análise, a conversão de centipeões em chance de vitória, os limites de cada classificação e como são calculados a precisão, o ACPL e o rating estimado.</p>
+<p class="ap-meta">Por Rampini · Atualizado em 16 de novembro de 2026 · 9 min de leitura</p>
+
+<nav class="ap-toc" aria-label="Neste artigo"><strong>Neste artigo</strong><ol><li><a href="#fases">As fases da análise</a></li><li><a href="#chance-de-vitoria">De centipeões para chance de vitória</a></li><li><a href="#escada">A escada de classificações</a></li><li><a href="#gafe">O que separa um erro de uma gafe</a></li><li><a href="#especiais">As classificações especiais</a></li><li><a href="#precisao">Como a precisão é calculada</a></li><li><a href="#acpl">Como o ACPL é calculado</a></li><li><a href="#rating">Como o rating estimado é calculado</a></li><li><a href="#limites">Limites que vale conhecer</a></li></ol></nav>
+<p>Ferramentas de análise costumam mostrar etiquetas como “gafe” ou “brilhante” sem dizer de onde elas vêm. Este artigo descreve os critérios que o Gambyte usa, com os números reais do código. Saber como a conta é feita ajuda a interpretar o resultado e também a entender por que outra ferramenta pode dar uma etiqueta diferente para o mesmo lance.</p>
+
+<h2 id="fases">As fases da análise</h2>
+<p>A análise roda no seu navegador com o Stockfish 18. Para cada lance da partida, o motor avalia duas posições: a de antes do lance, para saber qual era a melhor opção, e a de depois, para medir o que o lance jogado fez. Em cada posição ele acompanha as <strong>três melhores continuações</strong>.</p>
+<p>Isso é feito em etapas de profundidade crescente:</p>
+<div class="ap-tabela-wrap"><table class="ap-tabela">
+<thead><tr><th>Etapa</th><th>Profundidade</th><th>Para que serve</th></tr></thead>
+<tbody>
+<tr><td>Fase 1</td><td>8</td><td>Leitura rápida da partida inteira. O gráfico e as primeiras classificações aparecem em segundos.</td></tr>
+<tr><td>Fase 2, plano gratuito</td><td>12 e depois 16</td><td>Refinamento. As avaliações são recalculadas e as etiquetas podem mudar.</td></tr>
+<tr><td>Fase 2, Análise Profunda (Pro)</td><td>14, 18 e 22</td><td>Refinamento em três passagens, com leitura tática mais longa.</td></tr>
+</tbody></table></div>
+<p>“Profundidade” é o número de meios-lances que o motor examina à frente na linha principal. Cada nível adicional custa mais tempo que o anterior. Para economizar, os lances cuja avaliação mudou menos de 0,30 peão entre uma passagem e a seguinte são considerados estáveis e não são recalculados nas passagens mais profundas.</p>
+<p>É por isso que uma etiqueta pode mudar enquanto a barra de progresso ainda está andando: uma tática que o motor não via na profundidade 8 aparece na 16.</p>
+
+<h2 id="chance-de-vitoria">De centipeões para chance de vitória</h2>
+<p>O motor devolve avaliações em centipeões. O problema de classificar lances direto por centipeões é que a mesma perda tem pesos muito diferentes conforme a posição. Perder um peão de avaliação em uma posição igual muda a partida. Perder um peão quando você já tem uma dama a mais não muda nada.</p>
+<p>Por isso o Gambyte converte cada avaliação em <strong>chance esperada de vitória</strong>, um número entre 0% e 100%, usando a mesma curva logística adotada pelo Lichess:</p>
+<pre>chance (%) = 50 + 50 × ( 2 / (1 + e^(−0,00368208 × centipeões)) − 1 )</pre>
+<p>Alguns pontos da curva, do ponto de vista de quem joga:</p>
+<div class="ap-tabela-wrap"><table class="ap-tabela">
+<thead><tr><th>Avaliação</th><th>Chance esperada</th></tr></thead>
+<tbody>
+<tr><td>0,00</td><td>50%</td></tr>
+<tr><td>+1,00</td><td>cerca de 59%</td></tr>
+<tr><td>+3,00</td><td>cerca de 75%</td></tr>
+<tr><td>+5,00</td><td>cerca de 86%</td></tr>
+<tr><td>+8,00</td><td>cerca de 95%</td></tr>
+</tbody></table></div>
+<p>A classificação de cada lance parte da <strong>queda de chance</strong>: a chance antes do lance menos a chance depois dele. Cair de +5,00 para +3,00 custa cerca de 11 pontos percentuais. Cair de +1,00 para −1,00, os mesmos dois peões, custa cerca de 18.</p>
+
+<h2 id="escada">A escada de classificações</h2>
+<p>Quando nenhum caso especial se aplica, a etiqueta sai diretamente da queda de chance:</p>
+<div class="ap-tabela-wrap"><table class="ap-tabela">
+<thead><tr><th>Queda de chance</th><th>Classificação</th></tr></thead>
+<tbody>
+<tr><td>O lance coincide com a primeira escolha do motor</td><td><strong>Melhor lance</strong></td></tr>
+<tr><td>Menos de 2 pontos</td><td><strong>Excelente</strong></td></tr>
+<tr><td>De 2 a 5 pontos</td><td><strong>Boa</strong></td></tr>
+<tr><td>De 5 a 10 pontos</td><td><strong>Imprecisão</strong></td></tr>
+<tr><td>De 10 a 20 pontos</td><td><strong>Erro</strong></td></tr>
+<tr><td>20 pontos ou mais</td><td><strong>Erro</strong> ou <strong>Gafe</strong>, conforme o critério abaixo</td></tr>
+</tbody></table></div>
+
+<h2 id="gafe">O que separa um erro de uma gafe</h2>
+<p>No Gambyte, uma queda grande de avaliação não basta para um lance ser chamado de gafe. É preciso que aconteça uma de duas coisas concretas:</p>
+<ul>
+<li><strong>Perda material real.</strong> Na resposta que o motor considera melhor, o adversário captura algo que vale pelo menos uma peça menor (três pontos).</li>
+<li><strong>Mate forçado.</strong> Depois do lance, o adversário passa a ter uma sequência de mate.</li>
+</ul>
+<p>Se a queda é de 20 pontos ou mais e nenhuma das duas condições ocorre, o lance fica como erro. A intenção é reservar a palavra “gafe” para o que um jogador reconhece como tal: uma peça entregue ou um mate permitido. Um erro posicional grave, que estraga a posição sem perder material na hora, recebe a etiqueta de erro.</p>
+<p>Essa é uma das principais diferenças em relação a outras ferramentas, que costumam usar só o tamanho da queda. O efeito prático é que o Gambyte tende a marcar menos gafes e mais erros.</p>
+
+<h2 id="especiais">As classificações especiais</h2>
+<p>Antes de aplicar a escada, o classificador verifica uma série de casos, nesta ordem de prioridade.</p>
+<h3>Livro</h3>
+<p>O lance leva a uma posição que consta na base de aberturas, com mais de 3.800 linhas catalogadas pelo código ECO. Lances de livro não entram no cálculo de precisão nem de ACPL.</p>
+<h3>Xeque-mate e empates</h3>
+<p>Um lance que dá mate é sempre classificado como melhor lance. Um lance que afoga o adversário é tratado conforme a situação anterior: se quem jogou tinha mais de três peões de vantagem, é gafe; com mais de um peão e meio, é erro. Se estava perdendo e conseguiu o empate, o lance é marcado como ótimo.</p>
+<h3>Brilhante</h3>
+<p>Exige todas estas condições:</p>
+<ul>
+<li>a análise já chegou pelo menos à profundidade 10, porque leituras rasas produzem falsos sacrifícios;</li>
+<li>o lance é a primeira escolha do motor, ou perde menos de 5 pontos de chance;</li>
+<li>há um <strong>sacrifício genuíno</strong>: o saldo material entregue vale pelo menos uma peça menor e não é recuperado de imediato na mesma casa, ou a peça movida fica atacável e capturá-la seria ruim para o adversário;</li>
+<li>depois do lance, quem jogou não está pior que −0,50;</li>
+<li>a posição não estava ganha por seis peões ou mais antes do lance. A exceção é quando já havia mate forçado e o sacrifício faz parte dele.</li>
+</ul>
+<h3>Ótimo</h3>
+<p>O lance é a primeira escolha do motor, ou perde menos de 2 pontos, e além disso muda o rumo da partida em um destes sentidos: quem estava perdendo por um peão e meio ou mais volta a uma posição jogável; quem estava em posição igual passa a ter vantagem de um peão e meio ou mais; ou era a única boa jogada, com mais de dois peões de diferença entre a primeira e a segunda opções do motor.</p>
+<h3>Chance perdida</h3>
+<p>Havia uma vitória clara, com chance esperada de 85% ou mais, ou um mate forçado disponível. O lance jogado desperdiçou pelo menos 15 pontos e deixou a chance abaixo de 75%. É a etiqueta para “estava ganho e deixou escapar”, mesmo sem perder material.</p>
+<div class="ap-nota"><strong>Sobre os nomes</strong><p>Os nomes das categorias são parecidos com os de outras plataformas, mas os critérios são do Gambyte e não reproduzem os de nenhuma delas. É normal que a mesma partida tenha contagens diferentes de brilhantes ou gafes em ferramentas diferentes.</p></div>
+
+<h2 id="precisao">Como a precisão é calculada</h2>
+<p>A precisão é uma média das notas individuais dos lances. Cada lance recebe uma nota de 5 a 100 a partir da perda em centipeões em relação ao melhor lance do motor, por uma curva exponencial: perda zero dá 100, e a nota cai suavemente conforme a perda aumenta. Uma perda de meio peão resulta em nota próxima de 67; uma perda de um peão, próxima de 43.</p>
+<p>Quatro ajustes evitam distorções:</p>
+<ul>
+<li><strong>Lances de livro são ignorados.</strong></li>
+<li><strong>Lances únicos têm a perda limitada.</strong> Quando só existe uma jogada boa, com mais de quatro peões de diferença para a segunda opção, a perda considerada é de no máximo 0,30 peão.</li>
+<li><strong>Posições decididas pesam menos.</strong> Quando um dos lados já tem mais de sete peões de vantagem, o lance entra na média com peso de 30%.</li>
+<li><strong>O resultado final fica entre 20% e 100%.</strong></li>
+</ul>
+<p>A precisão por fase, disponível no Pro, usa a mesma conta em três fatias: os dez primeiros lances de cada jogador são a abertura, do 11º ao 30º é o meio-jogo, e do 31º em diante é o final.</p>
+
+<h2 id="acpl">Como o ACPL é calculado</h2>
+<p>ACPL é a perda média em centipeões por lance. No Gambyte, a conta usa as mesmas perdas do cálculo de precisão, com três limites:</p>
+<ul>
+<li>avaliações extremas e mates são tratados como ±9,00, para que um mate em vinte lances não pese mais que um mate em três;</li>
+<li>a perda de um único lance é limitada a três peões, para que uma gafe isolada não domine a média;</li>
+<li>lances em posições já decididas ficam fora da média.</li>
+</ul>
+
+<h2 id="rating">Como o rating estimado é calculado</h2>
+<p>O rating estimado parte do ACPL de cada jogador. Uma curva logarítmica converte o ACPL em um valor base, calibrada para que um ACPL de 10 corresponda a 3000 e um ACPL de 80 corresponda a 700. Sobre essa base são aplicados ajustes moderados pela precisão, pela regularidade das perdas ao longo da partida e pela quantidade de erros e gafes.</p>
+<p>O valor final fica entre 400 e 3200 e é arredondado em passos de 25. Em partidas com menos de oito lances fora do livro, a estimativa é puxada para a faixa intermediária, porque a amostra é pequena demais. O “nível estimado da partida” é a média dos dois jogadores.</p>
+<div class="ap-erro"><strong>O que o rating estimado não é</strong><p>Ele não é o seu rating em nenhum site ou federação e não tem relação com sistemas como o Elo, que dependem de resultados contra adversários. É uma medida da qualidade dos lances de <em>uma</em> partida, que varia bastante de um jogo para outro. E não serve como indício de uso de ajuda externa por ninguém.</p></div>
+
+<h2 id="limites">Limites que vale conhecer</h2>
+<ul>
+<li><strong>A profundidade é limitada.</strong> Na profundidade 16 ou 22, o motor é muito mais forte que qualquer humano, mas ainda pode mudar de opinião com mais tempo de cálculo, sobretudo em finais longos e em sacrifícios posicionais.</li>
+<li><strong>O aparelho influencia o tempo, e não o resultado.</strong> Como a análise vai até uma profundidade fixa, um celular demora mais que um computador para chegar à mesma avaliação.</li>
+<li><strong>As etiquetas são heurísticas.</strong> “Brilhante” e “ótimo” dependem de regras definidas pelo projeto. Um lance bonito pode não receber a etiqueta, e um lance marcado pode parecer comum para um jogador experiente.</li>
+<li><strong>O melhor lance do motor nem sempre é o melhor lance prático.</strong> Uma linha que exige dez lances exatos pode ser pior, para um humano, do que uma alternativa simples avaliada 0,20 abaixo.</li>
+</ul>
+<p>Para usar esses números no treino, veja <a href="/aprender/como-estudar-suas-partidas.html">como estudar as próprias partidas</a>. O significado de cada indicador exibido na tela está resumido no <a href="/guia.html">guia de análise</a>.</p>
+<aside class="ap-cta"><div><strong>Veja isso acontecer nas suas partidas</strong><p>Cole o PGN de um jogo seu e o Gambyte mostra, lance a lance, onde a avaliação mudou. É gratuito e roda no seu navegador.</p></div><a class="btn-ap btn-ap-solid" href="/">Analisar uma partida</a></aside>
+</article>
+<section class="ap-rel" aria-labelledby="rel-t"><h2 id="rel-t">Continue estudando</h2><div class="ap-grid"><a class="ap-card" href="/aprender/como-estudar-suas-partidas.html"><span class="ap-card-cat">Estratégia e estudo</span><strong>Como estudar as próprias partidas: um método em cinco etapas</strong><span class="ap-card-desc">O que anotar logo depois do jogo, como revisar sem motor, como usar a análise sem virar refém dela e como montar um caderno de erros que realmente muda o seu jogo.</span><span class="ap-card-min">6 min de leitura</span></a><a class="ap-card" href="/aprender/valor-das-pecas.html"><span class="ap-card-cat">Fundamentos</span><strong>Valor das peças: a tabela de pontos e quando ela engana</strong><span class="ap-card-desc">Os valores de referência de cada peça, como contar atacantes e defensores, quando trocar, o que é a qualidade e por que a avaliação do motor não é só material.</span><span class="ap-card-min">6 min de leitura</span></a><a class="ap-card" href="/aprender/notacao-algebrica.html"><span class="ap-card-cat">Fundamentos</span><strong>Notação algébrica e PGN: como ler e escrever uma partida</strong><span class="ap-card-desc">As casas, as letras das peças em português e em inglês, os símbolos de captura, xeque e roque, e a estrutura de um arquivo PGN.</span><span class="ap-card-min">6 min de leitura</span></a></div></section>
+</main>
+<footer class="info-footer"><div><strong>Gambyte</strong><p>Projeto independente de Rampini. Aprender com a prática.</p></div><nav aria-label="Informações institucionais"><a href="/sobre.html">Sobre</a><a href="/aprender/">Aprender xadrez</a><a href="/como-usar.html">Como usar</a><a href="/guia.html">Guia de análise</a><a href="/gambyte-premium.html">Gambyte Pro</a><a href="/contato.html">Contato</a><a href="/privacidade.html">Privacidade</a><a href="/termos.html">Termos de Uso</a><a href="/licencas.html">Créditos e licença</a></nav><small>© 2026 Rampini · <a href="mailto:ebezerrarampini1@gmail.com">ebezerrarampini1@gmail.com</a></small></footer>
+</body>
+</html>

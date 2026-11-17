@@ -1,0 +1,69 @@
+<!--meta {"titulo":"Como exportar o PGN das suas partidas do Chess.com e do Lichess","descricao":"Onde encontrar o PGN de uma partida online, como registrar um jogo presencial, o que conferir antes de colar no analisador e como resolver os erros mais comuns.","categoria":"fundamentos","ordem":2,"relacionados":["notacao-algebrica","como-estudar-suas-partidas"]}-->
+<p>Para analisar uma partida você precisa dela em PGN, o formato de texto que registra todos os lances. Os sites de xadrez geram esse texto automaticamente para cada jogo terminado. Este guia mostra onde ele fica, o que fazer com partidas jogadas em tabuleiro físico e como resolver os problemas mais comuns na hora de colar.</p>
+<div class="ap-nota"><strong>Sobre os nomes dos botões</strong><p>Sites e aplicativos mudam de aparência com frequência. Os caminhos abaixo descrevem a lógica de cada plataforma; o rótulo exato de um botão pode estar diferente quando você ler. Na dúvida, procure pelas palavras “PGN”, “compartilhar” ou “exportar”.</p></div>
+
+<h2 id="lichess">No Lichess</h2>
+<ol>
+<li>Abra a partida terminada. Você a encontra no seu perfil, na lista de partidas.</li>
+<li>Role a página até abaixo do tabuleiro. Na versão para computador há uma área com o FEN e o PGN da partida, além de opções de compartilhar e exportar.</li>
+<li>Copie o texto do PGN ou use a opção de baixar. O Lichess oferece o PGN com anotações (avaliações e relógio) e o PGN “cru”, só com os lances. Os dois funcionam no Gambyte.</li>
+</ol>
+<p>No aplicativo para celular, abra a partida e use o menu de compartilhamento para copiar ou enviar o PGN.</p>
+<p>O Lichess também permite baixar várias partidas de uma vez pelo perfil. Para analisar no Gambyte, abra o arquivo em um editor de texto e copie <strong>uma partida por vez</strong>: cada uma começa em uma linha <code>[Event ...]</code> e termina no resultado.</p>
+
+<h2 id="chesscom">No Chess.com</h2>
+<ol>
+<li>Abra a partida pelo seu histórico de jogos.</li>
+<li>Clique no ícone de compartilhar, que fica perto do tabuleiro ou da lista de lances.</li>
+<li>Na janela que abrir, escolha a aba <strong>PGN</strong>. Ali você pode copiar o texto ou baixar o arquivo.</li>
+</ol>
+<p>No aplicativo, o caminho é parecido: abrir a partida, tocar em compartilhar e escolher a opção de PGN. O Chess.com costuma incluir marcações de tempo em cada lance, no formato <code>{[%clk 0:04:58]}</code>. Não é preciso apagar: o analisador ignora tudo que está entre chaves.</p>
+
+<h2 id="presencial">Partidas jogadas no tabuleiro físico</h2>
+<p>Se você anotou a partida em uma planilha de torneio, é possível transformá-la em PGN de duas formas:</p>
+<ul>
+<li><strong>Reproduzir os lances em um tabuleiro de análise online.</strong> Os grandes sites têm uma página de análise em que você move as peças e o PGN é montado sozinho. É a forma mais segura, porque o tabuleiro não aceita lances ilegais e você descobre na hora se anotou algo errado.</li>
+<li><strong>Digitar o texto diretamente.</strong> Funciona bem para partidas curtas. Use as letras em inglês (K, Q, R, B, N) e siga o modelo abaixo.</li>
+</ul>
+<pre>[White "Seu nome"]
+[Black "Adversário"]
+[Result "0-1"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 0-1</pre>
+<p>Os cabeçalhos são opcionais para a análise. Se você colar só a linha de lances, o Gambyte analisa do mesmo jeito e mostra “Brancas” e “Pretas” no lugar dos nomes. A explicação completa de cada símbolo está no guia de <a href="/aprender/notacao-algebrica.html">notação algébrica e PGN</a>.</p>
+
+<h2 id="antes-de-colar">O que conferir antes de colar</h2>
+<ul>
+<li><strong>A partida está completa?</strong> O texto deve terminar com o resultado: 1-0, 0-1, 1/2-1/2 ou um asterisco.</li>
+<li><strong>É uma partida só?</strong> Se houver dois blocos de cabeçalhos, apague um deles.</li>
+<li><strong>É xadrez padrão?</strong> Variantes como Chess960 começam de outra posição inicial. O analisador reconstrói a partida a partir da posição clássica, então jogos de variantes não são lidos corretamente.</li>
+<li><strong>Você quer compartilhar esses nomes?</strong> O PGN traz o nome de usuário dos dois jogadores. A análise do Gambyte roda no seu navegador e a partida não é enviada a um histórico no servidor, mas se você pretende mandar o PGN para outra pessoa, considere trocar os nomes nos cabeçalhos <em>White</em> e <em>Black</em>.</li>
+</ul>
+
+<h2 id="colando">Colando no Gambyte</h2>
+<ol>
+<li>Na <a href="/">página inicial</a>, cole o texto no campo “Cole seu PGN”.</li>
+<li>Clique em “Analisar Partida”, ou use o atalho Ctrl + Enter com o cursor dentro do campo.</li>
+<li>Aguarde a barra de progresso. Na primeira visita o navegador baixa o motor Stockfish, o que pode levar um pouco mais. A análise acontece em duas fases: uma leitura rápida de todos os lances e depois um refinamento mais profundo.</li>
+</ol>
+<p>Enquanto o refinamento roda, você já pode navegar pelos lances. As classificações podem mudar até o fim, porque o motor revisa as avaliações conforme calcula mais fundo.</p>
+
+<h2 id="problemas">Problemas comuns e como resolver</h2>
+<div class="ap-tabela-wrap"><table class="ap-tabela">
+<thead><tr><th>O que aparece</th><th>Causa provável</th><th>O que fazer</th></tr></thead>
+<tbody>
+<tr><td>“Nenhum lance encontrado no PGN”</td><td>Você colou um link, uma imagem ou só os cabeçalhos.</td><td>Copie o texto do PGN, que inclui a linha de lances numerados.</td></tr>
+<tr><td>A análise para no meio da partida</td><td>Um lance ilegal ou ambíguo no texto, comum em partidas digitadas à mão.</td><td>Confira o lance seguinte ao último analisado: letra da peça, coluna de origem, casa.</td></tr>
+<tr><td>Os lances aparecem, mas a posição fica estranha</td><td>Partida de uma variante, ou PGN que começa de uma posição diferente da inicial.</td><td>Use partidas de xadrez padrão, do primeiro lance.</td></tr>
+<tr><td>Letras como C, T ou D não são reconhecidas</td><td>Notação em português.</td><td>Troque por N, R e Q.</td></tr>
+<tr><td>O motor demora a carregar</td><td>Primeiro acesso, com o download do Stockfish em andamento.</td><td>Mantenha a aba aberta. Nas visitas seguintes o navegador reaproveita o arquivo.</td></tr>
+</tbody></table></div>
+
+<h2 id="quais-partidas">Quais partidas vale a pena exportar</h2>
+<p>Você não precisa analisar tudo o que joga. Em geral rendem mais:</p>
+<ul>
+<li><strong>Derrotas em que você não sabe onde errou.</strong> São as que mais ensinam, porque o erro não era visível para você durante o jogo.</li>
+<li><strong>Partidas longas com ritmo mais lento.</strong> Em blitz, muitos erros são de relógio. Em partidas de dez minutos ou mais, os erros refletem melhor o que você realmente entende da posição.</li>
+<li><strong>Vitórias “fáceis”.</strong> Muitas vezes o adversário deixou passar uma defesa, e a análise mostra que a sua vantagem era menor do que parecia.</li>
+</ul>
+<p>Uma ou duas partidas bem revisadas por semana produzem mais do que vinte olhadas rápidas no gráfico. O método completo de revisão está em <a href="/aprender/como-estudar-suas-partidas.html">como estudar as próprias partidas</a>.</p>

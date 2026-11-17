@@ -18,8 +18,8 @@ const App = (() => {
     } catch (err) {
       console.error('[App] Stockfish falhou:', err);
       UIController.showError(
-        'Não foi possível carregar Stockfish. Verifique se "stockfish-18-single.js/.wasm" ' +
-        'e "stockfish-18-multi.js/.wasm" estão na mesma pasta que este HTML.'
+        'Não foi possível carregar o motor Stockfish. Verifique sua conexão e recarregue a página. ' +
+        'Se o problema continuar, avise pela página de Contato.'
       );
     }
   }
@@ -60,6 +60,9 @@ const App = (() => {
     UIController.showResults(parsedGame);
     UIController.initMovesList(parsedGame);
     currentMovesData = [];
+    // Recursos de exportação do Pro e histórico local usam o resultado pronto.
+    ProTools.setGame(parsedGame);
+    const deepMode = document.getElementById('pro-deep-toggle')?.checked ?? false;
 
     AnalysisEngine.setCallbacks({
       onProgress(data) {
@@ -99,6 +102,8 @@ const App = (() => {
         document.getElementById('progress-container').classList.remove('visible');
         // ── INSIGHTS FINAIS (sempre atualiza ao completar) ──
         InsightsUI.renderGlobalInsights(allMoves, /*isPartial=*/false);
+        ProTools.markComplete(deepMode ? 22 : 16);
+        GameHistory.save(parsedGame, allMoves, pgn);
       }
     });
 

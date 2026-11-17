@@ -3,17 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gambyte — Análise de partidas de xadrez</title>
+<title>Gambyte — Analise suas partidas de xadrez com Stockfish 18</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/styles.css?v=2">
 <meta name="google-adsense-account" content="ca-pub-7858747311725137">
 <!-- Veiculação de anúncios desativada durante a preparação para avaliação. -->
-<link rel="stylesheet" href="site-info.css?v=2">
-<meta name="description" content="Analise partidas de xadrez em PGN com Stockfish e aprenda a interpretar avaliações, precisão e momentos críticos."><link rel="canonical" href="https://gambyte.com.br/"><meta property="og:title" content="Gambyte — Analisar partida"><meta property="og:description" content="Analise partidas de xadrez em PGN com Stockfish e aprenda a interpretar avaliações, precisão e momentos críticos."><meta property="og:url" content="https://gambyte.com.br/"><meta property="og:type" content="website">
+<link rel="stylesheet" href="site-info.css?v=3">
+<link rel="stylesheet" href="aprender.css?v=2">
+<link rel="icon" href="logo.png">
+<meta name="description" content="Analisador gratuito de partidas de xadrez: cole o PGN e veja gráfico de vantagem, precisão e classificação de cada lance com Stockfish 18, direto no navegador. Inclui guias de tática, finais e aberturas."><link rel="canonical" href="https://gambyte.com.br/"><meta property="og:title" content="Gambyte — Analise suas partidas de xadrez com Stockfish 18"><meta property="og:locale" content="pt_BR"><meta property="og:site_name" content="Gambyte"><meta property="og:description" content="Analisador gratuito de partidas de xadrez: cole o PGN e veja gráfico de vantagem, precisão e classificação de cada lance com Stockfish 18, direto no navegador. Inclui guias de tática, finais e aberturas."><meta property="og:url" content="https://gambyte.com.br/"><meta property="og:type" content="website">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "WebApplication", "name": "Gambyte", "url": "https://gambyte.com.br/", "applicationCategory": "GameApplication", "operatingSystem": "Web", "inLanguage": "pt-BR", "description": "Analisador gratuito de partidas de xadrez: cole o PGN e veja gráfico de vantagem, precisão e classificação de cada lance com Stockfish 18, direto no navegador. Inclui guias de tática, finais e aberturas.", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "BRL"}, "author": {"@type": "Person", "name": "Rampini"}}, {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "O Gambyte é gratuito?", "acceptedAnswer": {"@type": "Answer", "text": "Sim. A análise completa da partida até a profundidade 16, com gráfico, classificações, precisão, Modo Livre e exportação do PGN, é gratuita e não tem limite de partidas. O Gambyte Pro é opcional e acrescenta análise mais profunda e ferramentas de estudo."}}, {"@type": "Question", "name": "Preciso criar uma conta?", "acceptedAnswer": {"@type": "Answer", "text": "Não. Para analisar basta colar o PGN. A conta só é necessária para quem assina o Pro, porque é nela que o acesso fica registrado."}}, {"@type": "Question", "name": "Minhas partidas ficam guardadas em algum servidor?", "acceptedAnswer": {"@type": "Answer", "text": "Não. O PGN é lido e analisado no seu navegador, e o Gambyte não mantém um histórico remoto das suas partidas. Um resumo das últimas análises fica guardado apenas no seu aparelho e pode ser apagado quando você quiser. Os detalhes estão na política de privacidade."}}, {"@type": "Question", "name": "Que motor de xadrez é usado?", "acceptedAnswer": {"@type": "Answer", "text": "O Stockfish 18, um motor de código aberto, na versão Stockfish.js que roda dentro do navegador. O Gambyte é um projeto independente e não representa o projeto Stockfish. Veja os créditos e a licença."}}, {"@type": "Question", "name": "Por que a classificação é diferente da de outros sites?", "acceptedAnswer": {"@type": "Answer", "text": "Cada ferramenta usa profundidade e critérios próprios. No Gambyte, por exemplo, um lance só é chamado de gafe quando há perda material real ou mate forçado. Os limites de cada etiqueta estão descritos em como o Gambyte classifica cada lance."}}, {"@type": "Question", "name": "Funciona no celular?", "acceptedAnswer": {"@type": "Answer", "text": "Funciona. Como o motor roda no próprio aparelho, a análise leva mais tempo e consome mais bateria do que em um computador. Mantenha a aba aberta até a barra de progresso terminar."}}, {"@type": "Question", "name": "Posso usar durante uma partida em andamento?", "acceptedAnswer": {"@type": "Answer", "text": "Não use. Consultar um motor durante o jogo viola as regras de fair play dos sites e dos torneios. O Gambyte foi feito para revisar partidas já terminadas."}}]}]</script>
 </head>
 <body data-site="gambyte">
-<nav class="info-nav" aria-label="Navegação do Gambyte"><div><a href="index.html" aria-current="page">Analisar partida</a><a href="como-usar.html">Como usar</a><a href="guia.html">Guia de análise</a><a href="sobre.html">Sobre</a><a href="contato.html">Contato</a></div></nav>
+<nav class="info-nav" aria-label="Navegação do Gambyte"><div><a href="index.html" aria-current="page">Analisar partida</a><a href="aprender/">Aprender xadrez</a><a href="como-usar.html">Como usar</a><a href="guia.html">Guia de análise</a><a href="sobre.html">Sobre</a><a href="contato.html">Contato</a></div></nav>
 <div class="container">
 
   <!-- Header -->
@@ -23,7 +26,7 @@
         <div class="logo-icon"><img src="logo.png" alt="Gambyte"></div>
         <div>
           <div class="logo-text">Gambyte</div>
-          <div class="logo-tagline">Análise Profissional de Partidas</div>
+          <div class="logo-tagline">Análise de partidas com Stockfish 18</div>
         </div>
       </div>
       <div class="header-right" id="header-auth-area">
@@ -45,7 +48,8 @@
     <div class="input-actions">
       <button id="btn-analyze" class="btn-primary">Analisar Partida</button>
       <button id="btn-clear" class="btn-secondary" title="Reinicia o tabuleiro e limpa a análise atual">Limpar</button>
-      <label class="pro-toggle-wrap" title="Análise profunda até depth 22 (apenas Gambyte Pro)" id="pro-toggle-wrap" data-onclick="index-1">
+      <button id="btn-sample" class="btn-secondary" type="button" title="Preenche o campo com uma partida clássica para você testar">Carregar exemplo</button>
+      <label class="pro-toggle-wrap" title="Análise em três passagens, até a profundidade 22 (Gambyte Pro)" id="pro-toggle-wrap" data-onclick="index-1">
         <span class="pro-badge">Gambyte Pro</span>
         <span class="pro-toggle-label">Análise Profunda</span>
         <span class="pro-switch">
@@ -59,6 +63,9 @@
       </div>
     </div>
   </section>
+
+  <!-- Histórico local de análises (Gambyte Pro) -->
+  <div id="history-panel" class="history-panel" hidden></div>
 
   <!-- Progress -->
   <div id="progress-container" class="progress-container">
@@ -209,6 +216,10 @@
             <div class="pgn-menu" id="pgn-menu" hidden>
               <button type="button" id="pgn-menu-copy">Copiar PGN</button>
               <button type="button" id="pgn-menu-download">Baixar arquivo .pgn</button>
+              <div class="pgn-menu-sep" role="separator"></div>
+              <button type="button" id="pgn-menu-annotated">Baixar PGN anotado <span class="menu-pro">Pro</span></button>
+              <button type="button" id="pgn-menu-report">Baixar relatório de estudo <span class="menu-pro">Pro</span></button>
+              <button type="button" id="pgn-menu-report-copy">Copiar relatório de estudo <span class="menu-pro">Pro</span></button>
             </div>
           </div>
         </div>
@@ -272,7 +283,7 @@
             background:rgba(232,201,122,.07);border:1px solid rgba(232,201,122,.2);
             border-radius:var(--radius);padding:9px 14px;margin-bottom:14px;font-size:12px;color:var(--accent);">
             <span style="animation:pulse 1.5s infinite;font-size:14px">⚡</span>
-            <span><strong>Análise Gambyte Pro em andamento</strong> — valores preliminares (depth 18). Serão atualizados automaticamente ao concluir depth 22.</span>
+            <span><strong>Análise Profunda em andamento.</strong> Os valores abaixo são preliminares e serão atualizados quando a profundidade 22 terminar.</span>
           </div>
 
           <!-- TAB: GLOBAL INSIGHTS -->
@@ -312,7 +323,7 @@
                   </div>
                   <div class="insight-card red">
                     <div class="insight-card-icon">💀</div>
-                    <div class="insight-card-label">Blunders / Erros / Imprecisões</div>
+                    <div class="insight-card-label">Gafes / Erros / Imprecisões</div>
                     <div class="insight-card-value" id="ig-errors-total">—</div>
                     <div class="insight-card-sub" id="ig-errors-sub">—</div>
                   </div>
@@ -434,7 +445,7 @@
                 <div style="font-size:28px">🔒</div>
                 <span>Gambyte Pro — insights completos</span>
                 <button class="btn-unlock-premium" data-onclick="index-7">
-                  Assinar Gambyte Pro — R$9,90/mês
+                  Gambyte Pro — R$ 9,90 por um mês
                 </button>
               </div>
             </div>
@@ -572,7 +583,59 @@
     <script src="js/pages/index-4.js"></script>
   </div>
 
-<section class="info-home" aria-labelledby="learn-title"><h2 id="learn-title">Da análise ao estudo</h2><p>Uma boa revisão não termina na porcentagem de precisão. Escolha um momento em que a avaliação mudou, tente explicar o motivo e teste uma alternativa no tabuleiro. O gráfico serve para localizar a decisão; a aprendizagem está em entender a ameaça e as opções que você tinha.</p><div class="info-grid"><div><h3>Como interpretar o resultado</h3><p>ACPL, precisão e rating estimado resumem aspectos diferentes de uma única partida. Eles não são uma nota oficial nem uma prova de trapaça. Compare os lances e o contexto antes de tirar conclusões.</p><a href="guia.html">Entender os indicadores</a></div><div><h3>Revise antes de jogar outra</h3><p>Anote um erro recorrente, como uma peça indefesa ou uma ameaça de mate. Refaça a posição sem consultar o motor. Encontrar o motivo de um lance vale mais do que decorar a alternativa sugerida.</p><a href="como-usar.html">Seguir o roteiro de análise</a></div><div><h3>Uma ferramenta independente</h3><p>Gambyte organiza sua revisão usando Stockfish e critérios próprios de classificação. As estimativas variam com a profundidade da busca e não substituem o estudo ou a orientação de um treinador.</p><a href="sobre.html">Conhecer o projeto e os limites</a></div></div></section>
+<section class="info-home" aria-labelledby="como-title">
+<h2 id="como-title">Como funciona</h2>
+<ol class="home-steps">
+<li><span class="home-step-n">1</span><h3>Cole o PGN da partida</h3><p>Exporte o jogo do Chess.com ou do Lichess, ou digite os lances de uma partida de tabuleiro. Não tem um PGN à mão? Use o botão “Carregar exemplo” para testar com uma partida clássica. <a href="aprender/exportar-pgn.html">Como exportar o PGN</a></p></li>
+<li><span class="home-step-n">2</span><h3>O Stockfish analisa no seu navegador</h3><p>O motor avalia a posição antes e depois de cada lance, primeiro em uma leitura rápida e depois em passagens mais profundas. A partida não é enviada para um servidor de análise, e você pode navegar pelos lances enquanto o refinamento termina.</p></li>
+<li><span class="home-step-n">3</span><h3>Estude os momentos decisivos</h3><p>O gráfico de vantagem mostra onde a partida virou. Vá até o lance, compare com a seta do melhor lance e teste alternativas no Modo Livre. <a href="aprender/como-estudar-suas-partidas.html">Um método de estudo em cinco etapas</a></p></li>
+</ol>
+</section>
+
+<section class="info-home" aria-labelledby="mostra-title">
+<h2 id="mostra-title">O que a análise mostra</h2>
+<p>Tudo o que está na lista abaixo é gratuito e não exige cadastro. O plano gratuito analisa até a profundidade 16.</p>
+<ul class="home-feats">
+<li><strong>Gráfico de vantagem</strong> lance a lance, com os pontos de virada visíveis de relance.</li>
+<li><strong>Dez classificações de lance</strong>, de brilhante a gafe, com critérios publicados em <a href="aprender/como-o-gambyte-classifica.html">como o Gambyte classifica cada lance</a>.</li>
+<li><strong>Precisão e ACPL</strong> de cada jogador, com lances de livro fora da conta.</li>
+<li><strong>Abertura identificada</strong> pelo nome e pelo código ECO, em uma base com mais de 3.800 linhas.</li>
+<li><strong>Seta do melhor lance</strong> e barra de avaliação em cada posição.</li>
+<li><strong>Modo Livre</strong> para jogar variantes a partir de qualquer lance e ver a resposta do motor.</li>
+<li><strong>Rating estimado da partida</strong>, uma referência interna calculada a partir da qualidade dos lances.</li>
+<li><strong>Exportação do PGN</strong> para copiar ou baixar.</li>
+</ul>
+<p class="home-pro-line">O <a href="gambyte-premium.html">Gambyte Pro</a> acrescenta a análise profunda até a profundidade 22, o painel completo de insights, o PGN anotado com avaliações, o relatório de estudo em texto e o histórico das suas análises.</p>
+</section>
+
+<section class="info-home" aria-labelledby="learn-title">
+<h2 id="learn-title">Aprenda xadrez com guias originais</h2>
+<p>A análise mostra <em>onde</em> a partida mudou. Os guias explicam <em>por quê</em>. São 21 artigos em português, com diagramas e sequências conferidas lance a lance.</p>
+<div class="ap-grid home-cards">
+<a class="ap-card" href="aprender/garfo.html"><span class="ap-card-cat">Tática</span><strong>Garfo: como atacar duas peças com um lance só</strong><span class="ap-card-desc">Por que o cavalo é o especialista, como preparar o garfo e como parar de cair nele.</span></a>
+<a class="ap-card" href="aprender/pecas-indefesas.html"><span class="ap-card-cat">Tática</span><strong>Peças indefesas e o checklist de 10 segundos</strong><span class="ap-card-desc">Uma rotina curta antes de cada lance para cortar gafes pela metade.</span></a>
+<a class="ap-card" href="aprender/como-estudar-suas-partidas.html"><span class="ap-card-cat">Estudo</span><strong>Como estudar as próprias partidas</strong><span class="ap-card-desc">O que anotar, como revisar sem motor e como montar um caderno de erros.</span></a>
+<a class="ap-card" href="aprender/finais-de-rei-e-peao.html"><span class="ap-card-cat">Finais</span><strong>Regra do quadrado, oposição e casas-chave</strong><span class="ap-card-desc">Como saber em segundos se um final de peões está ganho ou empatado.</span></a>
+<a class="ap-card" href="aprender/abertura-italiana.html"><span class="ap-card-cat">Aberturas</span><strong>Abertura Italiana: ideias, planos e armadilhas</strong><span class="ap-card-desc">Giuoco Piano, Dois Cavalos e Gambito Evans sem decoreba.</span></a>
+<a class="ap-card" href="aprender/partida-da-opera.html"><span class="ap-card-cat">Partida comentada</span><strong>A Partida da Ópera: Morphy e o desenvolvimento</strong><span class="ap-card-desc">Dezessete lances que ensinam mais sobre tempo do que qualquer regra.</span></a>
+</div>
+<p class="home-more"><a class="btn-ap" href="aprender/">Ver todos os guias</a></p>
+</section>
+
+<section class="info-home" aria-labelledby="interp-title"><h2 id="interp-title">Da análise ao estudo</h2><p>Uma boa revisão não termina na porcentagem de precisão. Escolha um momento em que a avaliação mudou, tente explicar o motivo e teste uma alternativa no tabuleiro. O gráfico serve para localizar a decisão; a aprendizagem está em entender a ameaça e as opções que você tinha.</p><div class="info-grid"><div><h3>Como interpretar o resultado</h3><p>ACPL, precisão e rating estimado resumem aspectos diferentes de uma única partida. Eles não são uma nota oficial nem uma prova de trapaça. Compare os lances e o contexto antes de tirar conclusões.</p><a href="guia.html">Entender os indicadores</a></div><div><h3>Revise antes de jogar outra</h3><p>Anote um erro recorrente, como uma peça indefesa ou uma ameaça de mate. Refaça a posição sem consultar o motor. Encontrar o motivo de um lance vale mais do que decorar a alternativa sugerida.</p><a href="como-usar.html">Seguir o roteiro de análise</a></div><div><h3>Uma ferramenta independente</h3><p>Gambyte organiza sua revisão usando Stockfish e critérios próprios de classificação. As estimativas variam com a profundidade da busca e não substituem o estudo ou a orientação de um treinador.</p><a href="sobre.html">Conhecer o projeto e os limites</a></div></div></section>
+
+<section class="info-home" aria-labelledby="faq-title">
+<h2 id="faq-title">Perguntas frequentes</h2>
+<div class="home-faq">
+<details><summary>O Gambyte é gratuito?</summary><p>Sim. A análise completa da partida até a profundidade 16, com gráfico, classificações, precisão, Modo Livre e exportação do PGN, é gratuita e não tem limite de partidas. O Gambyte Pro é opcional e acrescenta análise mais profunda e ferramentas de estudo.</p></details>
+<details><summary>Preciso criar uma conta?</summary><p>Não. Para analisar basta colar o PGN. A conta só é necessária para quem assina o Pro, porque é nela que o acesso fica registrado.</p></details>
+<details><summary>Minhas partidas ficam guardadas em algum servidor?</summary><p>Não. O PGN é lido e analisado no seu navegador, e o Gambyte não mantém um histórico remoto das suas partidas. Um resumo das últimas análises fica guardado apenas no seu aparelho e pode ser apagado quando você quiser. Os detalhes estão na <a href="privacidade.html">política de privacidade</a>.</p></details>
+<details><summary>Que motor de xadrez é usado?</summary><p>O Stockfish 18, um motor de código aberto, na versão Stockfish.js que roda dentro do navegador. O Gambyte é um projeto independente e não representa o projeto Stockfish. Veja os <a href="licencas.html">créditos e a licença</a>.</p></details>
+<details><summary>Por que a classificação é diferente da de outros sites?</summary><p>Cada ferramenta usa profundidade e critérios próprios. No Gambyte, por exemplo, um lance só é chamado de gafe quando há perda material real ou mate forçado. Os limites de cada etiqueta estão descritos em <a href="aprender/como-o-gambyte-classifica.html">como o Gambyte classifica cada lance</a>.</p></details>
+<details><summary>Funciona no celular?</summary><p>Funciona. Como o motor roda no próprio aparelho, a análise leva mais tempo e consome mais bateria do que em um computador. Mantenha a aba aberta até a barra de progresso terminar.</p></details>
+<details><summary>Posso usar durante uma partida em andamento?</summary><p>Não use. Consultar um motor durante o jogo viola as regras de fair play dos sites e dos torneios. O Gambyte foi feito para revisar partidas já terminadas.</p></details>
+</div>
+</section>
 </div><!-- /container -->
 
 <div id="toast-container"></div>
@@ -584,6 +647,7 @@
 
 <!-- Dados -->
 <script src="js/data/eco-data.js"></script>
+<script src="js/data/sample-games.js"></script>
 
 <!-- Módulos de baixo nível (tabuleiro, PGN, engine) -->
 <script src="js/modules/opening-detector.js"></script>
@@ -609,8 +673,10 @@
 <script src="js/modules/supabase-config.js"></script>
 <script src="js/modules/auth-system.js"></script>
 <script src="js/modules/insights-engine.js"></script>
+<script src="js/modules/pro-tools.js"></script>
 <script src="js/modules/insights-ui.js"></script>
 <script src="js/modules/auth-ui.js"></script>
+<script src="js/modules/game-history.js"></script>
 
 <!-- Controlador de UI (precisa que o DOM acima já exista) -->
 <script src="js/modules/ui-controller.js"></script>
@@ -619,6 +685,7 @@
 <script src="js/app.js"></script>
 
 <script src="js/pages/index-events.js"></script>
-<footer class="info-footer"><div><strong>Gambyte</strong><p>Projeto independente de Rampini. Aprender com a prática.</p></div><nav aria-label="Informações institucionais"><a href="sobre.html">Sobre</a><a href="como-usar.html">Como usar</a><a href="guia.html">Guia de análise</a><a href="contato.html">Contato</a><a href="privacidade.html">Privacidade</a><a href="termos.html">Termos de Uso</a><a href="licencas.html">Créditos e licença</a></nav><small>© 2026 Rampini · <a href="mailto:ebezerrarampini1@gmail.com">ebezerrarampini1@gmail.com</a></small></footer>
+<script src="js/pages/index-home.js"></script>
+<footer class="info-footer"><div><strong>Gambyte</strong><p>Projeto independente de Rampini. Aprender com a prática.</p></div><nav aria-label="Informações institucionais"><a href="sobre.html">Sobre</a><a href="aprender/">Aprender xadrez</a><a href="como-usar.html">Como usar</a><a href="guia.html">Guia de análise</a><a href="gambyte-premium.html">Gambyte Pro</a><a href="contato.html">Contato</a><a href="privacidade.html">Privacidade</a><a href="termos.html">Termos de Uso</a><a href="licencas.html">Créditos e licença</a></nav><small>© 2026 Rampini · <a href="mailto:ebezerrarampini1@gmail.com">ebezerrarampini1@gmail.com</a></small></footer>
 </body>
 </html>

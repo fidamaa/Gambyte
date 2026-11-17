@@ -1,12 +1,18 @@
-document.querySelector('[data-onclick="gambyte-premium-1"]').addEventListener('click', function(event) { window.location.href='index.html' });
-document.querySelector('[data-onclick="gambyte-premium-2"]').addEventListener('click', function(event) { openCheckout() });
-document.querySelector('[data-onclick="gambyte-premium-3"]').addEventListener('click', function(event) { toggleFaq(this) });
-document.querySelector('[data-onclick="gambyte-premium-4"]').addEventListener('click', function(event) { toggleFaq(this) });
-document.querySelector('[data-onclick="gambyte-premium-5"]').addEventListener('click', function(event) { toggleFaq(this) });
-document.querySelector('[data-onclick="gambyte-premium-6"]').addEventListener('click', function(event) { toggleFaq(this) });
-document.querySelector('[data-onclick="gambyte-premium-7"]').addEventListener('click', function(event) { toggleFaq(this) });
-document.querySelector('[data-onclick="gambyte-premium-8"]').addEventListener('click', function(event) { closeCheckoutOnOverlay(event) });
-document.querySelector('[data-onclick="gambyte-premium-9"]').addEventListener('click', function(event) { closeCheckout() });
-document.querySelector('[data-onclick="gambyte-premium-10"]').addEventListener('click', function(event) { goToLogin() });
-document.querySelector('[data-onclick="gambyte-premium-11"]').addEventListener('click', function(event) { doPayment() });
-document.querySelector('[data-onclick="gambyte-premium-12"]').addEventListener('click', function(event) { reloadAnalyzer() });
+/* Liga os botões da página do Gambyte Pro (sem handlers inline, por causa da CSP). */
+document.addEventListener('click', event => {
+  const faq = event.target.closest('.faq-question');
+  if (faq) { toggleFaq(faq); return; }
+
+  if (event.target.id === 'modal-overlay') { closeCheckout(); return; }
+
+  const el = event.target.closest('[data-action]');
+  if (!el) return;
+  switch (el.dataset.action) {
+    case 'voltar':  window.location.href = 'index.html'; break;
+    case 'assinar': openCheckout(); break;
+    case 'fechar':  closeCheckout(); break;
+    case 'login':   goToLogin(); break;
+    case 'pagar':   doPayment(); break;
+    case 'renovar': showPaymentStep(AuthSystem.currentSession(), 'Pagar mais um mês'); break;
+  }
+});

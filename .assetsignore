@@ -7,3 +7,11 @@ supabase/
 dev-server.py
 .gitignore
 .assetsignore
+
+# Nunca publicar o repositório git, configuração de ferramentas locais
+# nem os fontes do gerador de conteúdo (só o HTML gerado vai pro site).
+.git
+.git/
+.claude/
+.gitattributes
+tools/

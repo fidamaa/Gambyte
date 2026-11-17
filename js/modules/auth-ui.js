@@ -30,7 +30,7 @@ const AuthUI = (() => {
     } else {
       area.innerHTML = `
         <button class="btn-login-header" data-auth-action="login">Entrar</button>
-        <button class="btn-premium-header" data-auth-action="premium">Premium</button>
+        <button class="btn-premium-header" data-auth-action="premium">Conhecer o Pro</button>
       `;
     }
     // Update pro toggle
@@ -51,7 +51,7 @@ const AuthUI = (() => {
   function handleProToggleClick(e) {
     if (!AuthSystem.isPremium()) {
       e.preventDefault();
-      showToast('🔒 Análise Profunda requer conta Premium.', 'error');
+      showToast('A Análise Profunda (profundidade 22) faz parte do Gambyte Pro.', 'error');
       openPremiumPage();
     }
   }
@@ -64,8 +64,7 @@ const AuthUI = (() => {
     document.addEventListener("click", event => { const button = event.target.closest("[data-auth-action]"); if (!button) return; if (button.dataset.authAction === "premium") openPremiumPage(); else window.location.href = "gambyte-login.html"; });
     renderHeader();
     // Re-renderiza sempre que o login/logout ou o status premium mudar
-    // (login em outra aba, webhook do Mercado Pago confirmando o
-    // pagamento em tempo real via Firestore, etc.)
+    // (login em outra aba, liberação do Pro registrada no perfil, etc.)
     AuthSystem.onChange(() => renderHeader());
   }
 

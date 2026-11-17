@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gambyte Pro — Assinar</title>
+<title>Gambyte Pro — análise profunda e ferramentas de estudo</title>
+<meta name="description" content="O Gambyte Pro leva a análise até a profundidade 22 e acrescenta insights da partida, PGN anotado, relatório de estudo e histórico. R$ 9,90 por um mês, via Pix, sem renovação automática.">
+<link rel="canonical" href="https://gambyte.com.br/gambyte-premium">
+<meta property="og:type" content="website"><meta property="og:title" content="Gambyte Pro — análise profunda e ferramentas de estudo"><meta property="og:description" content="O Gambyte Pro leva a análise até a profundidade 22 e acrescenta insights da partida, PGN anotado, relatório de estudo e histórico. R$ 9,90 por um mês, via Pix, sem renovação automática."><meta property="og:url" content="https://gambyte.com.br/gambyte-premium"><meta property="og:locale" content="pt_BR">
+<link rel="icon" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -417,16 +421,57 @@ header {
   font-family: 'JetBrains Mono', monospace; font-size: 10px;
   color: var(--text3); word-break: break-all; padding: 0 20px;
 }
+
+/* ── Ajustes da versão atual da página ── */
+:root { --text2:#a6afc5; --text3:#7c86a3; }
+h2.section-title { margin-top:0; font-size:13px; color:#b4bdd0; }
+.hero-sub { max-width:600px; }
+.hero-stat { max-width:190px; }
+.hero-stat-label { line-height:1.5; }
+.pricing-card.featured::before { content:'PLANO COMPLETO'; }
+.plan-feature { position:relative; padding-left:22px; line-height:1.45; font-size:13.5px; color:#cdd4e3; }
+.plan-feature::before { content:''; position:absolute; left:2px; top:.42em; width:9px; height:5px; border-left:2px solid var(--green); border-bottom:2px solid var(--green); transform:rotate(-45deg); }
+.plan-feature.locked { color:var(--text3); }
+.plan-feature.locked::before { width:10px; height:0; border-left:0; border-bottom:2px solid var(--text3); transform:none; top:.7em; }
+.btn-plan { font-size:15px; padding:13px; border-radius:10px; }
+.btn-plan.free { color:#cdd4e3; }
+.btn-plan.premium-cta, .btn-pay, .btn-go-analyze { background:linear-gradient(135deg,#f0d489,#c9a84c); color:#1b1a14; border:1px solid #f2d991; }
+.btn-plan:focus-visible, .btn-pay:focus-visible, .btn-go-analyze:focus-visible, .faq-question:focus-visible, .modal-close:focus-visible, .link-btn:focus-visible { outline:2px solid #f2d991; outline-offset:3px; }
+.features-grid { grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); }
+.feature-title { font-size:16px; margin:0 0 8px; }
+.feature-desc { font-size:14px; line-height:1.65; margin:0; }
+.feature-desc code { font-family:'JetBrains Mono',monospace; font-size:.9em; color:var(--accent); }
+.honest-note { max-width:760px; margin:26px auto 0; font-size:14px; line-height:1.7; color:var(--text2); text-align:center; }
+.honest-note a { color:var(--accent); }
+.steps-section { margin-bottom:56px; }
+.steps-list { max-width:680px; margin:0 auto; padding:0; list-style:none; counter-reset:passo; display:flex; flex-direction:column; gap:12px; }
+.steps-list li { counter-increment:passo; position:relative; padding:16px 18px 16px 58px; background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); font-size:14.5px; line-height:1.6; color:var(--text2); }
+.steps-list li::before { content:counter(passo); position:absolute; left:16px; top:15px; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; color:var(--accent); background:rgba(232,201,122,.12); border:1px solid rgba(232,201,122,.35); }
+.steps-list strong { color:var(--text); font-weight:600; }
+.faq-question { width:100%; background:none; border:0; font-family:inherit; text-align:left; font-size:15.5px; }
+.faq-answer { font-size:14.5px; }
+.faq-item.open .faq-answer { max-height:420px; }
+.pro-status { margin:22px 0 0; padding:14px 18px; border-radius:var(--radius-lg); border:1px solid rgba(91,201,122,.4); background:rgba(91,201,122,.08); color:#cfe9d7; font-size:14.5px; line-height:1.6; text-align:center; }
+.pro-status.ending { border-color:rgba(255,190,60,.45); background:rgba(255,190,60,.08); color:#f3e2b4; }
+.pro-status[hidden] { display:none; }
+.pay-steps { margin:0 0 16px; padding-left:20px; font-size:14px; line-height:1.65; color:var(--text2); }
+.pay-steps li { margin-bottom:6px; }
+.pay-steps strong { color:var(--text); word-break:break-all; }
+.form-error { display:none; margin-bottom:14px; padding:10px 12px; border-radius:var(--radius); border:1px solid rgba(224,92,92,.4); background:rgba(224,92,92,.08); color:#f0b4b4; font-size:13px; }
+.link-btn { background:none; border:0; color:var(--accent); font:inherit; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+.order-value { text-align:right; }
+.toast { max-width:340px; line-height:1.45; }
+@media (prefers-reduced-motion:reduce) { .hero-badge,.hero-title,.hero-sub,.hero-stats,.pricing-section,.features-section,.faq-section { animation:none; } body::before { animation:none; } }
 </style>
-<link rel="stylesheet" href="site-info.css?v=2">
+<link rel="stylesheet" href="site-info.css?v=3">
 </head>
 <body data-site="gambyte">
-<nav class="info-nav" aria-label="Navegação do Gambyte"><div><a href="index.html">Analisar partida</a><a href="como-usar.html">Como usar</a><a href="guia.html">Guia de análise</a><a href="sobre.html">Sobre</a><a href="contato.html">Contato</a></div></nav>
+<nav class="info-nav" aria-label="Navegação do Gambyte"><div><a href="index.html">Analisar partida</a><a href="aprender/">Aprender xadrez</a><a href="como-usar.html">Como usar</a><a href="guia.html">Guia de análise</a><a href="sobre.html">Sobre</a><a href="contato.html">Contato</a></div></nav>
 
 <div class="container">
   <!-- Header -->
   <header>
-    <a class="back-btn" href="index.html">← Voltar</a>
+    <a class="back-btn" href="index.html">← Voltar ao analisador</a>
     <div class="logo-area">
       <div class="logo-icon"><img src="logo.png" alt="Gambyte"></div>
       <div class="logo-text">Gambyte</div>
@@ -434,35 +479,38 @@ header {
     <div class="user-status-bar" id="user-status-bar"></div>
   </header>
 
+  <!-- Aviso para quem já é assinante (preenchido pelo script) -->
+  <div class="pro-status" id="pro-status" hidden></div>
+
   <!-- Hero -->
   <div class="hero">
-    <div class="hero-badge"> Gambyte Pro</div>
+    <div class="hero-badge">Gambyte Pro</div>
     <h1 class="hero-title">
-      Eleve seu xadrez<br>
-      ao próximo nível <span class="gold">hoje</span>
+      Análise mais profunda e<br>
+      ferramentas para <span class="gold">estudar</span>
     </h1>
     <p class="hero-sub">
-      Análises profundas com insights de Grão-Mestre, DNA do jogador, análise por lance e muito mais. Por menos que um café por semana.
+      O plano gratuito já analisa a partida inteira. O Pro leva a busca até a profundidade 22, abre o painel completo de insights e exporta a análise para você estudar fora do site.
     </p>
     <div class="hero-stats">
       <div class="hero-stat">
-        <div class="hero-stat-num">∞</div>
-        <div class="hero-stat-label">Partidas Analisadas</div>
-      </div>
-      <div class="hero-stat">
         <div class="hero-stat-num">22</div>
-        <div class="hero-stat-label">Depth de Análise</div>
+        <div class="hero-stat-label">Profundidade máxima</div>
       </div>
       <div class="hero-stat">
-        <div class="hero-stat-num">100%</div>
-        <div class="hero-stat-label">Insights Desbloqueados</div>
+        <div class="hero-stat-num">3</div>
+        <div class="hero-stat-label">Passagens de refinamento</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">R$ 9,90</div>
+        <div class="hero-stat-label">Por um mês, sem renovação automática</div>
       </div>
     </div>
   </div>
 
   <!-- Pricing -->
   <div class="pricing-section">
-    <div class="section-title">Escolha seu plano</div>
+    <h2 class="section-title">Compare os planos</h2>
     <div class="pricing-cards">
       <!-- Free -->
       <div class="pricing-card">
@@ -470,43 +518,46 @@ header {
         <div class="plan-price">
           <span class="plan-currency">R$</span>
           <span class="plan-amount">0</span>
-          <span class="plan-period">/mês</span>
         </div>
-        <div class="plan-desc">Para experimentar a plataforma</div>
+        <div class="plan-desc">Sem cadastro e sem limite de partidas</div>
         <ul class="plan-features">
-          <li class="plan-feature">Análise até depth 16</li>
-          <li class="plan-feature">Precisão geral</li>
-          <li class="plan-feature">Classificação de lances (10 categorias)</li>
-          <li class="plan-feature">Gráfico de vantagem</li>
-          <li class="plan-feature locked">Insights avançados</li>
-          <li class="plan-feature locked">Análise por lance</li>
-          <li class="plan-feature locked">DNA do Jogador</li>
-          <li class="plan-feature locked">Análise profunda (depth 22)</li>
+          <li class="plan-feature">Análise completa até a profundidade 16</li>
+          <li class="plan-feature">Gráfico de vantagem e barra de avaliação</li>
+          <li class="plan-feature">Dez classificações de lance, de brilhante a gafe</li>
+          <li class="plan-feature">Precisão, ACPL e rating estimado por jogador</li>
+          <li class="plan-feature">Abertura identificada pelo código ECO</li>
+          <li class="plan-feature">Modo Livre com avaliação até a profundidade 12</li>
+          <li class="plan-feature">Copiar e baixar o PGN</li>
+          <li class="plan-feature locked">Análise Profunda (profundidade 22)</li>
+          <li class="plan-feature locked">Painel de insights e análise por lance</li>
+          <li class="plan-feature locked">PGN anotado, relatório e histórico</li>
         </ul>
-        <button class="btn-plan free" data-onclick="gambyte-premium-1">Continuar grátis</button>
+        <button class="btn-plan free" data-action="voltar">Continuar no gratuito</button>
       </div>
 
-      <!-- Premium -->
+      <!-- Pro -->
       <div class="pricing-card featured">
-        <div class="plan-name" style="color:var(--gold)"> Premium</div>
+        <div class="plan-name" style="color:var(--gold)">Gambyte Pro</div>
         <div class="plan-price">
           <span class="plan-currency" style="color:var(--gold)">R$</span>
           <span class="plan-amount" style="color:var(--gold)">9</span>
-          <span class="plan-period">,90/mês</span>
+          <span class="plan-period">,90 por um mês</span>
         </div>
-        <div class="plan-desc">Um mês de acesso · Pix no Nubank</div>
+        <div class="plan-desc">Pagamento por Pix · sem débito automático</div>
         <ul class="plan-features">
-          <li class="plan-feature">Tudo do plano Gratuito</li>
-          <li class="plan-feature">Análise profunda (depth 22)</li>
-          <li class="plan-feature">Insights globais completos</li>
-          <li class="plan-feature">Análise detalhada por lance</li>
-          <li class="plan-feature">DNA do Jogador</li>
-          <li class="plan-feature">Maior erro da partida</li>
-          <li class="plan-feature">Precisão por fase</li>
+          <li class="plan-feature">Tudo do plano gratuito</li>
+          <li class="plan-feature">Análise Profunda em três passagens: profundidade 14, 18 e 22</li>
+          <li class="plan-feature">Modo Livre com avaliação até a profundidade 18</li>
+          <li class="plan-feature">Insights da partida: momento crítico, maior erro, fase mais fraca</li>
+          <li class="plan-feature">Precisão separada por abertura, meio-jogo e final</li>
+          <li class="plan-feature">Comentário e melhor alternativa em cada lance</li>
+          <li class="plan-feature">PGN anotado com avaliações, para abrir em outros programas</li>
+          <li class="plan-feature">Relatório de estudo em texto</li>
+          <li class="plan-feature">Histórico das suas análises neste aparelho</li>
           <li class="plan-feature">Sem anúncios</li>
         </ul>
-        <button class="btn-plan premium-cta" id="btn-subscribe" data-onclick="gambyte-premium-2">
-          Assinar por R$9,90/mês
+        <button class="btn-plan premium-cta" id="btn-subscribe" data-action="assinar">
+          Assinar por R$ 9,90
         </button>
       </div>
     </div>
@@ -514,169 +565,175 @@ header {
 
   <!-- Features Grid -->
   <div class="features-section">
-    <div class="section-title">O que você desbloqueia</div>
+    <h2 class="section-title">O que o Pro acrescenta</h2>
     <div class="features-grid">
       <div class="feature-card">
-
-        <div class="feature-title">Insights Globais</div>
-        <div class="feature-desc">Precisão por fase, momento crítico, padrões recorrentes e muito mais calculados para toda a partida.</div>
-        <span class="feature-badge">Premium</span>
+        <h3 class="feature-title">Análise Profunda</h3>
+        <p class="feature-desc">Com a chave ativada, o refinamento passa pelas profundidades 14, 18 e 22 em vez de 12 e 16. O motor enxerga táticas mais longas, e as classificações ficam mais estáveis. A análise demora mais, principalmente no celular.</p>
       </div>
       <div class="feature-card">
-
-        <div class="feature-title">Análise por Lance</div>
-        <div class="feature-desc">Para cada jogada: avaliação antes/depois, diferença, melhor lance e comentário automático inteligente.</div>
-        <span class="feature-badge">Premium</span>
+        <h3 class="feature-title">Insights da partida</h3>
+        <p class="feature-desc">Um resumo que aponta o momento em que a avaliação mais mudou, o maior erro com o lance jogado e a alternativa do motor, a fase mais fraca de cada jogador e uma leitura do gráfico de vantagem.</p>
       </div>
       <div class="feature-card">
-
-        <div class="feature-title">DNA do Jogador</div>
-        <div class="feature-desc">Seu perfil completo: agressivo, passivo, tático, imprudente. Com padrões detectados automaticamente.</div>
-        <span class="feature-badge">Premium</span>
+        <h3 class="feature-title">Precisão por fase</h3>
+        <p class="feature-desc">A precisão é calculada separadamente para os dez primeiros lances de cada jogador, do 11º ao 30º e do 31º em diante. Serve para ver se os seus erros se concentram na abertura, no meio-jogo ou no final.</p>
       </div>
       <div class="feature-card">
-
-        <div class="feature-title">Maior Erro da Partida</div>
-        <div class="feature-desc">O lance onde você perdeu mais vantagem, qual era o melhor e explicação simples do que aconteceu.</div>
-        <span class="feature-badge">Premium</span>
+        <h3 class="feature-title">Análise por lance</h3>
+        <p class="feature-desc">Ao navegar pela partida, cada lance mostra a avaliação antes e depois, a diferença, um comentário gerado a partir desses números e o lance que o motor preferia.</p>
       </div>
       <div class="feature-card">
-
-        <div class="feature-title">Precisão por Fase</div>
-        <div class="feature-desc">Abertura, meio-jogo e final separados. Identifique exatamente onde você precisa melhorar.</div>
-        <span class="feature-badge">Premium</span>
+        <h3 class="feature-title">PGN anotado</h3>
+        <p class="feature-desc">Baixe a partida com a avaliação de cada lance no formato <code>[%eval]</code>, os sinais ?!, ? e ?? e o melhor lance indicado nos erros. O arquivo abre em Lichess, ChessBase, Scid e outros programas.</p>
       </div>
       <div class="feature-card">
-
-        <div class="feature-title">Análise Profunda</div>
-        <div class="feature-desc">Profundidade até 22 com Stockfish 18 para classificações mais precisas e melhores lances mais acurados.</div>
-        <span class="feature-badge">Premium</span>
+        <h3 class="feature-title">Relatório de estudo</h3>
+        <p class="feature-desc">Um arquivo de texto com o resumo dos dois jogadores, os seis momentos mais importantes para revisar, as sugestões da análise e um roteiro para transformar a partida em treino. Dá para copiar ou baixar.</p>
+      </div>
+      <div class="feature-card">
+        <h3 class="feature-title">Histórico neste aparelho</h3>
+        <p class="feature-desc">As últimas trinta análises ficam guardadas no seu navegador, com a precisão de cada lado e a abertura. Um clique recarrega o PGN. Nada é enviado ao servidor, e você pode apagar quando quiser.</p>
+      </div>
+      <div class="feature-card">
+        <h3 class="feature-title">Perfil da partida e sugestões</h3>
+        <p class="feature-desc">Um rótulo de estilo para cada jogador, com os padrões que apareceram naquele jogo, e sugestões de estudo separadas para brancas e pretas. Vale para a partida analisada, e não para o jogador em geral.</p>
       </div>
     </div>
+    <p class="honest-note">O Gambyte Pro é uma ferramenta de estudo. Ele não garante aumento de rating nem resultado em torneio, e as avaliações são estimativas do motor que dependem da profundidade usada. O Stockfish é um motor de código aberto sob GPLv3; o Pro remunera a organização e os recursos do Gambyte, e não o motor.</p>
+  </div>
+
+  <!-- Como assinar -->
+  <div class="steps-section">
+    <h2 class="section-title">Como assinar</h2>
+    <ol class="steps-list">
+      <li><strong>Entre na sua conta</strong> ou crie uma. É nela que o acesso fica registrado.</li>
+      <li><strong>Pague R$ 9,90 por Pix</strong> na cobrança do Nubank aberta pelo botão de assinatura. Confira o nome do destinatário antes de confirmar.</li>
+      <li><strong>Avise pelo WhatsApp</strong> informando o e-mail da sua conta Gambyte.</li>
+      <li><strong>Aguarde a liberação.</strong> O recebimento é conferido manualmente. Quando o acesso é ativado, esta página e o analisador atualizam sozinhos.</li>
+    </ol>
+    <p class="honest-note">O acesso vale por um mês a partir da ativação. Não há cobrança automática: para continuar, você faz um novo Pix quando quiser. As condições completas estão nos <a href="termos.html">Termos de Uso</a>.</p>
   </div>
 
   <!-- FAQ -->
   <div class="faq-section">
-    <div class="section-title">Perguntas frequentes</div>
+    <h2 class="section-title">Perguntas frequentes</h2>
     <div class="faq-list" id="faq-list">
       <div class="faq-item">
-        <div class="faq-question" data-onclick="gambyte-premium-3">
-          <span>O pagamento é seguro?</span>
-          <span class="faq-arrow">›</span>
-        </div>
-        <div class="faq-answer">O Pix é feito no aplicativo do seu banco para uma conta Nubank. Confira os dados do destinatário antes de pagar. O acesso é liberado manualmente após a confirmação do recebimento.</div>
+        <button class="faq-question" type="button" aria-expanded="false"><span>O que exatamente muda em relação ao plano gratuito?</span><span class="faq-arrow">›</span></button>
+        <div class="faq-answer">A análise gratuita vai até a profundidade 16 e mostra gráfico, classificações, precisão, ACPL e rating estimado. O Pro acrescenta a Análise Profunda até a profundidade 22, o painel de insights, a análise comentada por lance, o PGN anotado, o relatório de estudo, o histórico local e a remoção dos anúncios.</div>
       </div>
       <div class="faq-item">
-        <div class="faq-question" data-onclick="gambyte-premium-4">
-          <span>Existe renovação automática?</span>
-          <span class="faq-arrow">›</span>
-        </div>
-        <div class="faq-answer">Não. Cada pagamento dá acesso por um mês, sem débito automático. Para continuar, você solicita um novo Pix.</div>
+        <button class="faq-question" type="button" aria-expanded="false"><span>A Análise Profunda demora mais?</span><span class="faq-arrow">›</span></button>
+        <div class="faq-answer">Sim. Cada nível de profundidade custa mais tempo que o anterior, e a análise roda no seu aparelho. Uma partida longa pode levar vários minutos em um computador comum, e mais do que isso no celular, com consumo de bateria. Você pode desligar a chave e usar a análise normal quando estiver com pressa.</div>
       </div>
       <div class="faq-item">
-        <div class="faq-question" data-onclick="gambyte-premium-5">
-          <span>Quais formas de pagamento são aceitas?</span>
-          <span class="faq-arrow">›</span>
-        </div>
-        <div class="faq-answer">Pix para uma conta Nubank, pelo botão de pagamento. Depois de pagar, informe pelo WhatsApp o e-mail da sua conta Gambyte. A liberação do Premium é manual, após conferir o recebimento.</div>
+        <button class="faq-question" type="button" aria-expanded="false"><span>Como funciona o pagamento?</span><span class="faq-arrow">›</span></button>
+        <div class="faq-answer">Por Pix, em uma cobrança do Nubank aberta pelo botão de assinatura. O Gambyte não recebe nem armazena dados de cartão ou senha bancária. Depois de pagar, informe pelo WhatsApp o e-mail da sua conta. A liberação é manual, feita depois que o recebimento é conferido.</div>
       </div>
       <div class="faq-item">
-        <div class="faq-question" data-onclick="gambyte-premium-6">
-          <span>O Gambyte funciona com qualquer PGN?</span>
-          <span class="faq-arrow">›</span>
-        </div>
-        <div class="faq-answer">Sim! Cole qualquer PGN padrão — do Chess.com, Lichess, Chess24 ou exportado de qualquer software de xadrez. O analisador roda 100% no seu navegador com Stockfish 18.</div>
+        <button class="faq-question" type="button" aria-expanded="false"><span>Quanto tempo leva para o acesso ser liberado?</span><span class="faq-arrow">›</span></button>
+        <div class="faq-answer">Como a conferência é manual, o prazo depende do horário. Abrir a cobrança ou enviar o comprovante não ativa o acesso sozinho. Se você precisa do Pro para uma data específica, combine antes pelo WhatsApp ou pelo e-mail da página de Contato.</div>
       </div>
       <div class="faq-item">
-        <div class="faq-question" data-onclick="gambyte-premium-7">
-          <span>Preciso criar conta para usar gratuitamente?</span>
-          <span class="faq-arrow">›</span>
-        </div>
-        <div class="faq-answer">Não. O plano gratuito não exige conta. Mas para assinar o Gambyte Pro você precisará de uma conta para gerenciar sua assinatura.</div>
+        <button class="faq-question" type="button" aria-expanded="false"><span>Existe renovação automática?</span><span class="faq-arrow">›</span></button>
+        <div class="faq-answer">Não. Cada pagamento dá acesso por um mês, sem débito automático. Quando o período termina, a conta volta ao plano gratuito e nada é cobrado. Para continuar, basta fazer um novo Pix.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" type="button" aria-expanded="false"><span>Posso desistir e pedir reembolso?</span><span class="faq-arrow">›</span></button>
+        <div class="faq-answer">Sim. Nas contratações à distância vale o direito de arrependimento do artigo 49 do Código de Defesa do Consumidor, no prazo de sete dias. Escreva para o e-mail ou o WhatsApp da página de Contato informando a conta e a data do pagamento.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" type="button" aria-expanded="false"><span>O Pro funciona em mais de um aparelho?</span><span class="faq-arrow">›</span></button>
+        <div class="faq-answer">O acesso é da conta, então vale em qualquer aparelho em que você entrar. A exceção é o histórico de análises, que fica guardado no navegador de cada aparelho e não é sincronizado.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" type="button" aria-expanded="false"><span>O Gambyte funciona com qualquer PGN?</span><span class="faq-arrow">›</span></button>
+        <div class="faq-answer">Com PGNs de xadrez padrão que começam da posição inicial, como os exportados pelo Chess.com e pelo Lichess ou por programas de xadrez. Comentários, variantes e marcações de relógio são ignorados. Variantes como Chess960 não são suportadas.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" type="button" aria-expanded="false"><span>Preciso de conta para usar o plano gratuito?</span><span class="faq-arrow">›</span></button>
+        <div class="faq-answer">Não. A análise gratuita não exige cadastro. A conta só é necessária para assinar o Pro.</div>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Checkout Modal -->
-<div class="modal-overlay" id="modal-overlay" data-onclick="gambyte-premium-8">
-  <div class="modal-card">
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title-text">
     <div class="modal-header">
-      <span class="modal-title" id="modal-title-text">Assinar Premium</span>
-      <button class="modal-close" data-onclick="gambyte-premium-9">✕</button>
+      <span class="modal-title" id="modal-title-text">Assinar o Gambyte Pro</span>
+      <button class="modal-close" data-action="fechar" aria-label="Fechar">✕</button>
     </div>
     <div class="modal-body">
 
       <!-- Step: Login required -->
       <div class="payment-step active" id="step-auth-check">
         <div style="text-align:center;padding:10px 0 20px">
-
-          <div style="font-size:16px;font-weight:600;margin-bottom:8px">Faça login para continuar</div>
-          <div style="font-size:13px;color:var(--text2);margin-bottom:22px;line-height:1.6">
-            Você precisa de uma conta para assinar o Gambyte Pro e acessar seus benefícios em qualquer dispositivo.
+          <div style="font-size:16px;font-weight:600;margin-bottom:8px">Entre na sua conta para continuar</div>
+          <div style="font-size:13.5px;color:var(--text2);margin-bottom:22px;line-height:1.6">
+            O acesso Pro fica registrado na conta. Assim ele vale em qualquer aparelho em que você entrar.
           </div>
-          <button class="btn-pay" data-onclick="gambyte-premium-10" style="margin-bottom:10px">
-            Entrar / Criar conta
+          <button class="btn-pay" data-action="login" style="margin-bottom:10px">
+            Entrar ou criar conta
           </button>
-          <div style="font-size:11px;color:var(--text3)">Leva menos de 1 minuto</div>
         </div>
       </div>
 
       <!-- Step: Already premium -->
       <div class="payment-step" id="step-already-premium">
         <div style="text-align:center;padding:10px 0 20px">
-
-          <div style="font-size:18px;font-weight:700;margin-bottom:8px;color:var(--gold)">Você já é Gambyte Pro!</div>
-          <div style="font-size:13px;color:var(--text2);margin-bottom:22px">
-            Sua conta já tem acesso a todos os recursos Gambyte Pro.
+          <div style="font-size:18px;font-weight:700;margin-bottom:8px;color:var(--gold)">Seu Gambyte Pro está ativo</div>
+          <div style="font-size:13.5px;color:var(--text2);margin-bottom:22px;line-height:1.6" id="already-premium-text">
+            Sua conta tem acesso a todos os recursos do Pro.
           </div>
-          <a class="btn-go-analyze" href="index.html">Ir para a análise →</a>
+          <a class="btn-go-analyze" href="index.html">Ir para o analisador</a>
+          <p style="margin-top:16px;font-size:13px"><button type="button" class="link-btn" data-action="renovar">Quero pagar mais um mês</button></p>
         </div>
       </div>
 
       <!-- Step: Payment -->
       <div class="payment-step" id="step-payment">
-        <!-- Order summary -->
         <div class="order-summary">
           <div class="order-row">
-            <span class="order-label"> Gambyte Pro</span>
-            <span class="order-value">R$9,90</span>
+            <span class="order-label">Gambyte Pro</span>
+            <span class="order-value">R$ 9,90</span>
           </div>
           <div class="order-row">
-            <span class="order-label">Cobrança</span>
+            <span class="order-label">Período</span>
             <span class="order-value">Um mês, sem renovação automática</span>
           </div>
           <div class="order-row total">
-            <span class="order-label">Total hoje</span>
-            <span class="order-value gold">R$9,90</span>
+            <span class="order-label">Total</span>
+            <span class="order-value gold">R$ 9,90</span>
           </div>
         </div>
 
-        <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5;">
-          Abra a cobrança de R$ 9,90 no Nubank e faça o Pix pelo aplicativo do seu banco. Depois, use o link abaixo para informar pelo WhatsApp o e-mail da sua conta Gambyte. O Premium será liberado após a confirmação manual do recebimento.
-        </div>
+        <ol class="pay-steps">
+          <li>Abra a cobrança de R$ 9,90 e pague por Pix no aplicativo do seu banco.</li>
+          <li>Avise pelo WhatsApp informando o e-mail da conta: <strong id="pay-email">—</strong></li>
+          <li>O Pro é liberado depois da conferência manual do recebimento.</li>
+        </ol>
 
-        <div class="form-error" id="payment-error" style="margin-bottom:14px"></div>
+        <div class="form-error" id="payment-error"></div>
 
-        <button class="btn-pay" id="btn-pay" data-onclick="gambyte-premium-11">
-           Pagar com Pix no Nubank
+        <button class="btn-pay" id="btn-pay" data-action="pagar">
+          Abrir a cobrança Pix no Nubank
         </button>
-        <div class="pay-security">Pix no Nubank · Confirmação manual · Sem renovação automática</div>
-        <p style="text-align:center;margin-top:16px;font-size:13px"><a href="https://wa.me/5521986996374?text=Ol%C3%A1!%20Fiz%20o%20Pix%20do%20Gambyte%20Pro.%20Meu%20e-mail%20da%20conta%20%C3%A9%3A%20" target="_blank" rel="noopener noreferrer" style="color:var(--gold)">Já paguei: solicitar liberação pelo WhatsApp</a></p>
+        <div class="pay-security">A cobrança abre em outra aba · Confira o destinatário antes de pagar</div>
+        <p style="text-align:center;margin-top:16px;font-size:13.5px"><a id="whats-link" href="https://wa.me/5521986996374?text=Ol%C3%A1!%20Fiz%20o%20Pix%20do%20Gambyte%20Pro.%20Meu%20e-mail%20da%20conta%20%C3%A9%3A%20" target="_blank" rel="noopener noreferrer" style="color:var(--gold)">Já paguei: avisar pelo WhatsApp</a></p>
       </div>
 
       <!-- Step: Success -->
       <div class="payment-step" id="step-success">
         <div class="success-step">
-
-          <div class="success-title">Premium Ativado!</div>
+          <div class="success-title">Gambyte Pro ativado</div>
           <div class="success-sub">
-            Parabéns! Sua conta agora tem acesso a todos os recursos Gambyte Pro.<br>
-            Analise suas partidas com insights completos.
+            Sua conta agora tem acesso a todos os recursos do Pro.<br>
+            Ative a chave “Análise Profunda” na próxima partida.
           </div>
-          <a class="btn-go-analyze" href="index.html" data-onclick="gambyte-premium-12">
-            Ir para a Análise →
-          </a>
+          <a class="btn-go-analyze" href="index.html">Ir para o analisador</a>
         </div>
       </div>
     </div>
@@ -688,8 +745,8 @@ header {
 <script src="js/vendor/supabase-2.118.0.js"></script>
 <script src="js/modules/supabase-config.js"></script>
 <script src="js/modules/auth-system.js"></script>
-<script src="js/pages/gambyte-premium-1.js?v=nubank-2"></script>
-<script src="js/pages/gambyte-premium-events.js"></script>
-<footer class="info-footer"><div><strong>Gambyte</strong><p>Projeto independente de Rampini. Aprender com a prática.</p></div><nav aria-label="Informações institucionais"><a href="sobre.html">Sobre</a><a href="como-usar.html">Como usar</a><a href="guia.html">Guia de análise</a><a href="contato.html">Contato</a><a href="privacidade.html">Privacidade</a><a href="termos.html">Termos de Uso</a><a href="licencas.html">Créditos e licença</a></nav><small>© 2026 Rampini · <a href="mailto:ebezerrarampini1@gmail.com">ebezerrarampini1@gmail.com</a></small></footer>
+<script src="js/pages/gambyte-premium-1.js?v=pro-3"></script>
+<script src="js/pages/gambyte-premium-events.js?v=pro-3"></script>
+<footer class="info-footer"><div><strong>Gambyte</strong><p>Projeto independente de Rampini. Aprender com a prática.</p></div><nav aria-label="Informações institucionais"><a href="sobre.html">Sobre</a><a href="aprender/">Aprender xadrez</a><a href="como-usar.html">Como usar</a><a href="guia.html">Guia de análise</a><a href="gambyte-premium.html">Gambyte Pro</a><a href="contato.html">Contato</a><a href="privacidade.html">Privacidade</a><a href="termos.html">Termos de Uso</a><a href="licencas.html">Créditos e licença</a></nav><small>© 2026 Rampini · <a href="mailto:ebezerrarampini1@gmail.com">ebezerrarampini1@gmail.com</a></small></footer>
 </body>
 </html>

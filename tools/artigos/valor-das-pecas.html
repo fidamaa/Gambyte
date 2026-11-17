@@ -1,0 +1,68 @@
+<!--meta {"titulo":"Valor das peças: a tabela de pontos e quando ela engana","descricao":"Os valores de referência de cada peça, como contar atacantes e defensores, quando trocar, o que é a qualidade e por que a avaliação do motor não é só material.","categoria":"fundamentos","ordem":3,"relacionados":["pecas-indefesas","estrutura-de-peoes"]}-->
+<p>Toda decisão de troca no xadrez parte de uma pergunta: o que eu entrego vale mais ou menos do que o que eu recebo? A tabela de pontos existe para responder isso rápido. Ela é uma boa aproximação, usada por jogadores de todos os níveis, mas tem limites que é preciso conhecer.</p>
+
+<h2 id="a-tabela">A tabela de referência</h2>
+<div class="ap-tabela-wrap"><table class="ap-tabela">
+<thead><tr><th>Peça</th><th>Valor</th><th>Observação</th></tr></thead>
+<tbody>
+<tr><td>Peão</td><td>1</td><td>A unidade de medida. O valor cresce conforme ele avança.</td></tr>
+<tr><td>Cavalo</td><td>3</td><td>Melhor em posições fechadas e em casas avançadas protegidas por peão.</td></tr>
+<tr><td>Bispo</td><td>3</td><td>Melhor em posições abertas. Muitos autores o colocam um pouco acima do cavalo.</td></tr>
+<tr><td>Torre</td><td>5</td><td>Precisa de colunas abertas para render o que vale.</td></tr>
+<tr><td>Dama</td><td>9</td><td>Combina os movimentos de torre e bispo.</td></tr>
+<tr><td>Rei</td><td>—</td><td>Não pode ser trocado. Como peça de luta no final, age com a força aproximada de uma peça menor.</td></tr>
+</tbody></table></div>
+<p>Cavalo e bispo são chamados de <strong>peças menores</strong>; torre e dama, de <strong>peças maiores</strong>. Esses números são uma convenção didática antiga. Programas de xadrez usam valores mais finos e que mudam conforme a posição, mas as proporções são parecidas.</p>
+
+<h2 id="trocas-comuns">O que a tabela diz sobre as trocas mais comuns</h2>
+<ul>
+<li><strong>Peça menor por três peões:</strong> igualdade nominal. Na prática, a peça costuma ser melhor no meio-jogo, quando pode atacar, e os peões ganham força no final, quando podem promover.</li>
+<li><strong>Torre por peça menor:</strong> diferença de dois pontos. Essa diferença tem nome próprio, a <strong>qualidade</strong>. Quem troca um bispo ou cavalo por uma torre “ganha a qualidade”.</li>
+<li><strong>Duas peças menores por torre e peão:</strong> seis contra seis na conta, mas as duas peças costumam valer mais no meio-jogo, porque são duas unidades atacando contra uma.</li>
+<li><strong>Dama por duas torres:</strong> nove contra dez. As torres são melhores quando estão coordenadas e o rei delas está seguro; a dama é melhor quando há peões soltos e alvos espalhados para atacar.</li>
+<li><strong>Dama por três peças menores:</strong> igualdade nominal, e normalmente as três peças são preferíveis se estiverem bem coordenadas.</li>
+</ul>
+
+<h2 id="contando">Contando atacantes e defensores</h2>
+<p>Antes de capturar em uma casa disputada, conte quantas peças de cada lado apontam para ela. A regra básica: <strong>se os atacantes são mais numerosos que os defensores, a captura ganha material</strong>, desde que as peças entrem na ordem certa, da menos valiosa para a mais valiosa.</p>
+[[tab lances="1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. Ng5" marca="f7 c4 g5" leg="O peão de f7 é atacado por bispo e cavalo e defendido apenas pelo rei: dois atacantes contra um defensor."]]
+<p>Nesta posição conhecida da Defesa dos Dois Cavalos, as brancas ameaçam capturar em f7 com o cavalo, atacando dama e torre ao mesmo tempo. As pretas não conseguem acrescentar um defensor a f7 de forma satisfatória. A resposta correta é <em>bloquear um dos atacantes</em>: [[l 1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. Ng5 d5]] fecha a diagonal do bispo, e a contagem volta a um contra um.</p>
+<p>A contagem tem dois refinamentos importantes:</p>
+<ol>
+<li><strong>O valor de quem captura primeiro importa.</strong> Se uma torre sua está defendida três vezes e é atacada por um único peão, você perde a qualidade mesmo com mais defensores. Vale a mesma coisa para qualquer peça atacada por algo mais barato.</li>
+<li><strong>Peças atrás de outras também contam.</strong> Uma dama atrás de uma torre na mesma coluna entra na conta depois que a torre captura. São os chamados atacantes “em bateria”.</li>
+</ol>
+
+<h2 id="quando-trocar">Quando trocar e quando evitar</h2>
+<p>A tabela diz quanto as peças valem. Ela não diz quando uma troca de valor igual é boa para você. Algumas regras práticas:</p>
+<ul>
+<li><strong>Com material a mais, troque peças.</strong> Um peão de vantagem com todas as peças no tabuleiro é pouco; o mesmo peão em um final de reis costuma decidir.</li>
+<li><strong>Com material a menos, troque peões e mantenha as peças.</strong> Menos peões significa menos chances de promoção para o adversário, e alguns finais sem peões são empate mesmo com uma peça a mais.</li>
+<li><strong>Sob ataque, troque as peças que atacam.</strong> Uma troca de damas costuma esvaziar um ataque ao rei.</li>
+<li><strong>Com menos espaço, trocas ajudam.</strong> Quem está apertado precisa de casas, e cada troca libera algumas.</li>
+<li><strong>Não troque sua peça boa pela peça ruim dele.</strong> Um bispo preso atrás dos próprios peões vale menos que três pontos na prática.</li>
+</ul>
+
+<h2 id="quando-engana">Quando a tabela engana</h2>
+<p>O valor real de uma peça depende do que ela consegue fazer naquela posição. Quatro fatores alteram a conta com frequência:</p>
+<h3>Atividade</h3>
+<p>Uma torre trancada no canto atrás dos próprios peões não vale cinco. Um cavalo em uma casa avançada, protegido por peão e impossível de expulsar, pode valer tanto quanto uma torre. Antes de trocar, pergunte quantas casas úteis cada peça controla.</p>
+<h3>O par de bispos</h3>
+<p>Dois bispos juntos cobrem casas das duas cores e se complementam. Em posições abertas, o par costuma valer cerca de meio ponto a mais do que a soma simples sugere. Trocar um deles por um cavalo sem necessidade é uma concessão pequena, mas real.</p>
+<h3>Segurança do rei</h3>
+<p>Material a mais não serve de nada se o rei leva mate. Sacrifícios em h7 ou f7, que destroem o abrigo do rei, podem ser corretos mesmo entregando uma peça inteira. O inverso também vale: capturar um peão “envenenado” com a dama e passar cinco lances fugindo com ela costuma custar mais do que o peão rendeu.</p>
+<h3>Peões passados</h3>
+<p>Um peão sem peões adversários à sua frente ganha valor a cada casa que avança. Na sétima fileira, a um passo da promoção, ele pode prender uma torre ou até uma dama adversária só para vigiá-lo. Esse tema é detalhado no guia de <a href="/aprender/estrutura-de-peoes.html">estrutura de peões</a>.</p>
+
+<h2 id="centipeoes">Pontos, centipeões e a avaliação do motor</h2>
+<p>Os motores de xadrez expressam a avaliação em <strong>centipeões</strong>: cem centipeões equivalem a um peão. Uma avaliação de +1,00 significa que o motor considera a posição das brancas tão boa quanto se tivessem um peão a mais.</p>
+<p>O ponto que mais confunde quem começa a usar análise: <strong>a avaliação não é contagem de material</strong>. Ela junta material, atividade, segurança do rei, estrutura de peões e tudo o que o motor enxerga calculando à frente. Uma posição pode estar materialmente igual e ser avaliada em +2,00 porque um lado tem um ataque forte. E você pode estar com uma peça a mais e ver 0,00 porque o adversário tem xeque perpétuo.</p>
+<div class="ap-dica"><strong>Na prática</strong><p>Quando o gráfico de vantagem do Gambyte mostra uma queda de três pontos em um lance seu e você não perdeu nenhuma peça naquele momento, o motor viu uma perda que acontece alguns lances depois. Siga a linha sugerida até o material realmente cair para entender o que foi.</p></div>
+
+<h2 id="resumo">Resumo para levar ao tabuleiro</h2>
+<ol>
+<li>Use 1, 3, 3, 5, 9 como primeira aproximação em qualquer troca.</li>
+<li>Em casas disputadas, conte atacantes e defensores e confira o valor de quem captura primeiro.</li>
+<li>Com vantagem material, simplifique. Com desvantagem, complique e mantenha peças.</li>
+<li>Antes de aceitar uma troca “igual”, compare a atividade das duas peças envolvidas.</li>
+</ol>
