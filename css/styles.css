@@ -1190,3 +1190,135 @@ textarea#pgn-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(23
 .imp-note{margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(91,143,224,.06);border:1px solid rgba(91,143,224,.22);font-size:12.5px;line-height:1.55;color:var(--text2)}
 .imp-note strong{color:var(--text);font-weight:600}
 .pgn-hint{margin:-4px 0 10px;font-size:12.5px;line-height:1.5;color:var(--text3)}
+
+/* ══════════════════════════════════════════════════════════════
+   Layout do analisador: tabuleiro na primeira tela, gráfico logo
+   abaixo dele, classificações acima da lista de lances e a entrada
+   da partida (busca por usuário ou PGN) compacta sob o gráfico.
+   ══════════════════════════════════════════════════════════════ */
+body[data-site="gambyte"] .info-intro.tool-intro{padding:14px 0 12px;max-width:none}
+body[data-site="gambyte"] .info-intro.tool-intro h1{font-size:clamp(22px,2.1vw,28px);margin:0 0 4px}
+body[data-site="gambyte"] .info-intro.tool-intro p{font-size:14.5px;line-height:1.5;max-width:none}
+body[data-site="gambyte"] .info-intro.tool-intro a{color:var(--accent)}
+
+/* Abertura + progresso na mesma faixa */
+.game-strip{display:flex;gap:12px;margin-bottom:12px;align-items:stretch}
+.game-strip>.opening-banner{flex:1 1 0;min-width:0;margin:0;padding:10px 16px;gap:12px}
+.game-strip>.progress-container{flex:1.4 1 0;min-width:0;margin:0;padding:10px 16px}
+.game-strip .progress-header{margin-bottom:7px}
+.game-strip .progress-stats{margin-top:7px}
+.game-strip .opening-name{font-size:14.5px}
+.game-strip .opening-variation{font-size:12.5px}
+
+/* Jogadores: uma linha cada, com a precisão em destaque */
+.players-row{gap:12px;margin-bottom:14px}
+.player-card{display:flex;align-items:center;gap:16px;padding:12px 16px}
+.player-card:hover{transform:none}
+.player-card::before{top:0;bottom:0;left:0;right:auto;width:3px;height:auto}
+.pc-id{display:flex;align-items:center;gap:10px;min-width:0;flex:1 1 auto}
+.pc-side{width:14px;height:14px;border-radius:4px;flex:none;border:1px solid var(--border2)}
+.player-card.white .pc-side{background:#ecebe6}
+.player-card.black .pc-side{background:#2b2f3c}
+.pc-who{min-width:0}
+.player-card .player-color-badge{font-size:11px;margin:0 0 1px;letter-spacing:1.2px}
+.player-card .player-name{font-size:16px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-acc{flex:none;text-align:center;padding:7px 14px 6px;border-radius:10px;background:linear-gradient(180deg,rgba(244,204,128,.15),rgba(211,154,69,.07));border:1px solid rgba(236,189,110,.45)}
+.pc-acc-val{font-family:'DM Serif Display',Georgia,serif;font-size:30px;line-height:1;background:linear-gradient(135deg,var(--gold-1),var(--gold-2));-webkit-background-clip:text;background-clip:text;color:transparent;min-width:64px}
+.pc-lbl{font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);margin-top:4px;white-space:nowrap}
+.pc-acc .pc-lbl{color:var(--accent);font-weight:600}
+.pc-stats{display:flex;gap:14px;flex:none}
+.pc-stat{text-align:center;min-width:42px}
+.player-card .player-rating-display,.player-card .player-stat-value{font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:600;color:var(--text);margin:0;line-height:1.2}
+
+/* Gráfico sob o tabuleiro */
+.board-panel{gap:12px}
+.chart-section{padding:12px 14px}
+.chart-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.chart-head .section-title{margin:0}
+.chart-head .chart-labels{margin:0;gap:12px}
+.chart-labels span{display:inline-flex;align-items:center;gap:6px;color:var(--text3)}
+.chart-labels span::before{content:"";width:10px;height:10px;border-radius:3px}
+.chart-labels .lbl-white::before{background:#e9e7e1}
+.chart-labels .lbl-black::before{background:#2a2e3a;border:1px solid var(--border2)}
+canvas#chart{height:150px}
+
+/* Caixa "Analisar uma partida" */
+.trazer{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px}
+.trazer-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.trazer-head .section-title{margin:0}
+.trazer-tabs{display:inline-flex;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:3px;gap:2px}
+.trazer-tabs button{border:1px solid transparent;background:none;color:var(--text2);font-family:inherit;font-size:13px;font-weight:500;padding:6px 12px;border-radius:7px;cursor:pointer}
+.trazer-tabs button:hover{color:var(--text)}
+.trazer-tabs button.active{background:var(--bg2);border-color:var(--border2);color:var(--text);font-weight:600}
+.trazer-tabs button:focus-visible{outline:2px solid var(--gold-1);outline-offset:2px}
+.trazer-pane.import-box,.trazer-pane.input-section{background:none;border:0;border-radius:0;padding:0;margin:0}
+.trazer-pane[hidden]{display:none}
+.trazer .imp-head{margin-bottom:10px}
+.trazer .imp-sites button{padding:6px 12px}
+.trazer .pgn-hint{margin:0 0 10px}
+.trazer textarea#pgn-input{min-height:96px}
+.trazer .imp-list{max-height:430px}
+.trazer-foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.trazer-foot .pro-toggle-wrap{margin-left:0}
+.trazer-foot .phase-indicator{margin-left:auto}
+
+/* Classificações acima da lista de lances */
+.middle-panel{gap:14px}
+.classification-legend{padding:14px 16px}
+.classification-legend .legend-header{margin-bottom:8px;gap:10px;flex-wrap:wrap}
+.classification-legend .legend-header .section-title{margin:0}
+.classification-legend .legend-col-labels{display:flex;gap:12px}
+.classification-legend .legend-col-label{display:inline-flex;align-items:center;gap:6px;color:var(--text3)!important;text-transform:none;font-size:12px!important}
+.classification-legend .legend-col-label::before{content:"";width:10px;height:10px;border-radius:3px}
+.classification-legend .lc-w::before{background:#e9e7e1}
+.classification-legend .lc-b::before{background:#2b2f3c;border:1px solid var(--border2)}
+.legend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));column-gap:20px}
+.legend-grid .legend-row{border-bottom:0;padding:4px 0;gap:8px}
+.legend-grid .legend-label{min-width:0;white-space:nowrap;overflow:hidden}
+.legend-grid .legend-label span{overflow:hidden;text-overflow:ellipsis}
+.legend-grid .legend-counts{display:flex;gap:4px;flex:none}
+.legend-grid .legend-count{min-width:26px;padding:1px 6px;border-radius:5px;text-align:center;font-size:12.5px;line-height:1.5}
+.legend-grid .legend-count.w{background:#e9e7e1;color:#1c1f27}
+.legend-grid .legend-count.b{background:#2b2f3c;color:#d5d9e6;box-shadow:0 0 0 1px var(--border2) inset}
+.moves-section{padding:14px 16px}
+.moves-list{max-height:560px}
+
+/* Até 1250px: duas colunas (tabuleiro | lances), insights embaixo */
+@media(max-width:1250px){.summary-panel{display:flex}}
+
+/* Celular */
+@media(max-width:760px){
+  body[data-site="gambyte"] .info-intro.tool-intro{padding:12px 0 10px}
+  body[data-site="gambyte"] .info-intro.tool-intro h1{font-size:21px}
+  body[data-site="gambyte"] .info-intro.tool-intro p{font-size:13.5px}
+  .game-strip{flex-direction:column;gap:8px}
+  .players-row{grid-template-columns:1fr;gap:8px}
+  .player-card{gap:10px;padding:10px 12px}
+  .pc-id{gap:8px}
+  .player-card .player-name{font-size:14.5px}
+  .player-card .player-color-badge{font-size:10px}
+  .pc-acc{padding:5px 9px 4px}
+  .pc-acc-val{font-size:22px;min-width:48px}
+  .pc-stats{gap:8px}
+  .pc-stat{min-width:30px}
+  .player-card .player-rating-display,.player-card .player-stat-value{font-size:14px}
+  .pc-lbl{font-size:9px;letter-spacing:.4px}
+  .pc-lbl[data-curto]{font-size:0}
+  .pc-lbl[data-curto]::after{content:attr(data-curto);font-size:9px}
+  .trazer{padding:12px}
+  .trazer-tabs{width:100%}
+  .trazer-tabs button{flex:1}
+  .moves-list{max-height:420px}
+}
+@media(max-width:380px){.pc-stat:nth-child(2){display:none}}
+
+/* Coluna do resumo antes da primeira análise */
+.summary-empty{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px}
+.insights-section.visible~.summary-empty{display:none}
+.summary-empty .section-title{margin-bottom:8px}
+.summary-empty p{font-size:14px;line-height:1.55;color:var(--text2);margin:0}
+.se-actions{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 12px}
+.se-actions a{text-decoration:none;display:inline-flex;align-items:center}
+.summary-empty .se-dica{font-size:12.5px;color:var(--text3)}
+@media(max-width:760px){body[data-site="gambyte"] .info-intro.tool-intro p{display:none}body[data-site="gambyte"] .info-intro.tool-intro h1{font-size:20px;margin:0}.game-strip>.opening-banner{flex-wrap:nowrap;padding:8px 12px}.game-strip .opening-variation{display:none}}
+@media(max-width:560px){.imp-game{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"d r" "p p";row-gap:6px;padding:9px 11px}.imp-g-date{grid-area:d;display:flex;gap:8px;align-items:baseline}.imp-g-date small{display:inline}.imp-g-players{grid-area:p}.imp-g-res{grid-area:r}}

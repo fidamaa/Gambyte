@@ -175,5 +175,36 @@ const ChartRenderer = (() => {
     }
   }
 
-  return { render };
+  // Sem partida analisada: posição igual (metade clara, metade escura) e um aviso.
+  function clear(canvas) {
+    if (!canvas) return;
+    _estado = null; _hover = -1;
+    const W = canvas.clientWidth || _lastW || 400;
+    const H = canvas.clientHeight || _lastH || 150;
+    const dpr = window.devicePixelRatio || 1;
+    _lastW = W; _lastH = H;
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    canvas.title = '';
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    const ph = H - 18, mid = ph / 2;
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(0, 0, W, ph, 8) : ctx.rect(0, 0, W, ph);
+    ctx.clip();
+    ctx.fillStyle = C.escuro; ctx.fillRect(0, 0, W, ph);
+    ctx.fillStyle = 'rgba(233,231,225,.16)'; ctx.fillRect(0, mid, W, ph - mid);
+    ctx.strokeStyle = C.meio; ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(0, mid); ctx.lineTo(W, mid); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+    ctx.fillStyle = C.rotulo;
+    ctx.font = '12px "Outfit", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('A vantagem de cada lado aparece aqui durante a análise.', W / 2, mid - 10);
+  }
+
+  return { render, clear };
 })();

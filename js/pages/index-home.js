@@ -31,7 +31,7 @@
     const pedido = new URLSearchParams(location.search).get('exemplo');
     if (pedido && ids.includes(pedido)) {
       proximo = ids.indexOf(pedido) + 1;
-      if (carregar(pedido, true)) campo.scrollIntoView({ block: 'center' });
+      if (carregar(pedido, true)) { GameImport.mostrarAba('pgn'); campo.scrollIntoView({ block: 'center' }); }
     }
   });
 })();

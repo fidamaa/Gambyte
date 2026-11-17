@@ -6,7 +6,7 @@
 <title>Gambyte — Analise suas partidas de xadrez com Stockfish 18</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=7">
+<link rel="stylesheet" href="css/styles.css?v=8">
 <meta name="google-adsense-account" content="ca-pub-7858747311725137">
 <!-- Veiculação de anúncios desativada durante a preparação para avaliação. -->
 <link rel="stylesheet" href="site-info.css?v=5">
@@ -20,59 +20,10 @@
 <div class="container">
 
 
-  <section class="info-intro" aria-labelledby="tool-title"><h1 id="tool-title">Entenda os momentos decisivos da sua partida.</h1><p>Importe pelo seu usuário do Chess.com ou do Lichess, ou cole o PGN, e revise avaliações, precisão e alternativas com Stockfish. Os cálculos acontecem no seu navegador. <a href="como-usar.html" style="color:var(--info-accent)">Veja como começar.</a></p></section>
-<!-- Importar partida do Chess.com / Lichess -->
-  <section class="import-box" id="import-box" aria-labelledby="imp-title">
-    <div class="imp-head">
-      <h2 class="section-label" id="imp-title">Importar partida</h2>
-      <div class="imp-sites" role="group" aria-label="Site da partida">
-        <button type="button" data-imp-site="chesscom">Chess.com</button>
-        <button type="button" data-imp-site="lichess">Lichess</button>
-      </div>
-    </div>
-    <div class="imp-row">
-      <input type="text" id="imp-input" class="imp-input" autocomplete="off" spellcheck="false" aria-label="Usuário ou link da partida">
-      <button type="button" class="btn-primary" id="imp-btn">Buscar partidas</button>
-    </div>
-    <div class="imp-mine" id="imp-mine" hidden></div>
-    <p class="imp-status" id="imp-status" role="status">Digite um usuário (o seu ou de qualquer jogador) para ver as últimas partidas, ou cole um link do Lichess.</p>
-    <p class="imp-note"><strong>Lichess:</strong> pode colar o link da partida, que ela abre direto. <strong>Chess.com:</strong> o link da partida não funciona, porque o Chess.com não permite que outros sites busquem partidas pelo link. Digite o usuário do Chess.com acima e as últimas partidas do perfil aparecem na lista.</p>
-    <div class="imp-list-head" id="imp-list-head" hidden><span class="imp-lh-text"></span><button type="button" class="imp-lh-btn" data-imp-scan hidden>Calcular prévia</button></div>
-    <div class="imp-list" id="imp-list" hidden></div>
-  </section>
+  <section class="info-intro tool-intro" aria-labelledby="tool-title"><h1 id="tool-title">Entenda os momentos decisivos da sua partida.</h1><p>Busque suas partidas pelo usuário do Chess.com ou do Lichess, ou cole o PGN, <a href="#trazer">logo abaixo do tabuleiro</a>. O Stockfish 18 calcula tudo no seu navegador. <a href="como-usar.html">Veja como começar.</a></p></section>
 
-  <!-- PGN Input -->
-  <section class="input-section">
-    <div class="section-label">Ou cole o PGN</div>
-    <p class="pgn-hint">Aceita o PGN de qualquer site, inclusive o arquivo exportado do Chess.com. Links não funcionam neste campo: para o Chess.com, use o usuário no quadro “Importar partida”.</p>
-    <textarea id="pgn-input" placeholder='[Event "Rated Blitz game"]
-[White "Kasparov"]
-[Black "Karpov"]
-
-1. e4 e5 2. Nf3 Nc6 3. Bb5 ...'></textarea>
-    <div id="error-msg" class="error-msg"></div>
-    <div class="input-actions">
-      <button id="btn-analyze" class="btn-primary">Analisar Partida</button>
-      <button id="btn-clear" class="btn-secondary" title="Reinicia o tabuleiro e limpa a análise atual">Limpar</button>
-      <button id="btn-sample" class="btn-secondary" type="button" title="Preenche o campo com uma partida clássica para você testar">Carregar exemplo</button>
-      <label class="pro-toggle-wrap" title="Análise em três passagens, até a profundidade 22 (Gambyte Pro)" id="pro-toggle-wrap" data-onclick="index-1">
-        <span class="pro-badge">Gambyte Pro</span>
-        <span class="pro-toggle-label">Análise Profunda</span>
-        <span class="pro-switch">
-          <input type="checkbox" id="pro-deep-toggle" disabled>
-          <span class="pro-slider"></span>
-        </span>
-      </label>
-      <div id="phase-indicator" class="phase-indicator hidden">
-        <div class="phase-dot"></div>
-        <span id="phase-text">Fase 1</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- Histórico local de análises (Gambyte Pro) -->
-  <div id="history-panel" class="history-panel" hidden></div>
-
+  <!-- Faixa da partida: abertura e progresso da análise -->
+  <div class="game-strip">
   <!-- Progress -->
   <div id="progress-container" class="progress-container">
     <div class="progress-header">
@@ -96,52 +47,42 @@
       <div class="opening-variation" id="opening-variation"></div>
     </div>
   </div>
+  </div>
 
   <!-- Results Section -->
   <section id="results-section">
 
-    <!-- Player Cards -->
+    <!-- Jogadores: precisão em destaque, rating, ACPL, erros e gafes -->
     <div class="players-row">
       <div class="player-card white">
-        <div class="player-color-badge">Brancas</div>
-        <div class="player-name" id="white-name">White</div>
-        <div class="player-rating-display" id="white-rating">—</div>
-        <div class="player-rating-label">Rating Estimado</div>
-        <div class="player-stats-row">
-          <div class="player-stat"><div class="player-stat-label">ACPL</div><div class="player-stat-value" id="white-acpl">—</div></div>
-          <div class="player-stat"><div class="player-stat-label">Precisão</div><div class="player-stat-value" id="white-acc">—</div></div>
-          <div class="player-stat"><div class="player-stat-label">Erros</div><div class="player-stat-value" id="white-mistakes">—</div></div>
-          <div class="player-stat"><div class="player-stat-label">Gafes</div><div class="player-stat-value" id="white-blunders">—</div></div>
+        <div class="pc-id">
+          <span class="pc-side" aria-hidden="true"></span>
+          <div class="pc-who"><div class="player-color-badge">Brancas</div><div class="player-name" id="white-name">Brancas</div></div>
+        </div>
+        <div class="pc-acc"><div class="pc-acc-val" id="white-acc">—</div><div class="pc-lbl">Precisão</div></div>
+        <div class="pc-stats">
+          <div class="pc-stat"><div class="player-rating-display" id="white-rating">—</div><div class="pc-lbl" data-curto="Rating">Rating estimado</div></div>
+          <div class="pc-stat"><div class="player-stat-value" id="white-acpl">—</div><div class="pc-lbl">ACPL</div></div>
+          <div class="pc-stat"><div class="player-stat-value" id="white-mistakes">—</div><div class="pc-lbl">Erros</div></div>
+          <div class="pc-stat"><div class="player-stat-value" id="white-blunders">—</div><div class="pc-lbl">Gafes</div></div>
         </div>
       </div>
       <div class="player-card black">
-        <div class="player-color-badge">Pretas</div>
-        <div class="player-name" id="black-name">Black</div>
-        <div class="player-rating-display" id="black-rating">—</div>
-        <div class="player-rating-label">Rating Estimado</div>
-        <div class="player-stats-row">
-          <div class="player-stat"><div class="player-stat-label">ACPL</div><div class="player-stat-value" id="black-acpl">—</div></div>
-          <div class="player-stat"><div class="player-stat-label">Precisão</div><div class="player-stat-value" id="black-acc">—</div></div>
-          <div class="player-stat"><div class="player-stat-label">Erros</div><div class="player-stat-value" id="black-mistakes">—</div></div>
-          <div class="player-stat"><div class="player-stat-label">Gafes</div><div class="player-stat-value" id="black-blunders">—</div></div>
+        <div class="pc-id">
+          <span class="pc-side" aria-hidden="true"></span>
+          <div class="pc-who"><div class="player-color-badge">Pretas</div><div class="player-name" id="black-name">Pretas</div></div>
+        </div>
+        <div class="pc-acc"><div class="pc-acc-val" id="black-acc">—</div><div class="pc-lbl">Precisão</div></div>
+        <div class="pc-stats">
+          <div class="pc-stat"><div class="player-rating-display" id="black-rating">—</div><div class="pc-lbl" data-curto="Rating">Rating estimado</div></div>
+          <div class="pc-stat"><div class="player-stat-value" id="black-acpl">—</div><div class="pc-lbl">ACPL</div></div>
+          <div class="pc-stat"><div class="player-stat-value" id="black-mistakes">—</div><div class="pc-lbl">Erros</div></div>
+          <div class="pc-stat"><div class="player-stat-value" id="black-blunders">—</div><div class="pc-lbl">Gafes</div></div>
         </div>
       </div>
     </div>
 
-    <!-- ============================================================
-         ANÚNCIO 1 — Após os resultados da análise (players-row)
-         ============================================================ -->
-    <div class="ad-slot" style="margin: 12px 0; text-align: center;">
-      <ins class="adsbygoogle"
-           style="display:block"
-           data-ad-client="ca-pub-7858747311725137"
-           data-ad-slot="5539241407"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script src="js/pages/index-1.js"></script>
-    </div>
-
-    <!-- Analysis layout: Board | Chart+Moves | Summary -->
+    <!-- Tabuleiro + gráfico + entrada | classificações + lances | insights -->
     <div class="analysis-layout">
 
       <!-- Board Panel -->
@@ -230,6 +171,77 @@
           </div>
         </div>
 
+        <!-- Gráfico de vantagem, logo abaixo do tabuleiro -->
+        <div class="chart-section">
+          <div class="chart-head">
+            <div class="section-title">Gráfico de vantagem</div>
+            <div class="chart-labels"><span class="lbl-white">Brancas</span><span class="lbl-black">Pretas</span></div>
+          </div>
+          <canvas id="chart"></canvas>
+        </div>
+
+        <!-- Trazer a partida: busca por usuário ou PGN colado -->
+        <section class="trazer" id="trazer" aria-labelledby="trazer-title">
+          <div class="trazer-head">
+            <h2 class="section-title" id="trazer-title">Analisar uma partida</h2>
+            <div class="trazer-tabs" role="tablist" aria-label="Como trazer a partida">
+              <button type="button" role="tab" data-trazer="importar" aria-selected="true">Buscar por usuário</button>
+              <button type="button" role="tab" data-trazer="pgn" aria-selected="false">Colar PGN</button>
+            </div>
+          </div>
+
+          <div class="trazer-pane import-box" id="import-box" data-pane="importar">
+            <div class="imp-head">
+              <div class="imp-sites" role="group" aria-label="Site da partida">
+        <button type="button" data-imp-site="chesscom">Chess.com</button>
+        <button type="button" data-imp-site="lichess">Lichess</button>
+      </div>
+            </div>
+            <div class="imp-row">
+      <input type="text" id="imp-input" class="imp-input" autocomplete="off" spellcheck="false" aria-label="Usuário ou link da partida">
+      <button type="button" class="btn-primary" id="imp-btn">Buscar partidas</button>
+    </div>
+    <div class="imp-mine" id="imp-mine" hidden></div>
+    <p class="imp-status" id="imp-status" role="status">Digite um usuário (o seu ou de qualquer jogador) para ver as últimas partidas, ou cole um link do Lichess.</p>
+    <p class="imp-note"><strong>Lichess:</strong> pode colar o link da partida, que ela abre direto. <strong>Chess.com:</strong> o link da partida não funciona, porque o Chess.com não permite que outros sites busquem partidas pelo link. Digite o usuário do Chess.com acima e as últimas partidas do perfil aparecem na lista.</p>
+    <div class="imp-list-head" id="imp-list-head" hidden><span class="imp-lh-text"></span><button type="button" class="imp-lh-btn" data-imp-scan hidden>Calcular prévia</button></div>
+    <div class="imp-list" id="imp-list" hidden></div>
+          </div>
+
+          <div class="trazer-pane input-section" data-pane="pgn" hidden>
+            <p class="pgn-hint">Aceita o PGN de qualquer site, inclusive o arquivo exportado do Chess.com. Links não funcionam neste campo: para o Chess.com, use a busca por usuário.</p>
+            <textarea id="pgn-input" placeholder='[Event "Rated Blitz game"]
+[White "Kasparov"]
+[Black "Karpov"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 ...'></textarea>
+            <div class="input-actions">
+              <button id="btn-analyze" class="btn-primary">Analisar Partida</button>
+              <button id="btn-clear" class="btn-secondary" title="Reinicia o tabuleiro e limpa a análise atual">Limpar</button>
+              <button id="btn-sample" class="btn-secondary" type="button" title="Preenche o campo com uma partida clássica para você testar">Carregar exemplo</button>
+            </div>
+          </div>
+
+          <div id="error-msg" class="error-msg"></div>
+          <div class="trazer-foot">
+            <label class="pro-toggle-wrap" title="Análise em três passagens, até a profundidade 22 (Gambyte Pro)" id="pro-toggle-wrap" data-onclick="index-1">
+        <span class="pro-badge">Gambyte Pro</span>
+        <span class="pro-toggle-label">Análise Profunda</span>
+        <span class="pro-switch">
+          <input type="checkbox" id="pro-deep-toggle" disabled>
+          <span class="pro-slider"></span>
+        </span>
+      </label>
+            <div id="phase-indicator" class="phase-indicator hidden">
+        <div class="phase-dot"></div>
+        <span id="phase-text">Fase 1</span>
+      </div>
+          </div>
+        </section>
+
+        <!-- Histórico local de análises (Gambyte Pro) -->
+        <div id="history-panel" class="history-panel" hidden></div>
+
         <!-- ============================================================
              ANÚNCIO 4 — Abaixo do tabuleiro (espaço vago na coluna do board)
              ============================================================ -->
@@ -244,17 +256,34 @@
         </div>
       </div>
 
-      <!-- Middle Panel -->
+      <!-- Classificações + lista de lances -->
       <div class="middle-panel">
-        <div class="chart-section">
-          <div class="section-title">Gráfico de Vantagem</div>
-          <div class="chart-labels">
-            <span class="lbl-white">▲ Brancas ganhando</span>
-            <span class="lbl-black">Pretas ganhando ▼</span>
+        <div class="classification-legend">
+          <div class="legend-header">
+            <span class="section-title">Classificações</span>
+            <div class="legend-col-labels">
+              <div class="legend-col-label lc-w">Brancas</div>
+              <div class="legend-col-label lc-b">Pretas</div>
+            </div>
           </div>
-          <canvas id="chart"></canvas>
+          <div class="legend-grid">
+          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--book)"></div><span style="color:var(--book)">Livro</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-book">0</div><div class="legend-count b" id="cnt-b-book">0</div></div></div>
+          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--brilliant)"></div><span style="color:var(--brilliant)">Brilhante</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-brilliant">0</div><div class="legend-count b" id="cnt-b-brilliant">0</div></div></div>
+          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--great)"></div><span style="color:var(--great)">Ótimo</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-great">0</div><div class="legend-count b" id="cnt-b-great">0</div></div></div>
+          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--best-move)"></div><span style="color:var(--best-move)">Melhor Lance</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-best-move">0</div><div class="legend-count b" id="cnt-b-best-move">0</div></div></div>
+          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--excellent)"></div><span style="color:var(--excellent)">Excelente</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-excellent">0</div><div class="legend-count b" id="cnt-b-excellent">0</div></div></div>
+          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--good)"></div><span style="color:var(--good)">Boa</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-good">0</div><div class="legend-count b" id="cnt-b-good">0</div></div></div>
+          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--inaccuracy)"></div><span style="color:var(--inaccuracy)">Imprecisão</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-inaccuracy">0</div><div class="legend-count b" id="cnt-b-inaccuracy">0</div></div></div>
+          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--mistake)"></div><span style="color:var(--mistake)">Erro</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-mistake">0</div><div class="legend-count b" id="cnt-b-mistake">0</div></div></div>
+          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--miss)"></div><span style="color:var(--miss)">Chance Perdida</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-miss">0</div><div class="legend-count b" id="cnt-b-miss">0</div></div></div>
+          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--blunder)"></div><span style="color:var(--blunder)">Gafe</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-blunder">0</div><div class="legend-count b" id="cnt-b-blunder">0</div></div></div>
+          </div>
         </div>
 
+        <div class="moves-section">
+          <div class="section-title">Análise de lances</div>
+          <div id="moves-list" class="moves-list"></div>
+        </div>
         <!-- ============================================================
              ANÚNCIO 2 — Entre o gráfico de vantagem e a lista de lances
              ============================================================ -->
@@ -267,14 +296,9 @@
                data-full-width-responsive="true"></ins>
           <script src="js/pages/index-3.js"></script>
         </div>
-
-        <div class="moves-section">
-          <div class="section-title">Análise de Lances</div>
-          <div id="moves-list" class="moves-list"></div>
-        </div>
       </div>
 
-      <!-- Summary Panel -->
+      <!-- Insights -->
       <div class="summary-panel">
         <!-- INSIGHTS PREMIUM SECTION -->
         <div id="insights-section" class="insights-section">
@@ -344,51 +368,31 @@
         </div>
         <!-- /INSIGHTS SECTION -->
 
-
-        <div class="accuracy-card">
-          <div class="accuracy-title">Precisão</div>
-          <div class="accuracy-player">
-            <div class="accuracy-player-name">
-              <span id="acc-white-name">Brancas</span>
-              <span id="acc-white-pct" class="mono">—%</span>
-            </div>
-            <div class="accuracy-bar-track">
-              <div id="acc-white-bar" class="accuracy-bar-fill white" style="width:0%"></div>
-            </div>
+        <!-- Antes da primeira análise: mostra onde trazer a partida -->
+        <div class="summary-empty">
+          <div class="section-title">Resumo da partida</div>
+          <p>Depois da análise, aqui aparecem os momentos decisivos, o que cada lado precisa treinar e a leitura do gráfico.</p>
+          <div class="se-actions">
+            <a class="btn-primary" href="#trazer" data-ir-trazer="importar">Buscar minhas partidas</a>
+            <a class="btn-secondary" href="#trazer" data-ir-trazer="pgn">Colar PGN</a>
           </div>
-          <div class="accuracy-player">
-            <div class="accuracy-player-name">
-              <span id="acc-black-name">Pretas</span>
-              <span id="acc-black-pct" class="mono">—%</span>
-            </div>
-            <div class="accuracy-bar-track">
-              <div id="acc-black-bar" class="accuracy-bar-fill black" style="width:0%"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="classification-legend">
-          <div class="legend-header">
-            <span class="accuracy-title" style="margin-bottom:0">Classificações</span>
-            <div class="legend-col-labels">
-              <div class="legend-col-label" style="color:#ddd;">Brancas</div>
-              <div class="legend-col-label" style="color:#8888bb;">Pretas</div>
-            </div>
-          </div>
-          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--book)"></div><span style="color:var(--book)">Livro</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-book">0</div><div class="legend-count b" id="cnt-b-book">0</div></div></div>
-          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--brilliant)"></div><span style="color:var(--brilliant)">Brilhante</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-brilliant">0</div><div class="legend-count b" id="cnt-b-brilliant">0</div></div></div>
-          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--great)"></div><span style="color:var(--great)">Ótimo</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-great">0</div><div class="legend-count b" id="cnt-b-great">0</div></div></div>
-          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--best-move)"></div><span style="color:var(--best-move)">Melhor Lance</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-best-move">0</div><div class="legend-count b" id="cnt-b-best-move">0</div></div></div>
-          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--excellent)"></div><span style="color:var(--excellent)">Excelente</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-excellent">0</div><div class="legend-count b" id="cnt-b-excellent">0</div></div></div>
-          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--good)"></div><span style="color:var(--good)">Boa</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-good">0</div><div class="legend-count b" id="cnt-b-good">0</div></div></div>
-          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--inaccuracy)"></div><span style="color:var(--inaccuracy)">Imprecisão</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-inaccuracy">0</div><div class="legend-count b" id="cnt-b-inaccuracy">0</div></div></div>
-          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--mistake)"></div><span style="color:var(--mistake)">Erro</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-mistake">0</div><div class="legend-count b" id="cnt-b-mistake">0</div></div></div>
-          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--miss)"></div><span style="color:var(--miss)">Chance Perdida</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-miss">0</div><div class="legend-count b" id="cnt-b-miss">0</div></div></div>
-          <div class="legend-row"><div class="legend-label"><div class="legend-dot" style="background:var(--blunder)"></div><span style="color:var(--blunder)">Gafe</span></div><div class="legend-counts"><div class="legend-count w" id="cnt-w-blunder">0</div><div class="legend-count b" id="cnt-b-blunder">0</div></div></div>
+          <p class="se-dica">Sem partida à mão? Mova as peças no tabuleiro: o Modo Livre avalia cada lance na hora.</p>
         </div>
       </div>
 
     </div><!-- /analysis-layout -->
+    <!-- ============================================================
+         ANÚNCIO 1 — Após os resultados da análise (players-row)
+         ============================================================ -->
+    <div class="ad-slot" style="margin: 12px 0; text-align: center;">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-7858747311725137"
+           data-ad-slot="5539241407"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script src="js/pages/index-1.js"></script>
+    </div>
   </section><!-- /results-section -->
 
   <!-- ============================================================

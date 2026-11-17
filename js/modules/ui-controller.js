@@ -41,12 +41,6 @@ const UIController = (() => {
     blackAcc:          document.getElementById('black-acc'),
     blackMistakes:     document.getElementById('black-mistakes'),
     blackBlunders:     document.getElementById('black-blunders'),
-    accWhiteName:      document.getElementById('acc-white-name'),
-    accBlackName:      document.getElementById('acc-black-name'),
-    accWhitePct:       document.getElementById('acc-white-pct'),
-    accBlackPct:       document.getElementById('acc-black-pct'),
-    accWhiteBar:       document.getElementById('acc-white-bar'),
-    accBlackBar:       document.getElementById('acc-black-bar'),
     navStart:          document.getElementById('nav-start'),
     navPrev:           document.getElementById('nav-prev'),
     navNext:           document.getElementById('nav-next'),
@@ -77,7 +71,10 @@ const UIController = (() => {
     const panel = document.querySelector('.board-panel');
     const width = panel && panel.clientWidth ? panel.clientWidth : Math.min(window.innerWidth - 32, 560);
     const available = Math.max(160, width - 48);
-    return Math.floor(Math.min(560, available) / 8) * 8;
+    // No computador, o tabuleiro inteiro precisa caber na tela ao abrir a página.
+    const topo = panel ? panel.getBoundingClientRect().top + window.scrollY : 300;
+    const alturaUtil = window.innerWidth > 760 ? Math.max(320, window.innerHeight - topo - 28) : 9999;
+    return Math.floor(Math.min(560, available, alturaUtil) / 8) * 8;
   }
 
   function resizeBoard() {
@@ -394,7 +391,11 @@ const UIController = (() => {
   function updateOpeningBanner(moves) {
     const result = OpeningDetector.detect(moves);
     els.openingBanner.classList.add('visible');
-    if (result) {
+    if (!moves.length) {
+      els.openingEco.textContent      = '—';
+      els.openingName.textContent     = 'Posição inicial';
+      els.openingVariation.textContent = 'Jogue no tabuleiro ou traga uma partida logo abaixo.';
+    } else if (result) {
       els.openingEco.textContent      = result.eco;
       els.openingName.textContent     = result.name;
       els.openingVariation.textContent = result.variation || '';
@@ -429,6 +430,9 @@ const UIController = (() => {
     // trocar de partida ou limpar.
     if (FreePlay.isActive() || FreePlay.hasTree()) FreePlay.stop();
     _branchBaseCtx = null;
+    document.getElementById('btn-free-play')?.classList.remove('active');
+    const fpLabel = document.getElementById('btn-free-play-label');
+    if (fpLabel) fpLabel.textContent = 'Modo Livre';
 
     parsedGameRef = parsedGame;
     currentMoveIdx = -1;
@@ -437,8 +441,9 @@ const UIController = (() => {
     els.resultsSection.classList.add('visible');
     els.whiteName.textContent    = headers.White || 'Brancas';
     els.blackName.textContent    = headers.Black || 'Pretas';
-    els.accWhiteName.textContent = headers.White || 'Brancas';
-    els.accBlackName.textContent = headers.Black || 'Pretas';
+    // Partida nova: zera os números dos jogadores e o gráfico.
+    if (!parsedGame.moves.length || !parsedGame.movesData) _resetPlayerStats();
+    ChartRenderer.clear(els.chart);
 
     // Opening detection
     updateOpeningBanner(parsedGame.moves);
@@ -669,9 +674,20 @@ const UIController = (() => {
     }
   }
 
+  function _resetPlayerStats() {
+    for (const id of ['white-rating','white-acpl','white-acc','white-mistakes','white-blunders',
+                      'black-rating','black-acpl','black-acc','black-mistakes','black-blunders']) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '—';
+    }
+    for (const lado of ['white', 'black']) for (const k in cntEls[lado]) cntEls[lado][k].textContent = '0';
+  }
+
   function updatePlayerStats(movesData) {
     // Store reference for board nav
     if (parsedGameRef) parsedGameRef.movesData = movesData;
+    // Nada avaliado ainda (tabuleiro vazio, Modo Livre): mostra traços, não 100%.
+    if (!movesData.some(m => m && m.evalAfter != null)) { _resetPlayerStats(); return; }
 
     const wStats = MoveClassifier.computeStats(movesData, true);
     const bStats = MoveClassifier.computeStats(movesData, false);
@@ -697,10 +713,6 @@ const UIController = (() => {
     els.blackMistakes.textContent = movesData.filter(m => m.color==='black' && m.classification==='mistake').length;
     els.blackBlunders.textContent = movesData.filter(m => m.color==='black' && m.classification==='blunder').length;
 
-    els.accWhitePct.textContent = String(wStats.accuracy).replace('.', ',') + '%';
-    els.accBlackPct.textContent = String(bStats.accuracy).replace('.', ',') + '%';
-    els.accWhiteBar.style.width = wStats.accuracy + '%';
-    els.accBlackBar.style.width = bStats.accuracy + '%';
 
     const classes = ['book','brilliant','great','excellent','best-move','good','inaccuracy','mistake','miss','blunder'];
     for (const cls of classes) {

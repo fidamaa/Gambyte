@@ -31,6 +31,7 @@ const App = (() => {
       t = setTimeout(() => {
         UIController.resizeBoard();
         if (currentMovesData.length > 0) UIController.updateChart(currentMovesData);
+        else ChartRenderer.clear(document.getElementById('chart'));
       }, 200);
     });
   }
@@ -131,6 +132,14 @@ const App = (() => {
     document.getElementById('pgn-input').addEventListener('keydown', e => {
       if (e.ctrlKey && e.key === 'Enter') runAnalysis();
     });
+    // Colou outra partida no meio de uma análise: o botão volta a valer e
+    // troca de partida (a análise atual é interrompida em runAnalysis).
+    document.getElementById('pgn-input').addEventListener('input', () => {
+      if (!analyzing) return;
+      const b = document.getElementById('btn-analyze');
+      b.disabled = false;
+      b.textContent = 'Analisar esta partida';
+    });
     document.getElementById('btn-clear').addEventListener('click', () => {
       document.getElementById('pgn-input').value = '';
       document.getElementById('progress-container').classList.remove('visible');
@@ -147,7 +156,7 @@ const App = (() => {
     UIController.showEmptyBoard();
   }
 
-  return { init };
+  return { init, run: runAnalysis };
 })();
 
 document.addEventListener('DOMContentLoaded', () => {

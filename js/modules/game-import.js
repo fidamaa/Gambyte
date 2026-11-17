@@ -269,8 +269,11 @@ const GameImport = (() => {
       if (w.toLowerCase() === eu) InsightsUI.setPov('white');
       else if (b.toLowerCase() === eu) InsightsUI.setPov('black');
     }
-    $('btn-analyze')?.click();
-    campo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Chama a análise direto: durante uma análise o botão fica desativado,
+    // e um clique nele não faria nada. App.run interrompe a anterior.
+    if (typeof App !== 'undefined' && App.run) App.run();
+    else $('btn-analyze')?.click();
+    $('board-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   function erro(e, onde) {
@@ -348,7 +351,46 @@ const GameImport = (() => {
     box.hidden = false;
   }
 
+  /* ── Abas da caixa "Analisar uma partida" ─────────────────── */
+  const KEY_ABA = 'gambyte_trazer_v1';
+  function mostrarAba(qual, lembrarAba) {
+    const caixa = $('trazer');
+    if (!caixa) return;
+    caixa.querySelectorAll('[data-trazer]').forEach(b => {
+      const on = b.dataset.trazer === qual;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    caixa.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== qual; });
+    if (lembrarAba) { try { localStorage.setItem(KEY_ABA, qual); } catch (e) { /* sem armazenamento */ } }
+  }
+  function initAbas() {
+    const caixa = $('trazer');
+    if (!caixa) return;
+    let aba = 'importar';
+    try { if (localStorage.getItem(KEY_ABA) === 'pgn') aba = 'pgn'; } catch (e) { /* sem armazenamento */ }
+    mostrarAba(aba);
+    caixa.querySelector('.trazer-tabs')?.addEventListener('click', e => {
+      const b = e.target.closest('[data-trazer]');
+      if (!b) return;
+      mostrarAba(b.dataset.trazer, true);
+      if (b.dataset.trazer === 'pgn') $('pgn-input')?.focus();
+      else $('imp-input')?.focus();
+    });
+    // Atalhos do cartão "Resumo da partida" (antes da primeira análise)
+    document.addEventListener('click', e => {
+      const ir = e.target.closest('[data-ir-trazer]');
+      if (!ir) return;
+      e.preventDefault();
+      mostrarAba(ir.dataset.irTrazer, true);
+      caixa.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const alvo = $(ir.dataset.irTrazer === 'pgn' ? 'pgn-input' : 'imp-input');
+      if (alvo) setTimeout(() => alvo.focus({ preventScroll: true }), 350);
+    });
+  }
+
   function init() {
+    initAbas();
     const box = $('import-box');
     if (!box) return;
     try {
@@ -379,10 +421,10 @@ const GameImport = (() => {
         primeira = false;
         const pedido = new URLSearchParams(location.search).get('importar');
         const nome = sess && sess.linked && sess.linked[pedido];
-        if (nome) { buscarComo(pedido, nome); box.scrollIntoView({ block: 'start' }); }
+        if (nome) { mostrarAba('importar'); buscarComo(pedido, nome); $('trazer')?.scrollIntoView({ block: 'start' }); }
       }
     });
   }
 
-  return { init, pararPrevia, renderAtalhos };
+  return { init, pararPrevia, renderAtalhos, mostrarAba };
 })();

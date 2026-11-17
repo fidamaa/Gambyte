@@ -31,6 +31,10 @@ const AnalysisEngine = (() => {
   let onMoveUpdate = null;
   let onComplete = null;
   let aborted = false;
+  // Cada chamada de analyze() ganha um número. Uma análise antiga que
+  // ainda esteja esperando o motor percebe que foi substituída e para,
+  // sem chamar os callbacks da análise nova.
+  let runSeq = 0;
 
   // ── Material real capturável (usado por Gafe e Brilhante) ─────────
   // Extraído da resposta REAL do motor (bestMove da posição pós-lance),
@@ -165,6 +169,8 @@ const AnalysisEngine = (() => {
    */
   async function analyze(parsedGame) {
     aborted = false;
+    const run = ++runSeq;
+    const dead = () => aborted || run !== runSeq;
 
     const { moves, fensBefore, fensAfter, headers } = parsedGame;
     const total = moves.length;
@@ -228,7 +234,7 @@ const AnalysisEngine = (() => {
     let brilliantsUsed = 0;
 
     for (let i = 0; i < total; i++) {
-      if (aborted) return;
+      if (dead()) return;
 
       const fenBefore = fensBefore[i];
       const fenAfter  = fensAfter[i];
@@ -250,6 +256,7 @@ const AnalysisEngine = (() => {
       // Analyze before and after positions — sequencial (worker single-threaded)
       const beforeResult = await getAnalysis(fenBefore, PHASE1_DEPTH);
       const afterResult  = await getAnalysis(fenAfter,  PHASE1_DEPTH);
+      if (dead()) return;
 
       // evalBefore e bestEval: perspectiva do lado a mover (positivo = bom para quem joga)
       // evalAfter: Stockfish retorna da perspectiva do OPONENTE após o lance
@@ -376,7 +383,7 @@ const AnalysisEngine = (() => {
     const PHASE2_DEPTHS = isProMode ? PHASE2_DEPTHS_PRO : PHASE2_DEPTHS_FREE;
     for (let pass = 0; pass < PHASE2_DEPTHS.length; pass++) {
       const depth = PHASE2_DEPTHS[pass];
-      if (aborted) return;
+      if (dead()) return;
       const deep = isProMode && pass === PHASE2_DEPTHS.length - 1;
       const prevDepth = pass > 0 ? PHASE2_DEPTHS[pass - 1] : PHASE1_DEPTH;
       // Só entram na conta os lances que serão de fato recalculados nesta
@@ -391,12 +398,13 @@ const AnalysisEngine = (() => {
       if (onProgress) onProgress({ phase: 2, done: 0, total: toRefine.length, depth, ...passInfo });
 
       for (let ci = 0; ci < toRefine.length; ci++) {
-        if (aborted) return;
+        if (dead()) return;
 
         const i = toRefine[ci].index;
         const m = movesData[i];
         let lastLive = 0, half = 0;
         const onLive = deep && onProgress ? (d) => {
+          if (dead()) return;
           if (d > lastLive) { lastLive = d; onProgress({ phase: 2, done: ci, total: toRefine.length, depth, ...passInfo, liveDepth: d, liveHalf: half }); }
         } : null;
 
@@ -415,6 +423,7 @@ const AnalysisEngine = (() => {
           bRes = await getAnalysis(fenBefore, depth);
           aRes = await getAnalysis(fenAfter,  depth);
         }
+        if (dead()) return;
         // Na passada profunda, as 3 linhas (lance único, peça pendurada)
         // vêm da passada anterior, que ainda usou MultiPV 3.
         const aResLines = deep ? (cache.get(`${fenAfter}@${prevDepth}`) || aRes) : aRes;
@@ -517,6 +526,7 @@ const AnalysisEngine = (() => {
       });
     }
 
+    if (dead()) return;
     if (onComplete) onComplete([...movesData]);
   }
 
