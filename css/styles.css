@@ -1338,3 +1338,39 @@ canvas#chart{height:150px}
 /* Celular: a caixa de partida vem logo depois do tabuleiro e do gráfico */
 @media(max-width:760px){.summary-panel{display:contents}.analysis-layout>.board-panel{order:1}.summary-panel>#trazer{order:2}.analysis-layout>.middle-panel{order:3}.summary-panel>*{order:4}}
 .chart-head .section-title{white-space:nowrap}.chart-head .chart-labels{flex-wrap:nowrap}
+
+/* ══════════════════════════════════════════════════════════════
+   Tabuleiro interativo: arrastar peças, barra da análise ao vivo e
+   faixa da abertura com altura fixa (nada pula quando o nome muda).
+   ══════════════════════════════════════════════════════════════ */
+.board-wrapper,.board-wrapper canvas,#board-canvas{-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#board-canvas{touch-action:none;cursor:default}
+#board-canvas:focus{outline:none}
+.drag-ghost{position:absolute;left:0;top:0;z-index:40;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 10px rgba(0,0,0,.45));-webkit-user-drag:none;user-select:none}
+.drag-ghost[hidden]{display:none}
+
+.live-bar{display:flex;align-items:center;gap:10px;height:40px;padding:0 12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;white-space:nowrap}
+.live-eval{flex:none;min-width:58px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;padding:3px 8px;border-radius:6px;background:#ecebe6;color:#1b1d24}
+.live-eval.neg{background:#2b2f3c;color:#eef0f6;box-shadow:0 0 0 1px var(--border2) inset}
+.live-line{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2)}
+.live-depth{flex:none;font-size:11.5px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+
+/* Abertura: uma linha só, altura fixa */
+.opening-banner{height:56px;flex-wrap:nowrap;overflow:hidden}
+.opening-banner>div:last-child{min-width:0;display:flex;align-items:baseline;gap:8px;white-space:nowrap;overflow:hidden}
+.opening-name{overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;min-width:0}
+.opening-variation{margin:0;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;min-width:0}
+.opening-variation:not(:empty)::before{content:"· ";color:var(--text3)}
+@media(min-width:761px){
+  .game-strip{height:56px}
+  .game-strip>.progress-container{height:56px;padding:7px 14px;display:none;flex-direction:column;justify-content:center}
+  .game-strip>.progress-container.visible{display:flex}
+  .game-strip .progress-header{margin-bottom:5px}
+  .game-strip .progress-stats{margin-top:4px}
+}
+@media(max-width:760px){
+  .opening-banner{height:46px}
+  .live-bar{height:36px;padding:0 8px;gap:8px}
+  .live-line{font-size:12px}
+  .live-eval{min-width:50px;font-size:12px}
+}

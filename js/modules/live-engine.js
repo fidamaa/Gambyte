@@ -1,0 +1,146 @@
+/* ==============================================================
+   MODULE: live-engine.js
+   Análise ao vivo da posição do tabuleiro, no estilo dos grandes sites:
+
+   - Resposta imediata: se a posição já foi vista, o resultado guardado
+     aparece na hora; se o lance jogado é o que o motor previa, a linha
+     anterior é reaproveitada (o próximo lance dela vira a nova seta)
+     antes mesmo de a busca nova começar.
+   - Aprofundamento contínuo: a busca entrega a linha inteira a cada
+     profundidade nova, e a seta, a barra e a linha prevista acompanham.
+   - Prioridade: a busca ao vivo fura a fila do motor (ver
+     StockfishManager.analyzeLive), então nunca espera a classificação
+     dos lances ou a análise da partida terminarem.
+
+   Depende de: stockfish-manager.js, pgn-parser.js, evaluation-bar.js,
+               engine-suggestion.js, auth-system.js (opcional)
+   ============================================================== */
+const LiveEngine = (() => {
+  const DEPTH_FREE = 18;
+  const DEPTH_PRO  = 22;
+  const MAX_PLIES  = 10;      // lances mostrados na linha prevista
+  const cache = new Map();    // fen → { cp, pv, depth }  (cp do ponto de vista de quem joga)
+  const CACHE_MAX = 400;
+
+  let token = 0;
+  let timer = null;
+  let modo = { arrow: true, evalBar: true };
+
+  const $ = id => document.getElementById(id);
+
+  function alvo() {
+    const pro = typeof AuthSystem !== 'undefined' && AuthSystem.isPremium && AuthSystem.isPremium();
+    return pro ? DEPTH_PRO : DEPTH_FREE;
+  }
+
+  function guardar(fen, r) {
+    const old = cache.get(fen);
+    if (old && old.depth > r.depth) return;
+    if (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value);
+    cache.set(fen, r);
+  }
+
+  // Linha prevista em notação de partida: "12. Nf3 Nc6 13. Bb5 a6 …"
+  function linhaSAN(fen, pv) {
+    if (!pv || !pv.length) return '';
+    let st = PGNParser.fenToBoard(fen);
+    if (!st) return '';
+    const partes = fen.split(' ');
+    let n = parseInt(partes[5], 10) || 1;
+    let brancas = partes[1] === 'w';
+    const out = [];
+    for (const u of pv.slice(0, MAX_PLIES)) {
+      let san = null, prox = null;
+      try { san = PGNParser.uciToSan(st, u); prox = PGNParser.applyMoveUCI(st, u); } catch (e) { /* lance inválido */ }
+      if (!san || !prox) break;
+      if (brancas) out.push(`${n}. ${san}`);
+      else out.push(out.length ? san : `${n}… ${san}`);
+      if (!brancas) n++;
+      brancas = !brancas;
+      st = prox;
+    }
+    return out.join(' ');
+  }
+
+  function fmt(cpW) {
+    const abs = Math.abs(cpW);
+    if (abs >= 29000) {
+      const n = Math.max(1, 30000 - abs);
+      return (cpW > 0 ? '+M' : '−M') + n;
+    }
+    return (cpW > 0 ? '+' : cpW < 0 ? '−' : '') + (abs / 100).toFixed(2).replace('.', ',');
+  }
+
+  function mostrar(fen, r, previa) {
+    const evalEl = $('free-play-eval'), linhaEl = $('live-line'), profEl = $('live-depth');
+    if (!r) {
+      if (linhaEl) linhaEl.textContent = 'Calculando…';
+      if (profEl) profEl.textContent = '';
+      if (modo.arrow) EngineSuggestion.updateArrow(null);
+      return;
+    }
+    const brancasJogam = fen.split(' ')[1] === 'w';
+    const cpW = brancasJogam ? r.cp : -r.cp;
+    const mate = Math.abs(cpW) >= 29000;
+    if (evalEl) {
+      evalEl.textContent = fmt(cpW);
+      evalEl.classList.toggle('neg', cpW < 0);
+    }
+    if (linhaEl) linhaEl.textContent = linhaSAN(fen, r.pv) || '—';
+    if (profEl) profEl.textContent = previa ? 'prévia' : `prof. ${r.depth}`;
+    if (modo.evalBar) {
+      const n = mate ? Math.max(1, 30000 - Math.abs(cpW)) : 0;
+      EvalBar.update(mate ? 0 : cpW, mate, mate ? (cpW > 0 ? n : -n) : 0);
+    }
+    if (modo.arrow) EngineSuggestion.updateArrow(r.pv && r.pv[0] ? r.pv[0] : null);
+  }
+
+  /**
+   * Analisa a posição mostrada no tabuleiro.
+   * opts.played / opts.fenBefore: o lance que levou até aqui (para
+   *   reaproveitar a linha prevista na posição anterior).
+   * opts.arrow / opts.evalBar: se esta análise controla a seta e a barra
+   *   (na revisão da partida, a seta continua sendo a da análise completa).
+   */
+  function analyze(fen, opts = {}) {
+    const tok = ++token;
+    modo = { arrow: opts.arrow !== false, evalBar: opts.evalBar !== false };
+    if (timer) clearTimeout(timer);
+
+    // 1) Resposta imediata
+    let r = cache.get(fen) || null, previa = false;
+    if (!r && opts.played && opts.fenBefore) {
+      const ant = cache.get(opts.fenBefore);
+      if (ant && ant.pv && ant.pv[0] === opts.played && ant.pv.length > 1) {
+        r = { cp: -ant.cp, pv: ant.pv.slice(1), depth: Math.max(1, ant.depth - 1) };
+        previa = true;
+      }
+    }
+    mostrar(fen, r, previa);
+
+    // 2) Busca ao vivo (pequena espera para juntar cliques rápidos)
+    const profundidade = alvo();
+    if (r && !previa && r.depth >= profundidade) return;
+    timer = setTimeout(() => {
+      if (tok !== token) return;
+      StockfishManager.analyzeLive(fen, profundidade, u => {
+        if (tok !== token || !u || !u.pv || !u.pv.length) return;
+        const res = { cp: u.eval, pv: u.pv, depth: u.depth };
+        guardar(fen, res);
+        mostrar(fen, res, false);
+      });
+    }, 30);
+  }
+
+  // Fim de jogo ou nada para analisar: limpa a linha e mostra o motivo.
+  function parar(texto) {
+    token++;
+    if (timer) clearTimeout(timer);
+    const linhaEl = $('live-line'), profEl = $('live-depth'), evalEl = $('free-play-eval');
+    if (linhaEl) linhaEl.textContent = texto || '';
+    if (profEl) profEl.textContent = '';
+    if (evalEl && texto) evalEl.textContent = '—';
+  }
+
+  return { analyze, parar, linhaSAN };
+})();

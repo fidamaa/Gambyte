@@ -24,7 +24,6 @@ const FreePlay = (() => {
   let active        = false;
   let selectedSq    = null;
   let legalTargets  = [];
-  let evalAbort     = null;
   let onBranchCb    = null;   // chamado sempre que a linha muda (lance, navegação, reclassificação)
   let _pgnHeaders   = {};     // from the loaded game
   let _session      = 0;      // incrementado a cada start()/stop() — invalida callbacks assíncronos antigos
@@ -81,7 +80,6 @@ const FreePlay = (() => {
     _baseCtx = baseCtx || { idx: -1, moves: [], movesData: [] };
 
     document.getElementById('board-canvas').classList.add('free-play');
-    document.getElementById('free-play-bar').classList.add('visible');
     _updateTurnLabel();
     _requestEval();
     if (onBranchCb) onBranchCb();
@@ -97,10 +95,8 @@ const FreePlay = (() => {
   function pause() {
     console.log(`[DEBUG] 🎮 FreePlay.pause — mantém a linha (${sans.length} lance(s))`);
     active = false;
-    if (evalAbort) { evalAbort(); evalAbort = null; }
     selectedSq = null; legalTargets = [];
     document.getElementById('board-canvas').classList.remove('free-play', 'piece-selected');
-    document.getElementById('free-play-bar').classList.remove('visible');
   }
 
   // Retoma uma linha pausada exatamente de onde parou.
@@ -110,7 +106,6 @@ const FreePlay = (() => {
     active = true;
     onBranchCb = onBranchUpdate || null;
     document.getElementById('board-canvas').classList.add('free-play');
-    document.getElementById('free-play-bar').classList.add('visible');
     _updateTurnLabel();
     _requestEval();
     if (onBranchCb) onBranchCb();
@@ -123,11 +118,9 @@ const FreePlay = (() => {
     console.log(`[DEBUG] 🎮 FreePlay.stop — descarta a linha`);
     _session++; // invalida qualquer classificação/eval assíncrona pendente desta sessão
     active = false;
-    if (evalAbort) { evalAbort(); evalAbort = null; }
     selectedSq   = null;
     legalTargets = [];
     document.getElementById('board-canvas').classList.remove('free-play', 'piece-selected');
-    document.getElementById('free-play-bar').classList.remove('visible');
     onBranchCb = null;
     fens = []; sans = []; ucis = []; movesData = []; idx = -1;
   }
@@ -161,7 +154,8 @@ const FreePlay = (() => {
     if (!canGoForward()) return;
     idx++;
     currentFEN = fens[idx + 1];
-    _afterNavigate(null, null);
+    const u = ucis[idx];
+    _afterNavigate(u ? u.slice(0, 2) : null, u ? u.slice(2, 4) : null, u, fens[idx]);
   }
 
   // Pula direto para qualquer ponto já jogado nesta linha (ex.: clique
@@ -173,16 +167,53 @@ const FreePlay = (() => {
     _afterNavigate(null, null);
   }
 
-  function _afterNavigate(fromSq, toSq) {
+  function _afterNavigate(fromSq, toSq, played, fenBefore) {
     selectedSq = null; legalTargets = [];
     _updateTurnLabel();
-    _requestEval();
-    _redraw(fromSq, toSq);
+    _requestEval(played, fenBefore);
+    _redraw(fromSq, toSq, !!(fromSq && toSq));
     if (onBranchCb) onBranchCb();
   }
 
   // Mantido por compatibilidade com o botão "Voltar" já existente.
   function undoMove() { goBack(); }
+
+  // ── Interação usada pelo tabuleiro (clique e arrastar) ──────
+  function _ehDaVez(piece, turn) {
+    return !!piece && (turn === 'w' ? piece === piece.toUpperCase() : piece === piece.toLowerCase());
+  }
+  function isMovable(sq) {
+    if (!active || !sq || _gameStatus || !currentFEN) return false;
+    const st = PGNParser.fenToBoard(currentFEN);
+    return !!st && _ehDaVez(_pieceAt(st.board, sq), st.turn);
+  }
+  function select(sq) {
+    if (!isMovable(sq)) return [];
+    const st = PGNParser.fenToBoard(currentFEN);
+    _select(sq, st, st.turn === 'w');
+    return legalTargets.slice();
+  }
+  function deselect() {
+    if (!selectedSq) return;
+    selectedSq = null; legalTargets = [];
+    document.getElementById('board-canvas').classList.remove('piece-selected');
+    _redraw(null, null, false);
+  }
+  function getSelection() { return { sq: selectedSq, targets: legalTargets.slice() }; }
+  function pieceAt(sq) {
+    const st = currentFEN && PGNParser.fenToBoard(currentFEN);
+    return st ? _pieceAt(st.board, sq) : null;
+  }
+  // Tenta o lance from→to. animate=false para peças soltas pelo arraste
+  // (a peça já está na casa de destino, não faz sentido animar de novo).
+  function tryMove(fromSq, toSq, animate) {
+    if (!active || _gameStatus || !isMovable(fromSq)) return false;
+    const st = PGNParser.fenToBoard(currentFEN);
+    const alvos = _filterKingTargets(_getLegalTargets(fromSq, st, st.turn === 'w'), fromSq, st);
+    if (!alvos.includes(toSq)) return false;
+    _makeMove(fromSq, toSq, st, animate !== false);
+    return true;
+  }
 
   // ── Click handler — called from UIController ───────────────
   function handleClick(sq) {
@@ -209,7 +240,7 @@ const FreePlay = (() => {
       }
       // Clicked elsewhere — deselect
       selectedSq = null; legalTargets = [];
-      _redraw(null, null);
+      _redraw(null, null, false);
     } else {
       // Select if own piece
       if (piece && ((isWhiteTurn && piece === piece.toUpperCase()) ||
@@ -230,7 +261,7 @@ const FreePlay = (() => {
     const rawTargets = _getLegalTargets(sq, state, isWhiteTurn);
     legalTargets = _filterKingTargets(rawTargets, sq, state);
     document.getElementById('board-canvas').classList.add('piece-selected');
-    _redraw(null, null);
+    _redraw(null, null, false);
   }
 
   function _getLegalTargets(fromSq, state, isWhiteTurn) {
@@ -331,7 +362,7 @@ const FreePlay = (() => {
     });
   }
 
-  function _makeMove(fromSq, toSq, state) {
+  function _makeMove(fromSq, toSq, state, animate = true) {
     const uciMove = fromSq + toSq;
     // Handle promotion (default to queen)
     const piece = _pieceAt(state.board, fromSq);
@@ -339,7 +370,7 @@ const FreePlay = (() => {
     const uci = isPromo ? uciMove + 'q' : uciMove;
 
     const newState = PGNParser.applyMoveUCI(state, uci);
-    if (!newState) { selectedSq = null; legalTargets = []; _redraw(null, null); return; }
+    if (!newState) { selectedSq = null; legalTargets = []; _redraw(null, null, false); return; }
 
     const newFEN    = PGNParser.boardToFen(newState);
     const san       = PGNParser.uciToSan(state, uci) || uci;
@@ -357,8 +388,8 @@ const FreePlay = (() => {
       idx = nextIdx;
       currentFEN = fens[idx + 1];
       _updateTurnLabel();
-      _requestEval();
-      _redraw(fromSq, toSq);
+      _requestEval(uci, fenBefore);
+      _redraw(fromSq, toSq, animate);
       if (onBranchCb) onBranchCb();
       return;
     }
@@ -386,8 +417,8 @@ const FreePlay = (() => {
     currentFEN = newFEN;
 
     _updateTurnLabel();
-    _requestEval();
-    _redraw(fromSq, toSq);
+    _requestEval(uci, fenBefore);
+    _redraw(fromSq, toSq, animate);
     if (onBranchCb) onBranchCb();
     _classifyMove(nextIdx, newMoveData, fenBefore, newFEN, san, uci, isWhite);
   }
@@ -482,11 +513,20 @@ const FreePlay = (() => {
 
   // fromSq/toSq (opcionais): quando informados, anima o lance recém-feito
   // com a mesma animação tradicional usada na revisão de PGN.
-  function _redraw(fromSq, toSq) {
+  function _redraw(fromSq, toSq, animate = true) {
     const state = PGNParser.fenToBoard(currentFEN);
     if (!state) return;
     const board = __fenToBoard8x8(currentFEN);
-    BoardUI.renderWithAnim(board, fromSq || null, toSq || null, selectedSq, legalTargets);
+    if (animate && fromSq && toSq) {
+      BoardUI.renderWithAnim(board, fromSq, toSq, selectedSq, legalTargets);
+    } else {
+      // Estático, mantendo o destaque do último lance da linha (ou do
+      // lance da partida de onde a linha começou).
+      const u = idx >= 0 ? ucis[idx] : null;
+      const de = u ? u.slice(0, 2) : (_baseCtx.lastFrom || null);
+      const para = u ? u.slice(2, 4) : (_baseCtx.lastTo || null);
+      BoardUI.render(board, de, para, selectedSq, legalTargets);
+    }
     ArrowSystem.redraw();
   }
 
@@ -588,60 +628,17 @@ const FreePlay = (() => {
 
   function _updateTurnLabel() {
     _gameStatus = _computeGameStatus();
-    const el = document.getElementById('free-play-turn');
-    if (_gameStatus) {
-      el.textContent = GAME_STATUS_LABELS[_gameStatus.type](_gameStatus.winner);
-      return;
-    }
-    const isWhite = currentFEN.split(' ')[1] === 'w';
-    el.textContent = (PGNParser.isInCheck(PGNParser.fenToBoard(currentFEN).board, isWhite) ? 'Xeque — ' : '') +
-      (isWhite ? 'Vez das brancas' : 'Vez das pretas');
   }
 
-  // Profundidade de análise em tempo real no Modo Livre: usuários Free ficam
-  // limitados ao máximo que dá para processar em tempo real; assinantes Pro
-  // recebem uma análise mais profunda (mesma barreira usada na revisão de PGN).
-  const FREE_EVAL_DEPTH = 12;
-  const PRO_EVAL_DEPTH  = 18;
-
-  let _evalTimer = null;
-  function _requestEval() {
-    if (_evalTimer) clearTimeout(_evalTimer);
-    if (evalAbort) { evalAbort(); evalAbort = null; }
-    _evalTimer = setTimeout(async () => {
-      let aborted = false;
-      evalAbort = () => { aborted = true; };
-      try {
-        const isPro = typeof AuthSystem !== 'undefined' && AuthSystem.isPremium();
-        const depth = isPro ? PRO_EVAL_DEPTH : FREE_EVAL_DEPTH;
-        const isWhiteTurn = currentFEN.split(' ')[1] === 'w';
-
-        // Atualização progressiva: assim que o motor encontra QUALQUER
-        // melhor lance (mesmo em profundidade baixa), a seta e a barra já
-        // refletem isso — não esperamos o "go depth" inteiro terminar.
-        const applyEval = (cp, bestMove) => {
-          // cp já vem codificado em mate como ±(30000-N) — mesma convenção
-          // usada no resultado final (ver stockfish-manager.js).
-          const cpFromWhite = isWhiteTurn ? cp : -cp;
-          const absCpW = Math.abs(cpFromWhite);
-          const isMateW = absCpW >= 29000;
-          const mateDepthW = isMateW ? Math.max(1, 30000 - absCpW) : 0;
-          EvalBar.update(isMateW ? 0 : cpFromWhite, isMateW, isMateW ? (cpFromWhite > 0 ? mateDepthW : -mateDepthW) : 0);
-          const display = isMateW
-            ? (cpFromWhite > 0 ? `+M${mateDepthW}` : `-M${mateDepthW}`)
-            : (cpFromWhite >= 0 ? '+' : '') + (cpFromWhite / 100).toFixed(2);
-          document.getElementById('free-play-eval').textContent = display;
-          if (bestMove) EngineSuggestion.updateArrow(bestMove);
-        };
-
-        const result = await StockfishManager.analyzePosition(currentFEN, depth, 3, [], (partial) => {
-          if (aborted) return;
-          applyEval(partial.eval, partial.bestMove);
-        });
-        if (aborted) return;
-        applyEval(result.evals[0] ?? 0, result.bestMove);
-      } catch(e) { /* aborted or error */ }
-    }, 120);
+  // Análise ao vivo da posição atual (ver live-engine.js). played/fenBefore
+  // permitem reaproveitar a linha prevista quando o lance era o esperado.
+  function _requestEval(played, fenBefore) {
+    if (_gameStatus) {
+      LiveEngine.parar(GAME_STATUS_LABELS[_gameStatus.type](_gameStatus.winner));
+      EngineSuggestion.updateArrow(null);
+      return;
+    }
+    LiveEngine.analyze(currentFEN, { played, fenBefore });
   }
 
   // ── module: pgn-exporter.js ────────────────────────────────
@@ -676,11 +673,12 @@ const FreePlay = (() => {
 
   function _redrawPublic() {
     console.log(`[DEBUG] 🎮 FreePlay._redrawPublic — FEN: ${currentFEN ? currentFEN.slice(0,40) : 'null'}…`);
-    _redraw();
+    _redraw(null, null, false);
   }
 
   return {
     start, stop, pause, resume, hasTree, isActive,
+    isMovable, select, deselect, getSelection, pieceAt, tryMove, lineLength: () => sans.length,
     handleClick, undoMove, exportPGN, copyPGN,
     currentFEN: () => currentFEN, _redrawPublic,
     getBranchView, gotoIndex, goBack, goForward, canGoBack, canGoForward

@@ -101,6 +101,7 @@ const App = (() => {
         document.getElementById('progress-fill').style.width = '100%';
         document.getElementById('progress-title').textContent = 'Análise concluída';
         document.getElementById('progress-container').classList.remove('visible');
+        UIController.refreshLive();
         // ── INSIGHTS FINAIS (sempre atualiza ao completar) ──
         InsightsUI.renderGlobalInsights(allMoves, /*isPartial=*/false);
         ProTools.markComplete(deepMode ? 22 : 16);

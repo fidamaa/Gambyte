@@ -1,23 +1,53 @@
 /* ==============================================================
    MODULE: arrow-system.js
-   Handles manual arrows (right-click drag) and engine arrows.
+   Setas e marcações no tabuleiro, no estilo dos grandes sites:
+
+   - Botão direito arrastando: desenha uma seta (aparece enquanto você
+     arrasta). Arrastar de novo a mesma seta apaga.
+   - Botão direito sem arrastar: marca a casa. De novo, desmarca.
+   - Shift, Ctrl ou Alt mudam a cor (verde, vermelho, azul).
+   - Qualquer clique esquerdo no tabuleiro, ou um lance, apaga tudo.
+   - A seta do motor fica em verde, por baixo das setas do jogador.
+
+   Cada seta é desenhada opaca numa camada à parte e depois aplicada
+   com transparência: a haste e a ponta não se sobrepõem em tons
+   diferentes, e o cavalo ganha uma seta em L limpa.
    Depende de: board-ui.js
    ============================================================== */
 const ArrowSystem = (() => {
   let canvas  = null;
   let ctx     = null;
   let sqSizeFn = null;
+  let layer = null, lctx = null;   // camada opaca de cada seta
 
-  // Manual arrows: array of { from, to, color }
-  let manualArrows = [];
-  // Engine arrow: { from, to } | null
-  let engineArrow  = null;
+  const CORES = {
+    padrao:   'rgb(255,170,0)',
+    verde:    'rgb(159,207,63)',
+    vermelho: 'rgb(248,85,63)',
+    azul:     'rgb(72,193,249)',
+    motor:    'rgb(110,190,90)',
+  };
+  const MARCAS = {
+    padrao:   'rgba(235,97,80,0.80)',
+    verde:    'rgba(172,206,89,0.80)',
+    vermelho: 'rgba(248,85,63,0.80)',
+    azul:     'rgba(82,176,220,0.80)',
+  };
+
+  let manualArrows = [];   // { from, to, cor }
+  let marks = [];          // { sq, cor }
+  let engineArrow  = null; // { from, to }
   let showEngine   = true;
-
-  // Drag state
-  let dragging  = false;
-  let dragFrom  = null;
+  let preview = null;      // seta sendo arrastada agora
+  let dragFrom = null, dragCor = 'padrao';
   const boundBoards = new WeakSet();
+
+  function corDoEvento(e) {
+    if (e.shiftKey) return 'verde';
+    if (e.ctrlKey || e.metaKey) return 'vermelho';
+    if (e.altKey) return 'azul';
+    return 'padrao';
+  }
 
   function init(arrowCanvas, boardCanvas, sqSizeGetter) {
     canvas    = arrowCanvas;
@@ -25,49 +55,51 @@ const ArrowSystem = (() => {
     ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    layer = document.createElement('canvas');
+    layer.width = canvas.width; layer.height = canvas.height;
+    lctx = layer.getContext('2d');
+    lctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (boundBoards.has(boardCanvas)) return;
     boundBoards.add(boardCanvas);
 
-    // Right-click drag on board canvas
+    const sqDe = e => {
+      const r = boardCanvas.getBoundingClientRect();
+      return BoardUI.xyToSq(e.clientX - r.left, e.clientY - r.top);
+    };
     boardCanvas.addEventListener('contextmenu', e => e.preventDefault());
 
     boardCanvas.addEventListener('mousedown', e => {
       if (e.button !== 2) return;
       e.preventDefault();
-      const rect = boardCanvas.getBoundingClientRect();
-      const sq = BoardUI.xyToSq(e.clientX - rect.left, e.clientY - rect.top);
-      if (sq) { dragging = true; dragFrom = sq; }
+      dragFrom = sqDe(e);
+      dragCor = corDoEvento(e);
+      preview = null;
     });
-
-    boardCanvas.addEventListener('mouseup', e => {
-      if (e.button !== 2) return;
-      e.preventDefault();
-      if (!dragging) return;
-      const rect = boardCanvas.getBoundingClientRect();
-      const sq = BoardUI.xyToSq(e.clientX - rect.left, e.clientY - rect.top);
-      dragging = false;
-
-      if (!sq || sq === dragFrom) {
-        // Simple right-click: remove last arrow or clear all on double
-        if (manualArrows.length > 0) manualArrows.pop();
+    window.addEventListener('mousemove', e => {
+      if (!dragFrom) return;
+      const sq = sqDe(e);
+      const novo = sq && sq !== dragFrom ? { from: dragFrom, to: sq, cor: dragCor } : null;
+      if ((novo && preview && novo.to === preview.to) || (!novo && !preview)) return;
+      preview = novo;
+      _scheduleRedraw();
+    });
+    window.addEventListener('mouseup', e => {
+      if (e.button !== 2 || !dragFrom) return;
+      const de = dragFrom, sq = sqDe(e);
+      if (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) dragCor = corDoEvento(e);
+      dragFrom = null; preview = null;
+      if (!sq) { _scheduleRedraw(); return; }
+      if (sq === de) {
+        const i = marks.findIndex(m => m.sq === sq);
+        if (i >= 0 && marks[i].cor === dragCor) marks.splice(i, 1);
+        else { if (i >= 0) marks.splice(i, 1); marks.push({ sq, cor: dragCor }); }
+        BoardUI._forceRedraw();
       } else {
-        // Drag: add arrow
-        const existing = manualArrows.findIndex(a => a.from === dragFrom && a.to === sq);
-        if (existing >= 0) {
-          manualArrows.splice(existing, 1); // toggle off
-        } else {
-          manualArrows.push({ from: dragFrom, to: sq, color: 'rgba(255,80,80,0.82)' });
-        }
+        const i = manualArrows.findIndex(a => a.from === de && a.to === sq);
+        if (i >= 0 && manualArrows[i].cor === dragCor) manualArrows.splice(i, 1);
+        else { if (i >= 0) manualArrows.splice(i, 1); manualArrows.push({ from: de, to: sq, cor: dragCor }); }
       }
-      dragFrom = null;
-      redraw();
-    });
-
-    // Double right-click: clear all
-    boardCanvas.addEventListener('dblclick', e => {
-      if (e.button !== 2) return;
-      manualArrows = [];
-      redraw();
+      _scheduleRedraw();
     });
   }
 
@@ -83,10 +115,17 @@ const ArrowSystem = (() => {
     _scheduleRedraw();
   }
 
+  // Apaga setas e marcações do jogador (clique no tabuleiro, lance novo).
   function clearManual() {
+    if (!manualArrows.length && !marks.length && !preview) return;
     manualArrows = [];
+    preview = null;
+    if (marks.length) { marks = []; if (BoardUI._forceRedraw) BoardUI._forceRedraw(); }
     _scheduleRedraw();
   }
+
+  // Casas marcadas: desenhadas pelo BoardUI por baixo das peças.
+  function getMarks() { return marks.map(m => ({ sq: m.sq, color: MARCAS[m.cor] || MARCAS.padrao })); }
 
   function _scheduleRedraw() {
     if (_redrawPending) return;
@@ -103,103 +142,91 @@ const ArrowSystem = (() => {
     const w   = canvas.width  / dpr;
     const h   = canvas.height / dpr;
     ctx.clearRect(0, 0, w, h);
+    if (layer && (layer.width !== canvas.width || layer.height !== canvas.height)) {
+      layer.width = canvas.width; layer.height = canvas.height;
+      lctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
 
-    if (showEngine && engineArrow) {
-      drawArrow(engineArrow.from, engineArrow.to, 'rgba(50,200,100,0.88)', true);
-    }
-    for (const a of manualArrows) {
-      drawArrow(a.from, a.to, a.color, false);
-    }
+    if (showEngine && engineArrow) drawArrow(engineArrow.from, engineArrow.to, CORES.motor, 0.82);
+    for (const a of manualArrows) drawArrow(a.from, a.to, CORES[a.cor] || CORES.padrao, 0.82);
+    if (preview) drawArrow(preview.from, preview.to, CORES[preview.cor] || CORES.padrao, 0.82);
   }
 
   function sqCenter(sq) {
-    // Delegate to BoardUI so flip is respected automatically
     const { x, y } = BoardUI.sqToXY(sq);
     const sz = sqSizeFn();
     return { x: x + sz / 2, y: y + sz / 2 };
   }
 
-  // Retorna os "cotovelos" (waypoints) do trajeto entre duas casas.
-  // Lances de cavalo (2+1) são desenhados em L, como no chess.com,
-  // em vez de uma diagonal genérica.
+  // Trajeto entre duas casas; lances de cavalo viram um L.
   function _pathPoints(from, to) {
     const p1 = sqCenter(from);
     const p2 = sqCenter(to);
-    const fileOf = sq => sq.charCodeAt(0) - 97;
-    const rankOf = sq => parseInt(sq[1], 10);
-    const df = Math.abs(fileOf(to) - fileOf(from));
-    const dr = Math.abs(rankOf(to) - rankOf(from));
-    const isKnightMove = (df === 1 && dr === 2) || (df === 2 && dr === 1);
-
-    if (!isKnightMove) return [p1, p2];
-
-    // Cotovelo: primeiro percorre o eixo maior (2 casas), depois vira 90°.
-    const longAxisIsFile = df === 2;
-    const bend = longAxisIsFile
-      ? { x: p2.x, y: p1.y }
-      : { x: p1.x, y: p2.y };
+    const df = Math.abs(to.charCodeAt(0) - from.charCodeAt(0));
+    const dr = Math.abs(parseInt(to[1], 10) - parseInt(from[1], 10));
+    const cavalo = (df === 1 && dr === 2) || (df === 2 && dr === 1);
+    if (!cavalo) return [p1, p2];
+    const bend = df === 2 ? { x: p2.x, y: p1.y } : { x: p1.x, y: p2.y };
     return [p1, bend, p2];
   }
 
-  function drawArrow(from, to, color, isEngine) {
-    const sz     = sqSizeFn();
-    const points = _pathPoints(from, to);
+  function drawArrow(from, to, color, alpha) {
+    if (!lctx) return;
+    const sz = sqSizeFn();
+    const pts = _pathPoints(from, to);
 
-    const headLen  = sz * 0.34;
-    const headW    = sz * 0.30;      // largura da base do "bloco" da ponta
-    const bodyW    = sz * 0.22;      // haste mais grossa/quadrada, estilo chess.com
-    const startPad = sz * 0.20;
-    const endPad   = sz * 0.16;
+    const bodyW   = sz * 0.24;
+    const headW   = sz * 0.56;
+    const headLen = sz * 0.44;
+    const startPad = sz * 0.28;   // sai um pouco do centro da casa de origem
+    const tipBack  = sz * 0.10;   // a ponta para pouco antes do centro do destino
 
-    // Recuar o início do trajeto a partir da casa de origem
-    const first = points[0], second = points[1];
-    const fdx = second.x - first.x, fdy = second.y - first.y;
-    const flen = Math.hypot(fdx, fdy) || 1;
-    const sx = first.x + (fdx / flen) * startPad;
-    const sy = first.y + (fdy / flen) * startPad;
+    const a = pts[0], b = pts[1];
+    const fl = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+    const sx = a.x + (b.x - a.x) / fl * startPad;
+    const sy = a.y + (b.y - a.y) / fl * startPad;
 
-    // Recuar o fim do trajeto na direção do último segmento
-    const last = points[points.length - 1];
-    const prev = points[points.length - 2];
-    const ldx = last.x - prev.x, ldy = last.y - prev.y;
-    const llen = Math.hypot(ldx, ldy) || 1;
-    const ux = ldx / llen, uy = ldy / llen;
-    const ex = last.x - ux * endPad;
-    const ey = last.y - uy * endPad;
+    const last = pts[pts.length - 1], prev = pts[pts.length - 2];
+    const ll = Math.hypot(last.x - prev.x, last.y - prev.y) || 1;
+    const ux = (last.x - prev.x) / ll, uy = (last.y - prev.y) / ll;
+    const tx = last.x - ux * tipBack, ty = last.y - uy * tipBack;
+    const bx = tx - ux * headLen, by = ty - uy * headLen;
+    const px = -uy, py = ux;
 
-    // Ponto onde a haste termina e a ponta (bloco) começa
-    const headBaseX = ex - ux * headLen;
-    const headBaseY = ey - uy * headLen;
-    const perpX = -uy, perpY = ux;
+    const dpr = window.devicePixelRatio || 1;
+    lctx.save();
+    lctx.setTransform(1, 0, 0, 1, 0, 0);
+    lctx.clearRect(0, 0, layer.width, layer.height);
+    lctx.restore();
+
+    lctx.save();
+    lctx.fillStyle = color;
+    lctx.strokeStyle = color;
+    lctx.lineWidth = bodyW;
+    lctx.lineJoin = 'miter';
+    lctx.lineCap = 'butt';
+    // Haste (passa pelo cotovelo no L do cavalo)
+    lctx.beginPath();
+    lctx.moveTo(sx, sy);
+    for (let i = 1; i < pts.length - 1; i++) lctx.lineTo(pts[i].x, pts[i].y);
+    lctx.lineTo(bx + ux, by + uy);   // 1px de sobra para emendar na ponta
+    lctx.stroke();
+    // Ponta triangular larga
+    lctx.beginPath();
+    lctx.moveTo(bx + px * headW / 2, by + py * headW / 2);
+    lctx.lineTo(tx, ty);
+    lctx.lineTo(bx - px * headW / 2, by - py * headW / 2);
+    lctx.closePath();
+    lctx.fill();
+    lctx.restore();
 
     ctx.save();
-    ctx.strokeStyle = color;
-    ctx.fillStyle   = color;
-    ctx.lineWidth   = bodyW;
-    ctx.lineJoin    = 'miter';
-    ctx.lineCap     = 'butt';
-    if (isEngine) {
-      ctx.shadowColor = color;
-      ctx.shadowBlur  = 6;
-    }
-
-    // Haste: do início até a base da ponta, passando pelos cotovelos
-    ctx.beginPath();
-    ctx.moveTo(sx, sy);
-    for (let i = 1; i < points.length - 1; i++) ctx.lineTo(points[i].x, points[i].y);
-    ctx.lineTo(headBaseX, headBaseY);
-    ctx.stroke();
-
-    // Ponta em bloco/trapézio (mais "quadrada", sem curvas), como no chess.com
-    ctx.beginPath();
-    ctx.moveTo(headBaseX + perpX * headW / 2, headBaseY + perpY * headW / 2);
-    ctx.lineTo(headBaseX - perpX * headW / 2, headBaseY - perpY * headW / 2);
-    ctx.lineTo(ex, ey);
-    ctx.closePath();
-    ctx.fill();
-
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(layer, 0, 0);
     ctx.restore();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  return { init, setEngineArrow, setShowEngine, clearManual, redraw };
+  return { init, setEngineArrow, setShowEngine, clearManual, redraw, getMarks };
 })();

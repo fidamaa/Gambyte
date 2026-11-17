@@ -48,7 +48,7 @@ const BoardUI = (() => {
     dark:     '#b58863',
     hlFrom:   'rgba(20,170,90,0.45)',
     hlTo:     'rgba(20,170,90,0.55)',
-    hlSelect: 'rgba(80,130,250,0.45)',
+    hlSelect: 'rgba(20,110,50,0.50)',
     dot:      'rgba(0,0,0,0.18)',   // legal move dot (casa vazia)
     capture:  'rgba(220,55,55,0.55)', // casa de captura — destaque vermelho, não mais ponto
   };
@@ -62,6 +62,11 @@ const BoardUI = (() => {
   // Selection state (used by FreePlay)
   let selectedSq   = null;
   let legalDots    = [];   // array of sq strings to show as dots
+
+  // Arraste: a peça sai da casa de origem (vira um "fantasma" que segue o
+  // ponteiro, ver ui-controller) e a casa sob o ponteiro ganha contorno.
+  let _dragSq  = null;
+  let _hoverSq = null;
 
 
   function init(canvasEl, boardSize) {
@@ -167,6 +172,26 @@ const BoardUI = (() => {
       }
     }
 
+    // Casas marcadas com o botão direito (por baixo das peças)
+    if (typeof ArrowSystem !== 'undefined' && ArrowSystem.getMarks) {
+      for (const { sq, color } of ArrowSystem.getMarks()) {
+        const { x, y } = sqToCanvas(sq);
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, sqSize, sqSize);
+      }
+    }
+
+    // Casa sob a peça arrastada: contorno claro, como nos grandes sites
+    if (_hoverSq) {
+      const { x, y } = sqToCanvas(_hoverSq);
+      const w = Math.max(2, sqSize * 0.06);
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+      ctx.lineWidth = w;
+      ctx.strokeRect(x + w / 2, y + w / 2, sqSize - w, sqSize - w);
+      ctx.restore();
+    }
+
     // Casas de movimento legal: captura = casa inteira em vermelho
     // (bem visível), movimento simples = ponto tradicional.
     if (legalDots.length) {
@@ -199,6 +224,7 @@ const BoardUI = (() => {
         const piece = board[boardRow][boardCol];
         if (!piece) continue;
         const sq = String.fromCharCode(97 + boardCol) + (8 - boardRow);
+        if (sq === _dragSq) continue;   // está "na mão" do jogador
         const { x, y } = sqToCanvas(sq);
         const img = _getPieceImg(piece);
         // Sem isso, um SVG ainda não decodificado pode desenhar em branco
@@ -413,6 +439,10 @@ const BoardUI = (() => {
     ArrowSystem.redraw();
   }
 
+  function setDrag(sq)  { _dragSq = sq || null; _forceRedraw(); }
+  function setHover(sq) { if (sq === _hoverSq) return; _hoverSq = sq || null; _forceRedraw(); }
+  function pieceSrc(piece) { return piece ? `pieces/${PIECE_NAME[piece]}-${PIECE_COLOR[piece]}.svg` : ''; }
+
   return { init, render, renderWithAnim, sqToXY, xyToSq, sqSize: () => sqSize,
-           setFlipped, isFlipped, canvasToSq, _forceRedraw };
+           setFlipped, isFlipped, canvasToSq, _forceRedraw, setDrag, setHover, pieceSrc };
 })();

@@ -135,26 +135,8 @@ const UIController = (() => {
       });
     }
 
-    // ── Free play button ──────────────────────────────────────
-    const btnFP = document.getElementById('btn-free-play');
-    if (btnFP) {
-      btnFP.addEventListener('click', () => {
-        if (FreePlay.isActive()) _exitFreePlay(); else _enterFreePlay();
-      });
-    }
-
-    // Navegação (Voltar/Avançar) do Modo Livre usa as MESMAS setas de
-    // baixo (nav-prev/nav-next/nav-start/nav-end) e as mesmas setas do
-    // teclado do modo normal — ver navigate()/navTo()/setupKeyboard().
-    // Sair do Modo Livre é só clicar em "Modo Livre" de novo (btnFP acima).
-
-    // ── Board click for free play ────────────────────────────
-    document.getElementById('board-canvas').addEventListener('click', (e) => {
-      if (!FreePlay.isActive()) return;
-      const rect = e.target.getBoundingClientRect();
-      const sq = BoardUI.xyToSq(e.clientX - rect.left, e.clientY - rect.top);
-      FreePlay.handleClick(sq);
-    });
+    // ── Tabuleiro sempre interativo: clique e arrastar ─────────
+    _bindBoardPointer();
 
     // ── Export PGN button — abre menu com opções Copiar/Baixar ─
     const btnExport = document.getElementById('btn-export-pgn');
@@ -172,14 +154,14 @@ const UIController = (() => {
       const btnDownload = document.getElementById('pgn-menu-download');
       if (btnCopy) btnCopy.addEventListener('click', async () => {
         pgnMenu.hidden = true;
-        const ok = FreePlay.isActive()
+        const ok = _usarLinhaLivre()
           ? await FreePlay.copyPGN()
           : await PGNExporter.copyGame(parsedGameRef);
         _flashPgnFeedback(btnExport, ok ? 'PGN copiado!' : 'Não foi possível copiar.');
       });
       if (btnDownload) btnDownload.addEventListener('click', () => {
         pgnMenu.hidden = true;
-        if (FreePlay.isActive()) { FreePlay.exportPGN(); return; }
+        if (_usarLinhaLivre()) { FreePlay.exportPGN(); return; }
         PGNExporter.exportGame(parsedGameRef);
       });
     }
@@ -194,58 +176,165 @@ const UIController = (() => {
     setTimeout(() => { label.textContent = original; }, 1500);
   }
 
-  // ── Entrar/sair do Modo Livre ────────────────────────────────
-  // "Sair" NUNCA apaga o que foi feito: só pausa a edição (o tabuleiro, a
-  // lista de lances e o gráfico continuam mostrando a árvore como estava).
-  // Clicar em "Modo Livre" de novo retoma exatamente do mesmo ponto — só
-  // recomeça do zero se a árvore tiver sido descartada de vez (nova
-  // análise carregada, ou "Limpar"; ver showResults()).
+  // ── Linha livre (variante jogada no tabuleiro) ───────────────
+  // O tabuleiro é sempre interativo: na revisão de uma partida, pegar uma
+  // peça abre uma linha a partir do lance mostrado; sem partida, a linha
+  // começa da posição inicial.
+  function _temPartida() { return !!(parsedGameRef && parsedGameRef.moves && parsedGameRef.moves.length); }
+
+  // Exportar a linha livre só quando ela existe de fato (há lances nela,
+  // ou não há partida carregada); senão exporta a partida.
+  function _usarLinhaLivre() {
+    if (!FreePlay.isActive()) return false;
+    return FreePlay.lineLength() > 0 || !_temPartida();
+  }
+
   function _enterFreePlay() {
-    const btnFP = document.getElementById('btn-free-play');
-    if (btnFP) btnFP.classList.add('active');
-    document.getElementById('btn-free-play-label').textContent = 'Sair do Modo Livre';
-    ArrowSystem.clearManual();
-
-    if (FreePlay.hasTree()) {
-      console.log('[DEBUG] 🎮 Retomando o Modo Livre — árvore existente preservada');
-      FreePlay.resume(() => renderBranch());
-      return;
-    }
-
     const startFEN = currentMoveIdx < 0
       ? PGNParser.INITIAL_FEN
       : (parsedGameRef && parsedGameRef.fensAfter[currentMoveIdx]) || PGNParser.INITIAL_FEN;
-    console.log(`[DEBUG] 🎮 Entrando no Modo Livre — FEN: ${startFEN.slice(0, 40)}…`);
-    EngineSuggestion.updateArrow(null);
-
     const baseIdx = currentMoveIdx;
+    const ms = parsedGameRef && parsedGameRef.moveSquares && baseIdx >= 0 ? parsedGameRef.moveSquares[baseIdx] : null;
     const baseCtx = {
       idx: baseIdx,
       moves: parsedGameRef ? parsedGameRef.moves.slice(0, baseIdx + 1) : [],
-      movesData: parsedGameRef && parsedGameRef.movesData ? parsedGameRef.movesData.slice(0, baseIdx + 1) : []
+      movesData: parsedGameRef && parsedGameRef.movesData ? parsedGameRef.movesData.slice(0, baseIdx + 1) : [],
+      lastFrom: ms ? ms.from : null,
+      lastTo: ms ? ms.to : null,
     };
     _branchBaseCtx = baseCtx;
-
-    FreePlay.start(
-      startFEN,
-      parsedGameRef ? parsedGameRef.headers : {},
-      baseCtx,
-      () => renderBranch()
-    );
-    // Renderiza o board inicial do freeplay
-    const board = __fenToBoard8x8(startFEN);
-    BoardUI.render(board, null, null, null, []);
-    _showClassOverlay(null);  // limpa overlay
+    _showClassOverlay(null);
+    FreePlay.start(startFEN, parsedGameRef ? parsedGameRef.headers : {}, baseCtx, () => renderBranch());
+    FreePlay._redrawPublic();
   }
 
-  function _exitFreePlay() {
-    console.log(`[DEBUG] 🎮 Pausando o Modo Livre — nada é apagado`);
-    FreePlay.pause();
-    const btnFP = document.getElementById('btn-free-play');
-    if (btnFP) btnFP.classList.remove('active');
-    document.getElementById('btn-free-play-label').textContent = 'Modo Livre';
-    // O tabuleiro e a lista de lances continuam mostrando a árvore atual —
-    // nenhuma chamada a _clearBranch()/renderBoardAtMove() aqui de propósito.
+  // Volta para a partida carregada, descartando a linha livre.
+  function _leaveBranch() {
+    const base = _branchBaseCtx ? _branchBaseCtx.idx : currentMoveIdx;
+    FreePlay.stop();
+    _branchBaseCtx = null;
+    document.querySelectorAll('.move-pair[data-branch="1"], .move-item[data-branch-in-base="1"]').forEach(el => el.remove());
+    els.movesList.querySelectorAll('.move-pair').forEach(p => { p.style.display = ''; });
+    moveElementsRef.forEach(el => { if (el) el.style.display = ''; });
+    if (parsedGameRef) {
+      updateOpeningBanner(parsedGameRef.moves);
+      if (parsedGameRef.movesData) { updateChart(parsedGameRef.movesData); updatePlayerStats(parsedGameRef.movesData); }
+    }
+    return base;
+  }
+
+  // FEN mostrado na revisão (sem linha livre)
+  function _fenRevisao() {
+    if (!parsedGameRef || currentMoveIdx < 0) return PGNParser.INITIAL_FEN;
+    return parsedGameRef.fensAfter[currentMoveIdx] || PGNParser.INITIAL_FEN;
+  }
+  function _movivelNaRevisao(sq) {
+    const st = PGNParser.fenToBoard(_fenRevisao());
+    if (!st) return false;
+    const p = st.board[8 - parseInt(sq[1], 10)][sq.charCodeAt(0) - 97];
+    return !!p && (st.turn === 'w' ? p === p.toUpperCase() : p === p.toLowerCase());
+  }
+
+  // ── Clique e arrastar (mouse e toque) ─────────────────────────
+  function _bindBoardPointer() {
+    const cv = document.getElementById('board-canvas');
+    const wrap = document.getElementById('board-wrapper');
+    if (!cv || !wrap) return;
+    let ghost = document.getElementById('drag-ghost');
+    if (!ghost) {
+      ghost = document.createElement('img');
+      ghost.id = 'drag-ghost'; ghost.className = 'drag-ghost'; ghost.alt = ''; ghost.hidden = true;
+      wrap.appendChild(ghost);
+    }
+    let press = null;       // { sq, x, y, id, wasSelected, dragging, touch }
+    let ultimoHover = null;
+    const sqAt = e => {
+      const r = cv.getBoundingClientRect();
+      return BoardUI.xyToSq(e.clientX - r.left, e.clientY - r.top);
+    };
+    const moverFantasma = e => {
+      const r = wrap.getBoundingClientRect();
+      const sz = BoardUI.sqSize() * (press && press.touch ? 1.35 : 1);
+      const sobe = press && press.touch ? sz * 0.45 : 0;   // no toque, a peça fica acima do dedo
+      ghost.style.width = ghost.style.height = sz + 'px';
+      ghost.style.transform = 'translate(' + (e.clientX - r.left - sz / 2) + 'px,' + (e.clientY - r.top - sz / 2 - sobe) + 'px)';
+    };
+
+    cv.addEventListener('pointerdown', e => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      ArrowSystem.clearManual();
+      const sq = sqAt(e);
+      if (!sq) return;
+      e.preventDefault();
+      // Na revisão, pegar uma peça de quem joga abre a linha livre aqui.
+      if (!FreePlay.isActive()) {
+        if (!_movivelNaRevisao(sq)) return;
+        _enterFreePlay();
+      }
+      const sel = FreePlay.getSelection();
+      if (sel.sq && sel.targets.includes(sq)) {          // clique no destino
+        FreePlay.tryMove(sel.sq, sq, true);
+        press = null;
+        return;
+      }
+      if (FreePlay.isMovable(sq)) {
+        const wasSelected = sel.sq === sq;
+        if (!wasSelected) FreePlay.select(sq);
+        press = { sq, x: e.clientX, y: e.clientY, id: e.pointerId, wasSelected, dragging: false, touch: e.pointerType !== 'mouse' };
+        try { cv.setPointerCapture(e.pointerId); } catch (err) { /* sem captura */ }
+      } else {
+        FreePlay.deselect();
+        press = null;
+      }
+    });
+
+    cv.addEventListener('pointermove', e => {
+      if (!press || e.pointerId !== press.id) {
+        if (e.pointerType !== 'mouse') return;
+        const sq = sqAt(e);
+        if (sq === ultimoHover) return;
+        ultimoHover = sq;
+        let cursor = 'default';
+        if (sq) {
+          if (FreePlay.isActive()) {
+            if (FreePlay.isMovable(sq)) cursor = 'grab';
+            else if (FreePlay.getSelection().targets.includes(sq)) cursor = 'pointer';
+          } else if (_movivelNaRevisao(sq)) cursor = 'grab';
+        }
+        cv.style.cursor = cursor;
+        return;
+      }
+      if (!press.dragging) {
+        if (Math.hypot(e.clientX - press.x, e.clientY - press.y) < (press.touch ? 6 : 4)) return;
+        press.dragging = true;
+        ghost.src = BoardUI.pieceSrc(FreePlay.pieceAt(press.sq));
+        ghost.hidden = false;
+        cv.style.cursor = 'grabbing';
+        BoardUI.setDrag(press.sq);
+      }
+      moverFantasma(e);
+      BoardUI.setHover(sqAt(e));
+    });
+
+    const soltar = (e, cancelar) => {
+      if (!press || e.pointerId !== press.id) return;
+      const p = press;
+      press = null;
+      try { cv.releasePointerCapture(e.pointerId); } catch (err) { /* ok */ }
+      if (p.dragging) {
+        ghost.hidden = true;
+        BoardUI.setHover(null);
+        BoardUI.setDrag(null);
+        cv.style.cursor = 'grab';
+        const to = cancelar ? null : sqAt(e);
+        if (to && to !== p.sq && FreePlay.tryMove(p.sq, to, false)) return;
+        FreePlay._redrawPublic();                          // a peça volta para a casa
+      } else if (p.wasSelected) {
+        FreePlay.deselect();                               // segundo clique na mesma peça
+      }
+    };
+    cv.addEventListener('pointerup', e => soltar(e, false));
+    cv.addEventListener('pointercancel', e => soltar(e, true));
   }
 
   function renderBoardAtMove(idx) {
@@ -268,6 +357,7 @@ const UIController = (() => {
 
     // Engine arrow
     ArrowSystem.clearManual();
+    _barraRevisao(fen);
     if (parsedGameRef.movesData) {
       const md = parsedGameRef.movesData[idx];
       if (md && md.bestMoveUCI) {
@@ -336,6 +426,18 @@ const UIController = (() => {
     }
   }
 
+  // Barra da análise ao vivo durante a revisão: a linha do motor para a
+  // posição mostrada. A seta continua sendo a da análise da partida (o
+  // melhor lance no lugar do que foi jogado). Enquanto a partida ainda está
+  // sendo analisada, não disputa o motor com ela.
+  function _barraRevisao(fen) {
+    if (els.progressContainer.classList.contains('visible')) {
+      LiveEngine.parar('Análise da partida em andamento…');
+      return;
+    }
+    LiveEngine.analyze(fen, { arrow: false, evalBar: false });
+  }
+
   // ── FEN → 8x8 board ────────────────────────────────────────
   function __fenToBoard8x8(fen) {
     const rows = fen.split(' ')[0].split('/');
@@ -355,11 +457,19 @@ const UIController = (() => {
   // No Modo Livre, as MESMAS setas/teclas navegam a linha do Modo Livre
   // (Voltar/Avançar) em vez da partida carregada — sem botões extras.
   function navigate(delta) {
-    // hasTree() (não isActive()) de propósito: dá pra rever a linha do
-    // Modo Livre com as setas mesmo pausado ("Sair"), sem precisar
-    // reentrar em edição só pra olhar os lances de novo.
     if (FreePlay.hasTree()) {
-      if (delta < 0) FreePlay.goBack(); else FreePlay.goForward();
+      if (delta < 0) {
+        if (FreePlay.canGoBack()) { FreePlay.goBack(); return; }
+        if (!_temPartida()) return;
+        const base = _leaveBranch();
+        renderBoardAtMove(Math.max(-1, base - 1));
+        return;
+      }
+      if (FreePlay.canGoForward()) { FreePlay.goForward(); return; }
+      if (_temPartida() && FreePlay.lineLength() === 0) {
+        const base = _leaveBranch();
+        renderBoardAtMove(Math.min(parsedGameRef.fensAfter.length - 1, base + 1));
+      }
       return;
     }
     if (!parsedGameRef) return;
@@ -370,18 +480,18 @@ const UIController = (() => {
 
   function navTo(idx) {
     if (!parsedGameRef) return;
+    if (FreePlay.hasTree() && _temPartida()) _leaveBranch();
     renderBoardAtMove(idx);
   }
 
   function navToStart() {
-    if (FreePlay.hasTree()) { FreePlay.gotoIndex(-1); return; }
+    if (FreePlay.hasTree() && !_temPartida()) { FreePlay.gotoIndex(-1); return; }
     navTo(-1);
   }
 
   function navToEnd() {
-    if (FreePlay.hasTree()) {
-      const { path } = FreePlay.getBranchView();
-      FreePlay.gotoIndex(path.length - 1);
+    if (FreePlay.hasTree() && (!_temPartida() || FreePlay.lineLength() > 0)) {
+      FreePlay.gotoIndex(FreePlay.lineLength() - 1);
       return;
     }
     if (parsedGameRef) navTo(parsedGameRef.fensAfter.length - 1);
@@ -430,9 +540,6 @@ const UIController = (() => {
     // trocar de partida ou limpar.
     if (FreePlay.isActive() || FreePlay.hasTree()) FreePlay.stop();
     _branchBaseCtx = null;
-    document.getElementById('btn-free-play')?.classList.remove('active');
-    const fpLabel = document.getElementById('btn-free-play-label');
-    if (fpLabel) fpLabel.textContent = 'Modo Livre';
 
     parsedGameRef = parsedGame;
     currentMoveIdx = -1;
@@ -510,6 +617,19 @@ const UIController = (() => {
     document.querySelectorAll('.move-pair[data-branch="1"]').forEach(p => p.remove());
     document.querySelectorAll('.move-item[data-branch-in-base="1"]').forEach(el => el.remove());
 
+    // Peça só selecionada (nenhum lance novo ainda): a lista e o gráfico
+    // continuam sendo os da partida.
+    if (FreePlay.lineLength() === 0 && _temPartida()) {
+      els.movesList.querySelectorAll('.move-pair').forEach(p => { p.style.display = ''; });
+      moveElementsRef.forEach(el => { if (el) el.style.display = ''; });
+      const fim = parsedGameRef.fensAfter.length - 1;
+      els.navStart.disabled = baseIdx < 0;
+      els.navPrev.disabled  = baseIdx < 0;
+      els.navEnd.disabled   = baseIdx >= fim;
+      els.navNext.disabled  = baseIdx >= fim;
+      return;
+    }
+
     // Esconde pares INTEIROS além do ponto de ramificação (não só as
     // células — senão sobrava o número "6.", "7."... com a linha vazia).
     // O par que CONTÉM o lance base fica visível; só a célula preta é
@@ -564,8 +684,9 @@ const UIController = (() => {
 
     // As mesmas setas de baixo navegam o Modo Livre — refletem o estado
     // da linha atual (Voltar/Avançar), não mais o da partida carregada.
-    els.navStart.disabled = !FreePlay.canGoBack();
-    els.navPrev.disabled  = !FreePlay.canGoBack();
+    const voltaPartida = _temPartida();
+    els.navStart.disabled = !FreePlay.canGoBack() && !voltaPartida;
+    els.navPrev.disabled  = !FreePlay.canGoBack() && !voltaPartida;
     els.navEnd.disabled   = !FreePlay.canGoForward();
     els.navNext.disabled  = !FreePlay.canGoForward();
   }
@@ -784,6 +905,8 @@ const UIController = (() => {
   return {
     showError, hideError, setAnalyzing, showResults,
     initMovesList, updateMoveElement, updateProgress,
-    updatePlayerStats, updateChart, showEmptyBoard, resizeBoard
+    updatePlayerStats, updateChart, showEmptyBoard, resizeBoard,
+    // Fim da análise da partida: a barra ao vivo volta a analisar a posição mostrada.
+    refreshLive: () => { if (!FreePlay.isActive()) _barraRevisao(_fenRevisao()); }
   };
 })();

@@ -29,6 +29,7 @@ const StockfishManager = (() => {
   // Fila de análises: garante que apenas UMA roda por vez no worker
   let analysisQueue = [];
   let analysisRunning = false;
+  let currentItem = null;   // item da fila que está rodando agora
 
   // O .wasm do Stockfish tem ~108MB — passa de longe do limite de 25MB
   // por arquivo do Cloudflare Pages/Workers. Em produção ele fica num
@@ -138,7 +139,8 @@ const StockfishManager = (() => {
           let cpVal, mateN = null;
           if (type === 'mate') { mateN = val; cpVal = val > 0 ? (30000 - val) : -(30000 - Math.abs(val)); }
           else cpVal = val;
-          if (firstMove) currentOnUpdate({ bestMove: firstMove, eval: cpVal, mateN, depth });
+          const pv = pvLineMatch[1].trim().split(/\s+/);
+          if (firstMove) currentOnUpdate({ bestMove: firstMove, eval: cpVal, mateN, depth, pv });
         }
       }
     }
@@ -147,12 +149,21 @@ const StockfishManager = (() => {
       console.log('[Stockfish ←] bestmove recebido, linhas coletadas:', currentLines.length);
       const resolve = currentResolve;
       const lines = [...currentLines];
+      const item = currentItem;
       currentResolve = null;
       currentLines = [];
       currentOnUpdate = null;
+      currentItem = null;
       analysisRunning = false;
 
-      if (resolve) resolve({ bestmove: data, infoLines: lines });
+      if (item && item.preempted) {
+        // Interrompida por uma análise ao vivo: volta para a fila logo
+        // depois dela e roda de novo do zero (o resultado parcial é descartado).
+        item.preempted = false;
+        let pos = 0;
+        while (pos < analysisQueue.length && analysisQueue[pos].live) pos++;
+        analysisQueue.splice(pos, 0, item);
+      } else if (resolve) resolve({ bestmove: data, infoLines: lines });
 
       // Próximo item da fila
       _runNext();
@@ -164,7 +175,9 @@ const StockfishManager = (() => {
     if (analysisRunning || analysisQueue.length === 0) return;
     analysisRunning = true;
 
-    const { fen, depth, multiPV, movesUCI, resolve, onUpdate, movetime } = analysisQueue.shift();
+    const item = analysisQueue.shift();
+    currentItem = item;
+    const { fen, depth, multiPV, movesUCI, resolve, onUpdate, movetime } = item;
     currentOnUpdate = onUpdate || null;
     const movesSuffix = (movesUCI && movesUCI.length) ? ` moves ${movesUCI.join(' ')}` : '';
     console.log(
@@ -223,7 +236,7 @@ const StockfishManager = (() => {
       // Profundidade da linha principal efetivamente concluída. Com limite
       // de tempo (movetime), pode ficar abaixo da profundidade pedida.
       const reachedDepth = pvMap[1] ? pvMap[1].depth : 0;
-      resolve({ evals, mateNs, pvLines, bestMove, reachedDepth });
+      resolve({ evals, mateNs, pvLines, bestMove, reachedDepth, cancelled: !!item.cancelled });
     };
 
     worker.postMessage(`setoption name MultiPV value ${multiPV}`);
@@ -260,6 +273,35 @@ const StockfishManager = (() => {
       console.log(`[Stockfish] Enfileirando análise. Fila: ${analysisQueue.length + 1}`);
       analysisQueue.push({ fen, depth, multiPV, movesUCI, resolve, onUpdate, movetime: opts.movetime || 0 });
       _runNext();
+    });
+  }
+
+  /**
+   * Análise ao vivo do tabuleiro (o jogador acabou de mexer uma peça).
+   * Tem prioridade sobre tudo: uma busca comum em andamento é interrompida
+   * e volta para a fila logo depois desta; uma análise ao vivo anterior é
+   * simplesmente cancelada. Uma linha (MultiPV 1) para responder rápido;
+   * onUpdate recebe a linha prevista inteira a cada profundidade nova.
+   */
+  function analyzeLive(fen, depth, onUpdate) {
+    return new Promise((resolve) => {
+      if (!worker) { resolve(null); return; }
+      // Ao vivo ainda na fila: descartadas (resolvem como canceladas).
+      analysisQueue = analysisQueue.filter(it => {
+        if (!it.live) return true;
+        it.resolve({ evals: [null], mateNs: [null], pvLines: [null], bestMove: null, cancelled: true });
+        return false;
+      });
+      const item = { fen, depth, multiPV: 1, movesUCI: [], resolve, onUpdate, movetime: 0, live: true };
+      analysisQueue.unshift(item);
+      if (analysisRunning && currentItem) {
+        if (currentItem.live) currentItem.cancelled = true;
+        else currentItem.preempted = true;
+        currentOnUpdate = null;
+        worker.postMessage('stop');
+      } else {
+        _runNext();
+      }
     });
   }
 
@@ -315,6 +357,7 @@ const StockfishManager = (() => {
   function abort() {
     const pending = analysisQueue;
     analysisQueue = [];
+    if (currentItem) currentItem.preempted = false;
     for (const item of pending) {
       // Resolve com um resultado neutro em vez de deixar o `await` de quem
       // pediu pendurado pra sempre — quem chamou já deve checar sua própria
@@ -334,5 +377,5 @@ const StockfishManager = (() => {
 
   function isReady() { return fullyReady && !!worker; }
 
-  return { init, analyzePosition, verifySacrificeTrap, parsePV, abort, terminate, getEngineInfo, isReady };
+  return { init, analyzePosition, analyzeLive, verifySacrificeTrap, parsePV, abort, terminate, getEngineInfo, isReady };
 })();

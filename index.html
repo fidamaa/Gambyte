@@ -6,7 +6,7 @@
 <title>Gambyte — Analise suas partidas de xadrez com Stockfish 18</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=9">
+<link rel="stylesheet" href="css/styles.css?v=10">
 <meta name="google-adsense-account" content="ca-pub-7858747311725137">
 <!-- Veiculação de anúncios desativada durante a preparação para avaliação. -->
 <link rel="stylesheet" href="site-info.css?v=5">
@@ -112,12 +112,11 @@
           </div>
         </div>
 
-        <!-- Free play status bar -->
-        <div class="free-play-bar" id="free-play-bar">
-          <span class="free-play-status">Modo Livre</span>
-          <span id="free-play-turn">Vez das brancas</span>
-          <span class="free-play-hint">Use as setas abaixo (ou ← →) para navegar · clique em "Sair do Modo Livre" para sair</span>
-          <span class="free-play-eval" id="free-play-eval">0.00</span>
+        <!-- Análise ao vivo: avaliação, linha prevista e profundidade -->
+        <div class="live-bar" id="free-play-bar" title="Linha prevista pelo motor para a posição do tabuleiro">
+          <span class="live-eval" id="free-play-eval">0,00</span>
+          <span class="live-line" id="live-line">Arraste as peças para jogar; o motor responde na hora.</span>
+          <span class="live-depth" id="live-depth"></span>
         </div>
 
         <!-- Navigation -->
@@ -149,10 +148,6 @@
           <button class="btn-board" id="btn-flip" title="Inverter tabuleiro">
             <svg class="btn-board-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-4 4"/><path d="M21 7H8a4 4 0 0 0-4 4"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13a4 4 0 0 0 4-4"/></svg>
             <span>Inverter</span>
-          </button>
-          <button class="btn-board" id="btn-free-play" title="Modo de jogo livre">
-            <svg class="btn-board-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <span id="btn-free-play-label">Modo Livre</span>
           </button>
           <div class="btn-board-group" id="pgn-menu-wrap">
             <button class="btn-board" id="btn-export-pgn" title="Exportar PGN">
@@ -311,7 +306,7 @@
         <div class="summary-empty">
           <div class="section-title">Resumo da partida</div>
           <p>Depois da análise, aqui aparecem os momentos decisivos, o que cada lado precisa treinar e a leitura do gráfico. Traga uma partida logo abaixo.</p>
-          <p class="se-dica">Sem partida à mão? Mova as peças no tabuleiro: o Modo Livre avalia cada lance na hora.</p>
+          <p class="se-dica">Sem partida à mão? Arraste as peças no tabuleiro: o motor analisa cada lance na hora.</p>
         </div>
 
         <!-- Trazer a partida: busca por usuário ou PGN colado -->
@@ -411,7 +406,7 @@
 <ol class="home-steps">
 <li><span class="home-step-n">1</span><h3>Traga a partida</h3><p>Digite seu usuário do Chess.com ou do Lichess e escolha a partida na lista, cole um link do Lichess, ou cole o PGN de qualquer partida. Não tem um PGN à mão? Use o botão “Carregar exemplo” para testar com uma partida clássica. <a href="aprender/exportar-pgn.html">Como exportar o PGN</a></p></li>
 <li><span class="home-step-n">2</span><h3>O Stockfish analisa no seu navegador</h3><p>O motor avalia a posição antes e depois de cada lance, primeiro em uma leitura rápida e depois em passagens mais profundas. A partida não é enviada para um servidor de análise, e você pode navegar pelos lances enquanto o refinamento termina.</p></li>
-<li><span class="home-step-n">3</span><h3>Estude os momentos decisivos</h3><p>O gráfico de vantagem mostra onde a partida virou. Vá até o lance, compare com a seta do melhor lance e teste alternativas no Modo Livre. <a href="aprender/como-estudar-suas-partidas.html">Um método de estudo em cinco etapas</a></p></li>
+<li><span class="home-step-n">3</span><h3>Estude os momentos decisivos</h3><p>O gráfico de vantagem mostra onde a partida virou. Vá até o lance, compare com a seta do melhor lance e teste alternativas arrastando as peças no próprio tabuleiro. <a href="aprender/como-estudar-suas-partidas.html">Um método de estudo em cinco etapas</a></p></li>
 </ol>
 </section>
 
@@ -424,7 +419,7 @@
 <li><strong>Precisão e ACPL</strong> de cada jogador, com lances de livro fora da conta.</li>
 <li><strong>Abertura identificada</strong> pelo nome e pelo código ECO, em uma base com mais de 3.800 linhas.</li>
 <li><strong>Seta do melhor lance</strong> e barra de avaliação em cada posição.</li>
-<li><strong>Modo Livre</strong> para jogar variantes a partir de qualquer lance e ver a resposta do motor.</li>
+<li><strong>Tabuleiro livre</strong>: arraste as peças em qualquer lance para jogar variantes, com a linha do motor ao vivo.</li>
 <li><strong>Rating estimado da partida</strong>, uma referência interna calculada a partir da qualidade dos lances.</li>
 <li><strong>Importação pelo usuário</strong> do Chess.com e do Lichess, sem copiar o PGN, com uma prévia de precisão e nível de cada partida da lista.</li>
 <li><strong>Contas vinculadas:</strong> com uma conta grátis, seus usuários ficam salvos e suas partidas aparecem em um clique.</li>
@@ -490,6 +485,7 @@
 <script src="js/modules/chart-renderer.js"></script>
 <script src="js/modules/evaluation-bar.js"></script>
 <script src="js/modules/free-play.js"></script>
+<script src="js/modules/live-engine.js"></script>
 <script src="js/modules/pgn-exporter.js"></script>
 
 <!-- Contas / Premium / Insights -->
