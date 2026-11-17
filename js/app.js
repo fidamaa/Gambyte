@@ -124,8 +124,57 @@ const App = (() => {
     }
   }
 
+  // A coluna do meio (classificações + lances) termina exatamente onde
+  // termina a coluna do tabuleiro (no fim do gráfico de vantagem); a lista
+  // de lances rola por dentro. No celular as colunas empilham e nada muda.
+  function setupAlinhamento() {
+    const board = document.querySelector('.board-panel');
+    const mid = document.querySelector('.middle-panel');
+    if (!board || !mid) return;
+    const sum = document.querySelector('.summary-panel');
+    const alinhar = (el) => {
+      if (!el) return;
+      const topoB = board.getBoundingClientRect().top;
+      const mesmaLinha = window.innerWidth > 760 && Math.abs(el.getBoundingClientRect().top - topoB) < 4;
+      el.style.height = mesmaLinha ? board.offsetHeight + 'px' : '';
+      el.classList.toggle('alinhado', mesmaLinha);
+    };
+    // Coluna da direita: se o conteúdo passar da altura, primeiro a lista de
+    // partidas encolhe (rola por dentro), depois o painel de resumo.
+    const lista = document.getElementById('imp-list');
+    const resumo = document.getElementById('insights-section');
+    const ajustarDireita = () => {
+      if (!sum || !lista || !resumo) return;
+      lista.style.maxHeight = ''; resumo.style.maxHeight = '';
+      if (!sum.classList.contains('alinhado')) return;
+      let excesso = sum.scrollHeight - sum.clientHeight;
+      if (excesso <= 0) return;
+      if (lista.offsetHeight > 0) {
+        const alvo = Math.max(120, lista.offsetHeight - excesso);
+        excesso -= lista.offsetHeight - alvo;
+        lista.style.maxHeight = alvo + 'px';
+      }
+      if (excesso > 0 && resumo.offsetHeight > 0) {
+        resumo.style.maxHeight = Math.max(240, resumo.offsetHeight - excesso) + 'px';
+      }
+    };
+    let pendente = false;
+    const sync = () => {
+      if (pendente) return;
+      pendente = true;
+      requestAnimationFrame(() => { pendente = false; alinhar(mid); alinhar(sum); ajustarDireita(); });
+    };
+    if (window.ResizeObserver) new ResizeObserver(sync).observe(board);
+    if (sum && window.MutationObserver) {
+      new MutationObserver(sync).observe(sum, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'class'] });
+    }
+    window.addEventListener('resize', sync);
+    sync();
+  }
+
   function init() {
     setupResize();
+    setupAlinhamento();
     initStockfish();
 
     document.getElementById('btn-analyze').addEventListener('click', runAnalysis);

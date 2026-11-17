@@ -1322,3 +1322,19 @@ canvas#chart{height:150px}
 .summary-empty .se-dica{font-size:12.5px;color:var(--text3)}
 @media(max-width:760px){body[data-site="gambyte"] .info-intro.tool-intro p{display:none}body[data-site="gambyte"] .info-intro.tool-intro h1{font-size:20px;margin:0}.game-strip>.opening-banner{flex-wrap:nowrap;padding:8px 12px}.game-strip .opening-variation{display:none}}
 @media(max-width:560px){.imp-game{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"d r" "p p";row-gap:6px;padding:9px 11px}.imp-g-date{grid-area:d;display:flex;gap:8px;align-items:baseline}.imp-g-date small{display:inline}.imp-g-players{grid-area:p}.imp-g-res{grid-area:r}}
+
+/* Coluna do meio na mesma altura da coluna do tabuleiro; caixa de partida na direita */
+.summary-panel{position:static}
+.summary-empty p{margin:0 0 8px}
+@media(min-width:761px){.middle-panel{display:flex;flex-direction:column}.middle-panel .moves-section{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}.middle-panel .moves-section .section-title{flex:none}.middle-panel .moves-list{flex:1 1 auto;min-height:140px;max-height:none}}
+/* Coluna da direita na mesma altura: app.js ajusta a altura da lista de
+   partidas e do resumo para caberem; se ainda sobrar, a coluna rola. */
+.summary-panel.alinhado{overflow-y:auto;scrollbar-width:thin}
+.summary-panel.alinhado>#insights-section{max-height:none}
+.history-panel{margin-top:16px}
+.summary-panel.alinhado>*{flex:none}
+/* Com a lista aberta, o aviso sobre links já cumpriu seu papel */
+.import-box:has(.imp-list:not([hidden])) .imp-note{display:none}
+/* Celular: a caixa de partida vem logo depois do tabuleiro e do gráfico */
+@media(max-width:760px){.summary-panel{display:contents}.analysis-layout>.board-panel{order:1}.summary-panel>#trazer{order:2}.analysis-layout>.middle-panel{order:3}.summary-panel>*{order:4}}
+.chart-head .section-title{white-space:nowrap}.chart-head .chart-labels{flex-wrap:nowrap}

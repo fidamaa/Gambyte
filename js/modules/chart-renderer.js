@@ -203,7 +203,7 @@ const ChartRenderer = (() => {
     ctx.fillStyle = C.rotulo;
     ctx.font = '12px "Outfit", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('A vantagem de cada lado aparece aqui durante a análise.', W / 2, mid - 10);
+    ctx.fillText(W < 380 ? 'A vantagem aparece aqui na análise.' : 'A vantagem de cada lado aparece aqui durante a análise.', W / 2, mid - 10);
   }
 
   return { render, clear };

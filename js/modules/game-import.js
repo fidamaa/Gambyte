@@ -407,7 +407,7 @@ const GameImport = (() => {
       if (mine) { buscarComo(mine.dataset.impMine, mine.dataset.nome); return; }
       if (e.target.closest('[data-imp-scan]')) { rodarPrevia(); return; }
       const g = e.target.closest('[data-imp-game]');
-      if (g) { const jogo = jogos[+g.dataset.impGame]; if (jogo) { status('Partida carregada. Analisando…', 'ok'); carregar(jogo.pgn, usuario); } }
+      if (g) { const jogo = jogos[+g.dataset.impGame]; if (jogo) { status('Partida aberta no tabuleiro. Escolha outra quando quiser.', 'ok'); carregar(jogo.pgn, usuario); } }
     });
     $('imp-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); buscar(); } });
     // Uma análise de verdade tem prioridade: a prévia para na hora.
