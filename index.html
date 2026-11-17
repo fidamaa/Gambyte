@@ -6,7 +6,7 @@
 <title>Gambyte — Analise suas partidas de xadrez com Stockfish 18</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=6">
+<link rel="stylesheet" href="css/styles.css?v=7">
 <meta name="google-adsense-account" content="ca-pub-7858747311725137">
 <!-- Veiculação de anúncios desativada durante a preparação para avaliação. -->
 <link rel="stylesheet" href="site-info.css?v=5">
@@ -34,13 +34,17 @@
       <input type="text" id="imp-input" class="imp-input" autocomplete="off" spellcheck="false" aria-label="Usuário ou link da partida">
       <button type="button" class="btn-primary" id="imp-btn">Buscar partidas</button>
     </div>
-    <p class="imp-status" id="imp-status" role="status">Digite seu usuário para ver as últimas partidas, ou cole um link do Lichess.</p>
+    <div class="imp-mine" id="imp-mine" hidden></div>
+    <p class="imp-status" id="imp-status" role="status">Digite um usuário (o seu ou de qualquer jogador) para ver as últimas partidas, ou cole um link do Lichess.</p>
+    <p class="imp-note"><strong>Lichess:</strong> pode colar o link da partida, que ela abre direto. <strong>Chess.com:</strong> o link da partida não funciona, porque o Chess.com não permite que outros sites busquem partidas pelo link. Digite o usuário do Chess.com acima e as últimas partidas do perfil aparecem na lista.</p>
+    <div class="imp-list-head" id="imp-list-head" hidden><span class="imp-lh-text"></span><button type="button" class="imp-lh-btn" data-imp-scan hidden>Calcular prévia</button></div>
     <div class="imp-list" id="imp-list" hidden></div>
   </section>
 
   <!-- PGN Input -->
   <section class="input-section">
     <div class="section-label">Ou cole o PGN</div>
+    <p class="pgn-hint">Aceita o PGN de qualquer site, inclusive o arquivo exportado do Chess.com. Links não funcionam neste campo: para o Chess.com, use o usuário no quadro “Importar partida”.</p>
     <textarea id="pgn-input" placeholder='[Event "Rated Blitz game"]
 [White "Kasparov"]
 [Black "Karpov"]
@@ -420,7 +424,8 @@
 <li><strong>Seta do melhor lance</strong> e barra de avaliação em cada posição.</li>
 <li><strong>Modo Livre</strong> para jogar variantes a partir de qualquer lance e ver a resposta do motor.</li>
 <li><strong>Rating estimado da partida</strong>, uma referência interna calculada a partir da qualidade dos lances.</li>
-<li><strong>Importação pelo usuário</strong> do Chess.com e do Lichess, sem copiar o PGN.</li>
+<li><strong>Importação pelo usuário</strong> do Chess.com e do Lichess, sem copiar o PGN, com uma prévia de precisão e nível de cada partida da lista.</li>
+<li><strong>Contas vinculadas:</strong> com uma conta grátis, seus usuários ficam salvos e suas partidas aparecem em um clique.</li>
 <li><strong>Exportação do PGN</strong> para copiar ou baixar.</li>
 </ul>
 <p class="home-pro-line">O <a href="gambyte-premium.html">Gambyte Pro</a> acrescenta a análise profunda até a profundidade 22, o painel completo de insights com a escolha do seu lado, o PGN anotado com avaliações, o relatório de estudo em texto e o histórico das suas análises.</p>

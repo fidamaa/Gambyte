@@ -280,7 +280,7 @@ textarea#pgn-input::placeholder { color:var(--text3); }
   font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;
   color:var(--text3); margin-bottom:12px;
 }
-canvas#chart { width:100%; height:130px; display:block; }
+canvas#chart { width:100%; height:150px; display:block; border-radius:8px; }
 
 /* ── Badge de classificação sobre o tabuleiro ── */
 #board-cls-badge {
@@ -1155,3 +1155,38 @@ textarea#pgn-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(23
 .imp-g-res{font-size:12.5px;font-weight:600;color:var(--text2);white-space:nowrap}
 .imp-g-res.win{color:var(--green)}.imp-g-res.loss{color:#ef7a7a}.imp-g-res.draw{color:var(--text2)}
 @media (max-width:560px){.import-box{padding:16px}.imp-game{grid-template-columns:52px minmax(0,1fr) auto;gap:9px}.imp-row .btn-primary{width:100%}}
+
+/* Importar: contas vinculadas, prévia rápida */
+.imp-mine{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+.imp-mine[hidden]{display:none}
+.imp-mine-label{font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:var(--text3);font-weight:600;margin-right:2px}
+.imp-mine-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:99px;border:1px solid rgba(236,189,110,.45);background:rgba(236,189,110,.08);color:var(--text);font-family:inherit;font-size:13.5px;cursor:pointer;transition:background .15s,border-color .15s}
+.imp-mine-btn span{color:var(--text2);font-size:12.5px}
+.imp-mine-btn b{color:var(--accent);font-weight:600}
+.imp-mine-btn:hover{background:rgba(236,189,110,.16);border-color:var(--accent)}
+.imp-mine-btn:focus-visible{outline:2px solid var(--gold-1);outline-offset:2px}
+.imp-mine-hint{font-size:12.5px;color:var(--text3);line-height:1.5}
+.imp-mine-hint a{color:var(--accent)}
+.imp-list-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:var(--text2)}
+.imp-list-head[hidden]{display:none}
+.imp-lh-btn{background:none;border:1px solid var(--border2);border-radius:8px;color:var(--accent);font-family:inherit;font-size:12.5px;font-weight:600;padding:5px 10px;cursor:pointer}
+.imp-lh-btn[hidden]{display:none}
+.imp-lh-btn:hover{border-color:var(--accent)}
+.imp-list{margin-top:8px}
+.imp-pl{display:grid!important;grid-template-columns:10px minmax(0,1fr) auto;align-items:center;gap:7px}
+.imp-pl-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.imp-pl.is-me .imp-pl-name{color:var(--accent);font-weight:600}
+.imp-scan{display:inline-flex;align-items:baseline;gap:6px;font-family:'JetBrains Mono',monospace;font-size:12.5px;white-space:nowrap}
+.imp-scan b{color:var(--text);font-weight:600}
+.imp-scan small{color:var(--text3);font-size:11px}
+.imp-scan.pending{width:72px;height:10px;border-radius:99px;background:linear-gradient(90deg,#20253a 0%,#2b3248 50%,#20253a 100%);background-size:200% 100%;opacity:.55}
+.imp-game.scanning .imp-scan.pending{opacity:1;animation:impShimmer 1.1s linear infinite}
+@keyframes impShimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+.imp-game{grid-template-columns:62px minmax(0,1fr) 72px}
+.imp-g-res{text-align:right}
+@media (max-width:560px){.imp-lbl{display:none}.imp-scan{gap:4px;font-size:11.5px}.imp-scan.pending{width:44px}.imp-game{grid-template-columns:48px minmax(0,1fr) 58px}}
+@media (prefers-reduced-motion:reduce){.imp-game.scanning .imp-scan.pending{animation:none}}
+
+.imp-note{margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(91,143,224,.06);border:1px solid rgba(91,143,224,.22);font-size:12.5px;line-height:1.55;color:var(--text2)}
+.imp-note strong{color:var(--text);font-weight:600}
+.pgn-hint{margin:-4px 0 10px;font-size:12.5px;line-height:1.5;color:var(--text3)}

@@ -24,6 +24,12 @@ const AuthSystem = (() => {
     return !!(profile?.premium && profile.proximo_vencimento && Date.parse(profile.proximo_vencimento) > Date.now());
   }
 
+  function _linkedFrom(user) {
+    const md = (user && user.user_metadata) || {};
+    const limpa = v => (typeof v === 'string' && /^[A-Za-z0-9_-]{2,30}$/.test(v)) ? v : '';
+    return { chesscom: limpa(md.chesscom), lichess: limpa(md.lichess) };
+  }
+
   function _notify() {
     for (const cb of _listeners) { try { cb(_session); } catch (e) { console.error(e); } }
   }
@@ -77,6 +83,9 @@ const AuthSystem = (() => {
         email:   user.email,
         name:    (user.user_metadata && user.user_metadata.name) || (user.email ? user.email.split('@')[0] : ''),
         premium: false, // atualizado assim que o perfil carregar
+        // Usuários de xadrez vinculados pelo próprio usuário (só leitura de
+        // partidas públicas). Ficam nos metadados da conta no Supabase Auth.
+        linked:  _linkedFrom(user),
       };
       _notify();
       await _loadProfile(user.id);
@@ -134,6 +143,22 @@ const AuthSystem = (() => {
 
   function logout() { return supabaseClient.auth.signOut(); }
 
+  /** Salva os usuários de Chess.com/Lichess vinculados à conta. Vazio remove. */
+  async function setLinkedAccounts({ chesscom, lichess }) {
+    if (!_session) return { ok: false, msg: 'Entre na sua conta primeiro.' };
+    const data = {};
+    if (chesscom !== undefined) data.chesscom = chesscom || '';
+    if (lichess !== undefined) data.lichess = lichess || '';
+    try {
+      const { data: res, error } = await supabaseClient.auth.updateUser({ data });
+      if (error) return { ok: false, msg: _friendlyError(error) };
+      if (_session && res && res.user) { _session.linked = _linkedFrom(res.user); _notify(); }
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, msg: _friendlyError(err) };
+    }
+  }
+
   function currentSession() { return _session; }
   function isPremium() { return !!(_session && activePremium({ premium: _session.premium, proximo_vencimento: _session.expiresAt })); }
 
@@ -153,7 +178,7 @@ const AuthSystem = (() => {
   }
 
   return {
-    register, login, logout, currentSession, isPremium,
+    register, login, logout, currentSession, isPremium, setLinkedAccounts,
     onChange, isReady, refreshPremiumStatus, cancelSubscription, escapeHTML,
   };
 })();

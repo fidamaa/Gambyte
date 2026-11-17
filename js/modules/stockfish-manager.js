@@ -20,6 +20,7 @@
 const StockfishManager = (() => {
   let worker = null;
   let ready = false;
+  let fullyReady = false;   // true depois do readyok: pode receber buscas
   let currentResolve = null;
   let currentLines = [];
   let currentOnUpdate = null;
@@ -84,6 +85,7 @@ const StockfishManager = (() => {
           } else if (msg === 'readyok') {
             if (!settled) {
               settled = true;
+              fullyReady = true;
               clearTimeout(timeout);
               console.log('[Stockfish] readyok recebido → pronto para análise!');
               worker.onmessage = (ev) => handleMessage(
@@ -330,5 +332,7 @@ const StockfishManager = (() => {
 
   function getEngineInfo() { return { usingMulti, threadCount }; }
 
-  return { init, analyzePosition, verifySacrificeTrap, parsePV, abort, terminate, getEngineInfo };
+  function isReady() { return fullyReady && !!worker; }
+
+  return { init, analyzePosition, verifySacrificeTrap, parsePV, abort, terminate, getEngineInfo, isReady };
 })();

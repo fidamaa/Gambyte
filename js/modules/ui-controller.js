@@ -748,7 +748,7 @@ const UIController = (() => {
 
   function updateChart(movesData, activeIdx) {
     const valid = movesData.filter(m => m.evalAfter !== null);
-    if (valid.length > 0) ChartRenderer.render(els.chart, valid, activeIdx);
+    if (valid.length > 0) ChartRenderer.render(els.chart, valid, activeIdx ?? currentMoveIdx);
   }
 
   // ── Keyboard nav ─────────────────────────────────────────────

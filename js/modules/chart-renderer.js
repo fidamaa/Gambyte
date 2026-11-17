@@ -1,203 +1,177 @@
 /* ==============================================================
    MODULE: chart-renderer.js
-   Renders the advantage chart on a canvas element
+   Gráfico de vantagem no estilo dos grandes sites de xadrez:
+   a área clara (brancas) sobe a partir da base e a escura (pretas)
+   desce a partir do topo; a fronteira entre as duas é a avaliação.
+
+   Escala: a avaliação vira chance esperada de vitória (a mesma curva
+   que o classificador usa), então +1 e +2 ficam bem separados e uma
+   vantagem de +8 não "achata" o resto do gráfico.
+
+   Interação: passar o mouse mostra lance e avaliação; clicar leva o
+   tabuleiro para aquele lance.
    ============================================================== */
 const ChartRenderer = (() => {
 
-  let _lastW = 0;  // cache to avoid unnecessary canvas resize (causes layout reflow)
+  const CLS_COLOR = {
+    book: '#8890a8', brilliant: '#5bc9b8', great: '#9b7de0', excellent: '#5bc97a',
+    'best-move': '#59b8e0', good: '#c9c45b', inaccuracy: '#e09b5b',
+    mistake: '#e05c5c', miss: '#e0785b', blunder: '#c93030',
+  };
+  // Só os momentos que importam ganham marcador (o resto vira ruído visual).
+  const MARCAR = new Set(['brilliant', 'great', 'inaccuracy', 'mistake', 'miss', 'blunder']);
+
+  const C = {
+    escuro:  '#2a2e3a',   // lado das pretas
+    claro:   '#e9e7e1',   // lado das brancas
+    meio:    'rgba(120,128,150,.55)',
+    linha:   '#ecbd6e',
+    rotulo:  '#7c86a3',
+  };
+
+  let _lastW = 0, _lastH = 0;
+  let _estado = null;   // dados do último desenho, usados pela interação
+  let _hover = -1;
+  const _ligados = new WeakSet();
+
+  function chance(cp) {
+    // cp do ponto de vista das brancas → 0..1 (mesma curva do classificador)
+    if (cp >= 29000) return 1;
+    if (cp <= -29000) return 0;
+    return 1 / (1 + Math.exp(-0.00368208 * cp));
+  }
+  function fmt(v) {
+    if (Math.abs(v) >= 29000) return (v > 0 ? '+' : '−') + 'M' + Math.max(1, 30000 - Math.abs(v));
+    return (v > 0 ? '+' : v < 0 ? '−' : '') + (Math.abs(v) / 100).toFixed(2).replace('.', ',');
+  }
+
+  function ligar(canvas) {
+    if (_ligados.has(canvas)) return;
+    _ligados.add(canvas);
+    canvas.style.cursor = 'pointer';
+    const indice = ev => {
+      if (!_estado) return -1;
+      const r = canvas.getBoundingClientRect();
+      const x = ev.clientX - r.left;
+      const { pad, pw, n } = _estado;
+      if (n < 1) return -1;
+      const i = Math.round(((x - pad.l) / pw) * Math.max(1, n - 1));
+      return Math.max(0, Math.min(n - 1, i));
+    };
+    canvas.addEventListener('mousemove', ev => {
+      const i = indice(ev);
+      if (i === _hover || !_estado) return;
+      _hover = i;
+      const m = _estado.moves[i];
+      canvas.title = m ? `${Math.floor(m.index / 2) + 1}${m.color === 'white' ? '.' : '...'} ${m.san || ''}  ${fmt(_estado.evals[i])}` : '';
+      desenhar(canvas);
+    });
+    canvas.addEventListener('mouseleave', () => { _hover = -1; if (_estado) desenhar(canvas); });
+    canvas.addEventListener('click', ev => {
+      const i = indice(ev);
+      const m = _estado && _estado.moves[i];
+      if (!m) return;
+      const alvo = document.querySelector(`.move-item[data-index="${m.index}"]`);
+      if (alvo) alvo.click();
+    });
+  }
 
   function render(canvas, movesData, activeIdx) {
-    const W = canvas.offsetWidth || _lastW || 400;
-    const H = 130;
-    const dpr = devicePixelRatio || 1;
-    // Only resize the canvas element when dimensions actually changed
-    if (W !== _lastW || canvas.width !== Math.round(W * dpr)) {
-      _lastW = W;
-      canvas.width  = Math.round(W * dpr);
+    const moves = movesData.filter(m => m && m.evalAfter !== null && m.evalAfter !== undefined);
+    if (!moves.length) return;
+    const evals = moves.map(m => (m.color === 'white' ? m.evalAfter : -m.evalAfter));
+    _estado = { moves, evals, activeIdx, pad: null, pw: 0, n: moves.length };
+    ligar(canvas);
+    desenhar(canvas);
+  }
+
+  function desenhar(canvas) {
+    const { moves, evals, activeIdx } = _estado;
+    const W = canvas.clientWidth || _lastW || 400;
+    const H = canvas.clientHeight || _lastH || 150;
+    const dpr = window.devicePixelRatio || 1;
+    if (W !== _lastW || H !== _lastH || canvas.width !== Math.round(W * dpr)) {
+      _lastW = W; _lastH = H;
+      canvas.width = Math.round(W * dpr);
       canvas.height = Math.round(H * dpr);
-      canvas.style.height = H + 'px';
     }
     const ctx = canvas.getContext('2d');
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);  // reset + scale
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
 
-    const validMoves = movesData.filter(m => m.evalAfter !== null);
-    if (validMoves.length === 0) return;
-
-    // Build eval series from white's perspective
-    // evalAfter já está na perspectiva do jogador que moveu (negado no AnalysisEngine)
-    // Branco move → evalAfter = perspectiva das brancas → usa direto
-    // Preto move  → evalAfter = perspectiva das pretas → negamos para converter para brancas
-    const evals = validMoves.map(m => {
-      const isWhiteMoved = m.color === 'white';
-      return isWhiteMoved ? m.evalAfter : -m.evalAfter;
-    });
-
-    const maxEval = 600;
-    const pad = { l: 8, r: 8, t: 10, b: 22 };
-    const pw = W - pad.l - pad.r;
-    const ph = H - pad.t - pad.b;
+    const pad = { l: 0, r: 0, t: 0, b: 18 };
+    const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+    const n = evals.length;
+    _estado.pad = pad; _estado.pw = pw;
+    const x = i => pad.l + (n === 1 ? pw / 2 : (i / (n - 1)) * pw);
+    const y = v => pad.t + ph * (1 - chance(v));
     const midY = pad.t + ph / 2;
 
-    function evalToY(e) {
-      const clamped = Math.max(-maxEval, Math.min(maxEval, e));
-      return pad.t + (ph / 2) * (1 - clamped / maxEval);
-    }
-    function idxToX(i) {
-      return pad.l + (i / Math.max(1, evals.length - 1)) * pw;
-    }
-
-    // Background
-    ctx.fillStyle = '#13161e';
-    ctx.fillRect(0, 0, W, H);
-
-    // Gradient fill — brancas (acima da linha): branco suave
-    // Pretas (abaixo da linha): azul/roxo escuro
-    const whiteGrad = ctx.createLinearGradient(0, pad.t, 0, midY);
-    whiteGrad.addColorStop(0,   'rgba(240,217,181,0.55)');
-    whiteGrad.addColorStop(1,   'rgba(240,217,181,0.05)');
-
-    const blackGrad = ctx.createLinearGradient(0, midY, 0, pad.t + ph);
-    blackGrad.addColorStop(0,   'rgba(70,70,130,0.10)');
-    blackGrad.addColorStop(1,   'rgba(70,70,130,0.55)');
-
-    // White advantage area (above midline)
+    // Fundo (lado das pretas) com cantos arredondados
+    const raio = 8;
     ctx.save();
     ctx.beginPath();
-    ctx.rect(pad.l, pad.t, pw, midY - pad.t);
+    ctx.roundRect ? ctx.roundRect(pad.l, pad.t, pw, ph, raio) : ctx.rect(pad.l, pad.t, pw, ph);
     ctx.clip();
-    ctx.beginPath();
-    ctx.moveTo(idxToX(0), midY);
-    for (let i = 0; i < evals.length; i++) ctx.lineTo(idxToX(i), evalToY(evals[i]));
-    ctx.lineTo(idxToX(evals.length - 1), midY);
-    ctx.closePath();
-    ctx.fillStyle = whiteGrad;
-    ctx.fill();
-    ctx.restore();
+    ctx.fillStyle = C.escuro;
+    ctx.fillRect(pad.l, pad.t, pw, ph);
 
-    // Black advantage area (below midline)
-    ctx.save();
+    // Área das brancas: da base até a curva (começa da posição inicial, 0,00)
     ctx.beginPath();
-    ctx.rect(pad.l, midY, pw, ph / 2);
-    ctx.clip();
-    ctx.beginPath();
-    ctx.moveTo(idxToX(0), midY);
-    for (let i = 0; i < evals.length; i++) ctx.lineTo(idxToX(i), evalToY(evals[i]));
-    ctx.lineTo(idxToX(evals.length - 1), midY);
+    ctx.moveTo(pad.l, pad.t + ph);
+    ctx.lineTo(pad.l, midY);
+    for (let i = 0; i < n; i++) ctx.lineTo(x(i), y(evals[i]));
+    ctx.lineTo(pad.l + pw, pad.t + ph);
     ctx.closePath();
-    ctx.fillStyle = blackGrad;
+    ctx.fillStyle = C.claro;
     ctx.fill();
-    ctx.restore();
 
-    // Mid line
-    ctx.strokeStyle = '#2e3448';
+    // Linha de igualdade
+    ctx.strokeStyle = C.meio;
     ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(pad.l, midY);
-    ctx.lineTo(W - pad.r, midY);
-    ctx.stroke();
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(pad.l, midY); ctx.lineTo(pad.l + pw, midY); ctx.stroke();
     ctx.setLineDash([]);
 
-    // Linha de eval
-    ctx.beginPath();
-    ctx.moveTo(idxToX(0), evalToY(evals[0]));
-    for (let i = 1; i < evals.length; i++) ctx.lineTo(idxToX(i), evalToY(evals[i]));
-    ctx.strokeStyle = '#ecbd6e';
-    ctx.lineWidth = 2;
-    ctx.lineJoin = 'round';
-    ctx.stroke();
+    // Lance sob o mouse: guia vertical suave
+    if (_hover >= 0 && _hover < n) {
+      ctx.fillStyle = 'rgba(236,189,110,.18)';
+      ctx.fillRect(x(_hover) - 1, pad.t, 2, ph);
+    }
 
-    // Indicador de lado — pequenos triângulos nas laterais
-    ctx.fillStyle = 'rgba(240,217,181,0.5)';
-    ctx.beginPath(); ctx.moveTo(pad.l-6, pad.t+2); ctx.lineTo(pad.l-1, midY-2); ctx.lineTo(pad.l-1, pad.t+2); ctx.fill();
-    ctx.fillStyle = 'rgba(80,80,160,0.5)';
-    ctx.beginPath(); ctx.moveTo(pad.l-6, pad.t+ph-2); ctx.lineTo(pad.l-1, midY+2); ctx.lineTo(pad.l-1, pad.t+ph-2); ctx.fill();
+    // Lance ativo: guia vertical dourada
+    let ai = -1;
+    if (activeIdx !== undefined && activeIdx >= 0) ai = moves.findIndex(m => (m.index ?? m.moveIndex) === activeIdx);
+    if (ai >= 0) {
+      ctx.fillStyle = 'rgba(236,189,110,.55)';
+      ctx.fillRect(x(ai) - 1, pad.t, 2, ph);
+    }
 
-    // ── Bolinhas coloridas por classificação ─────────────────────
-    const CLS_DOT_COLOR = {
-      'book':       '#8890a8',
-      'brilliant':  '#5bc9b8',
-      'great':      '#9b7de0',
-      'excellent':  '#5bc97a',
-      'best-move':  '#59b8e0',
-      'good':       '#c9c45b',
-      'inaccuracy': '#e09b5b',
-      'mistake':    '#e05c5c',
-      'miss':       '#e0785b',
-      'blunder':    '#c93030',
-    };
-
-    // Determina o tamanho das bolinhas: menor em partidas longas
-    const dotR = evals.length > 60 ? 2 : evals.length > 30 ? 2.5 : 3;
-
-    for (let i = 0; i < evals.length; i++) {
-      const m   = validMoves[i];
-      const cls = m.classification || '';
-      const col = CLS_DOT_COLOR[cls];
-      if (!col) continue;  // sem classificação ainda (análise em andamento)
-
-      const cx = idxToX(i);
-      const cy = evalToY(evals[i]);
-
-      // Círculo preenchido com cor da classificação
+    // Marcadores dos momentos importantes
+    const r = n > 80 ? 3 : n > 40 ? 3.5 : 4;
+    for (let i = 0; i < n; i++) {
+      const cls = moves[i].classification;
+      if (!MARCAR.has(cls) && i !== ai) continue;
+      const cor = CLS_COLOR[cls] || C.linha;
       ctx.beginPath();
-      ctx.arc(cx, cy, dotR, 0, Math.PI * 2);
-      ctx.fillStyle = col;
+      ctx.arc(x(i), y(evals[i]), i === ai ? r + 1.5 : r, 0, Math.PI * 2);
+      ctx.fillStyle = cor;
       ctx.fill();
-
-      // Borda branca fina para destacar do fundo
-      ctx.beginPath();
-      ctx.arc(cx, cy, dotR, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-      ctx.lineWidth = 0.8;
+      ctx.lineWidth = i === ai ? 2.5 : 1.5;
+      ctx.strokeStyle = i === ai ? '#ffffff' : 'rgba(20,22,30,.85)';
       ctx.stroke();
     }
+    ctx.restore();
 
-    // ── Cursor do lance ativo ─────────────────────────────────────
-    // Encontra o índice dentro de validMoves que corresponde a activeIdx
-    if (activeIdx !== undefined && activeIdx >= 0) {
-      const vmIdx = validMoves.findIndex(m => (m.index !== undefined ? m.index : m.moveIndex) === activeIdx);
-      if (vmIdx >= 0) {
-        const cx = idxToX(vmIdx);
-        const cy = evalToY(evals[vmIdx]);
-        const cr = dotR + 3;  // círculo externo maior que as bolinhas
-
-        // Anel externo branco semi-transparente
-        ctx.beginPath();
-        ctx.arc(cx, cy, cr + 2, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        // Anel colorido da classificação (ou branco se sem class)
-        const m   = validMoves[vmIdx];
-        const cls = m.classification || '';
-        const CLS_CURSOR = {
-          'book':'#8890a8','brilliant':'#5bc9b8','great':'#9b7de0','excellent':'#5bc97a',
-          'best-move':'#59b8e0','good':'#c9c45b',
-          'inaccuracy':'#e09b5b','mistake':'#e05c5c','miss':'#e0785b','blunder':'#c93030',
-        };
-        ctx.beginPath();
-        ctx.arc(cx, cy, cr, 0, Math.PI * 2);
-        ctx.strokeStyle = CLS_CURSOR[cls] || '#ecbd6e';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Ponto central sólido
-        ctx.beginPath();
-        ctx.arc(cx, cy, dotR, 0, Math.PI * 2);
-        ctx.fillStyle = CLS_CURSOR[cls] || '#ecbd6e';
-        ctx.fill();
-      }
-    }
-
-    // Labels de número de lance (a cada 10)
-    ctx.fillStyle = '#555d78';
-    ctx.font = `9px JetBrains Mono, monospace`;
-    ctx.textAlign = 'center';
-    for (let i = 0; i < evals.length; i += 10) {
-      const moveNum = Math.floor(validMoves[i].moveIndex / 2) + 1;
-      ctx.fillText(moveNum, idxToX(i), H - 5);
+    // Números dos lances
+    ctx.fillStyle = C.rotulo;
+    ctx.font = '10px "JetBrains Mono", monospace';
+    ctx.textBaseline = 'alphabetic';
+    const passo = n > 120 ? 20 : n > 60 ? 10 : n > 24 ? 6 : 2;
+    for (let i = 0; i < n; i += passo) {
+      const num = Math.floor((moves[i].index ?? moves[i].moveIndex) / 2) + 1;
+      ctx.textAlign = i === 0 ? 'left' : 'center';
+      ctx.fillText(String(num), x(i), H - 4);
     }
   }
 

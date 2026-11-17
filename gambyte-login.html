@@ -314,6 +314,31 @@ body::before {
 .pw-strength-bar { flex: 1; height: 3px; border-radius: 2px; background: var(--border2); overflow: hidden; }
 .pw-strength-fill { height: 100%; border-radius: 2px; transition: width .3s, background .3s; width: 0%; }
 .pw-strength-label { font-size: 10px; color: var(--text3); width: 50px; text-align: right; }
+
+/* Contas de xadrez vinculadas */
+.linked-accounts { text-align:left; margin:18px 0 6px; padding:16px; border:1px solid var(--border); border-radius:var(--radius-lg); background:var(--bg3); }
+.linked-accounts[hidden] { display:none; }
+.lk-title { font-size:13px; letter-spacing:.8px; text-transform:uppercase; color:#b4bdd0; font-weight:600; margin-bottom:6px; }
+.lk-desc { font-size:12.5px; line-height:1.55; color:var(--text2); margin-bottom:12px; }
+.lk-row { padding:10px 0; border-top:1px solid var(--border); }
+.lk-label { display:block; font-size:12px; font-weight:600; color:var(--text); margin-bottom:6px; }
+.lk-row.is-linked .lk-label::after { content:'Vinculado'; margin-left:8px; font-size:10.5px; font-weight:700; color:var(--green); border:1px solid rgba(91,201,122,.4); border-radius:99px; padding:1px 7px; }
+.lk-field { display:flex; gap:8px; }
+.lk-input { flex:1; min-width:0; }
+.lk-btn { flex:none; padding:0 16px; border-radius:var(--radius); border:1px solid #f6d391; background:linear-gradient(135deg,#f4cc80,#d39a45); color:#1b1a14; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+.lk-btn:disabled { opacity:.6; cursor:wait; }
+.lk-btn:focus-visible, .lk-remove:focus-visible, .lk-link:focus-visible { outline:2px solid #f6d391; outline-offset:2px; }
+.lk-actions { display:flex; gap:14px; margin-top:7px; font-size:12.5px; }
+.lk-actions:empty { display:none; }
+.lk-link { color:var(--accent); text-decoration:none; font-weight:600; }
+.lk-link:hover { text-decoration:underline; }
+.lk-link[hidden], .lk-remove[hidden] { display:none; }
+.lk-remove { background:none; border:0; color:var(--text3); font:inherit; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+.lk-remove:hover { color:#ef9a9a; }
+.lk-status { font-size:12px; line-height:1.5; color:var(--text3); margin-top:5px; min-height:0; }
+.lk-status:empty { display:none; }
+.lk-status.ok { color:var(--green); }
+.lk-status.error { color:#ef9a9a; }
 </style>
 <link rel="stylesheet" href="site-info.css?v=5">
 
@@ -421,6 +446,28 @@ body::before {
       <div class="logged-in-email" id="li-email">—</div>
       <div class="logged-in-badge free" id="li-badge">Conta Gratuita</div>
       <a class="btn-back-analyze" href="index.html">← Voltar para Análise</a>
+      <section class="linked-accounts" id="linked-accounts" hidden aria-labelledby="lk-title">
+        <h2 class="lk-title" id="lk-title">Suas contas de xadrez</h2>
+        <p class="lk-desc">Vincule seu usuário para ver suas partidas no analisador com um clique. O Gambyte só lê partidas públicas; nada é alterado nas suas contas.</p>
+        <div class="lk-row" id="lk-row-chesscom">
+          <label class="lk-label" for="lk-input-chesscom">Chess.com</label>
+          <div class="lk-field">
+            <input type="text" class="form-input lk-input" id="lk-input-chesscom" data-lk-input="chesscom" placeholder="Seu usuário no Chess.com" autocomplete="off" spellcheck="false">
+            <button type="button" class="lk-btn" id="lk-save-chesscom" data-lk-save="chesscom">Salvar</button>
+          </div>
+          <div class="lk-actions"><a class="lk-link" id="lk-view-chesscom" href="index.html?importar=chesscom" hidden>Ver minhas partidas</a><button type="button" class="lk-remove" id="lk-remove-chesscom" data-lk-remove="chesscom" hidden>Remover</button></div>
+          <p class="lk-status" id="lk-status-chesscom" role="status"></p>
+        </div>
+        <div class="lk-row" id="lk-row-lichess">
+          <label class="lk-label" for="lk-input-lichess">Lichess</label>
+          <div class="lk-field">
+            <input type="text" class="form-input lk-input" id="lk-input-lichess" data-lk-input="lichess" placeholder="Seu usuário no Lichess" autocomplete="off" spellcheck="false">
+            <button type="button" class="lk-btn" id="lk-save-lichess" data-lk-save="lichess">Salvar</button>
+          </div>
+          <div class="lk-actions"><a class="lk-link" id="lk-view-lichess" href="index.html?importar=lichess" hidden>Ver minhas partidas</a><button type="button" class="lk-remove" id="lk-remove-lichess" data-lk-remove="lichess" hidden>Remover</button></div>
+          <p class="lk-status" id="lk-status-lichess" role="status"></p>
+        </div>
+      </section>
       <button class="btn-logout" data-onclick="gambyte-login-10">Sair da conta</button>
       <div class="premium-promo" style="margin-top:16px" data-onclick="gambyte-login-11" id="li-promo">
         <div class="premium-promo-icon">Pro</div>
@@ -445,6 +492,7 @@ body::before {
 <script src="js/modules/auth-system.js"></script>
 <script src="js/pages/gambyte-login-1.js"></script>
 <script src="js/pages/gambyte-login-events.js"></script>
+<script src="js/pages/gambyte-login-linked.js"></script>
 <footer class="info-footer"><div><strong>Gambyte</strong><p>Projeto independente de Rampini. Aprender com a prática.</p></div><nav aria-label="Informações institucionais"><a href="sobre.html">Sobre</a><a href="aprender/">Aprender xadrez</a><a href="como-usar.html">Como usar</a><a href="guia.html">Guia de análise</a><a href="gambyte-premium.html">Gambyte Pro</a><a href="contato.html">Contato</a><a href="privacidade.html">Privacidade</a><a href="termos.html">Termos de Uso</a><a href="licencas.html">Créditos e licença</a></nav><small>© 2026 Rampini · <a href="mailto:ebezerrarampini1@gmail.com">ebezerrarampini1@gmail.com</a></small></footer>
 </body>
 </html>
