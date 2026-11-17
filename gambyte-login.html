@@ -17,8 +17,8 @@
   --text:    #e8eaf0;
   --text2:   #a6afc5;
   --text3:   #7c86a3;
-  --accent:  #e8c97a;
-  --accent2: #c9a84c;
+  --accent:  #ecbd6e;
+  --accent2: #d39a45;
   --green:   #5bc97a;
   --red:     #e05c5c;
   --radius:  8px;
@@ -40,7 +40,7 @@ body::before {
   content: '';
   position: fixed; inset: 0;
   background:
-    radial-gradient(ellipse 70% 60% at 15% 10%, rgba(232,201,122,0.08) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 15% 10%, rgba(236,189,110,0.08) 0%, transparent 55%),
     radial-gradient(ellipse 60% 50% at 85% 90%, rgba(91,143,224,0.07) 0%, transparent 55%),
     radial-gradient(ellipse 40% 40% at 50% 50%, rgba(155,125,224,0.04) 0%, transparent 60%);
   pointer-events: none;
@@ -157,7 +157,7 @@ body::before {
 }
 .form-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(232,201,122,.1);
+  box-shadow: 0 0 0 3px rgba(236,189,110,.1);
 }
 .form-input::placeholder { color: var(--text3); }
 
@@ -221,17 +221,17 @@ body::before {
 /* ── Premium promo ── */
 .premium-promo {
   margin-top: 20px;
-  background: linear-gradient(135deg, rgba(232,201,122,.07), rgba(201,168,76,.03));
-  border: 1px solid rgba(232,201,122,.2);
+  background: linear-gradient(135deg, rgba(236,189,110,.07), rgba(211,154,69,.03));
+  border: 1px solid rgba(236,189,110,.2);
   border-radius: var(--radius);
   padding: 14px;
   display: flex; align-items: center; gap: 12px;
   cursor: pointer; transition: border-color .2s;
 }
-.premium-promo:hover { border-color: rgba(232,201,122,.45); }
+.premium-promo:hover { border-color: rgba(236,189,110,.45); }
 .premium-promo-icon { font-size: 24px; flex-shrink: 0; }
 .premium-promo-text { flex: 1; }
-.premium-promo-title { font-size: 13px; font-weight: 600; color: #e8c97a; margin-bottom: 2px; }
+.premium-promo-title { font-size: 13px; font-weight: 600; color: #ecbd6e; margin-bottom: 2px; }
 .premium-promo-desc  { font-size: 11px; color: var(--text2); }
 .premium-promo-arrow { color: var(--text3); font-size: 16px; }
 
@@ -248,7 +248,7 @@ body::before {
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 28px; font-weight: 700; color: #0d0f14;
   margin-bottom: 14px;
-  box-shadow: 0 8px 24px rgba(232,201,122,.25);
+  box-shadow: 0 8px 24px rgba(236,189,110,.25);
 }
 .logged-in-name { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
 .logged-in-email { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
@@ -258,7 +258,7 @@ body::before {
   margin-bottom: 20px;
 }
 .logged-in-badge.free    { background: rgba(136,144,168,.1); color: var(--text2); border: 1px solid var(--border2); }
-.logged-in-badge.premium { background: rgba(232,201,122,.15); color: #e8c97a; border: 1px solid rgba(232,201,122,.4); }
+.logged-in-badge.premium { background: rgba(236,189,110,.15); color: #ecbd6e; border: 1px solid rgba(236,189,110,.4); }
 
 .btn-back-analyze {
   display: block; width: 100%; padding: 12px;
@@ -315,7 +315,7 @@ body::before {
 .pw-strength-fill { height: 100%; border-radius: 2px; transition: width .3s, background .3s; width: 0%; }
 .pw-strength-label { font-size: 10px; color: var(--text3); width: 50px; text-align: right; }
 </style>
-<link rel="stylesheet" href="site-info.css?v=4">
+<link rel="stylesheet" href="site-info.css?v=5">
 
 <style>.form-input-row .form-input{padding-right:80px}.toggle-pw{font-size:12px;width:68px}</style>
 <style>body.auth-page{display:block;overflow:auto}.auth-page .auth-container{margin:40px auto}.auth-page>.info-footer{position:relative;z-index:1}</style></head>

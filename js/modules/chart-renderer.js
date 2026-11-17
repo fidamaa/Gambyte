@@ -102,7 +102,7 @@ const ChartRenderer = (() => {
     ctx.beginPath();
     ctx.moveTo(idxToX(0), evalToY(evals[0]));
     for (let i = 1; i < evals.length; i++) ctx.lineTo(idxToX(i), evalToY(evals[i]));
-    ctx.strokeStyle = '#e8c97a';
+    ctx.strokeStyle = '#ecbd6e';
     ctx.lineWidth = 2;
     ctx.lineJoin = 'round';
     ctx.stroke();
@@ -179,14 +179,14 @@ const ChartRenderer = (() => {
         };
         ctx.beginPath();
         ctx.arc(cx, cy, cr, 0, Math.PI * 2);
-        ctx.strokeStyle = CLS_CURSOR[cls] || '#e8c97a';
+        ctx.strokeStyle = CLS_CURSOR[cls] || '#ecbd6e';
         ctx.lineWidth = 2;
         ctx.stroke();
 
         // Ponto central sólido
         ctx.beginPath();
         ctx.arc(cx, cy, dotR, 0, Math.PI * 2);
-        ctx.fillStyle = CLS_CURSOR[cls] || '#e8c97a';
+        ctx.fillStyle = CLS_CURSOR[cls] || '#ecbd6e';
         ctx.fill();
       }
     }

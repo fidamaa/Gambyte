@@ -6,11 +6,11 @@
 <title>Gambyte — Analise suas partidas de xadrez com Stockfish 18</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=3">
+<link rel="stylesheet" href="css/styles.css?v=4">
 <meta name="google-adsense-account" content="ca-pub-7858747311725137">
 <!-- Veiculação de anúncios desativada durante a preparação para avaliação. -->
-<link rel="stylesheet" href="site-info.css?v=4">
-<link rel="stylesheet" href="aprender.css?v=3">
+<link rel="stylesheet" href="site-info.css?v=5">
+<link rel="stylesheet" href="aprender.css?v=4">
 <link rel="icon" href="logo.png">
 <meta name="description" content="Analisador gratuito de partidas de xadrez: cole o PGN e veja gráfico de vantagem, precisão e classificação de cada lance com Stockfish 18, direto no navegador. Inclui guias de tática, finais e aberturas."><link rel="canonical" href="https://gambyte.com.br/"><meta property="og:title" content="Gambyte — Analise suas partidas de xadrez com Stockfish 18"><meta property="og:locale" content="pt_BR"><meta property="og:site_name" content="Gambyte"><meta property="og:description" content="Analisador gratuito de partidas de xadrez: cole o PGN e veja gráfico de vantagem, precisão e classificação de cada lance com Stockfish 18, direto no navegador. Inclui guias de tática, finais e aberturas."><meta property="og:url" content="https://gambyte.com.br/"><meta property="og:type" content="website">
 <script type="application/ld+json">[{"@context": "https://schema.org", "@type": "WebApplication", "name": "Gambyte", "url": "https://gambyte.com.br/", "applicationCategory": "GameApplication", "operatingSystem": "Web", "inLanguage": "pt-BR", "description": "Analisador gratuito de partidas de xadrez: cole o PGN e veja gráfico de vantagem, precisão e classificação de cada lance com Stockfish 18, direto no navegador. Inclui guias de tática, finais e aberturas.", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "BRL"}, "author": {"@type": "Person", "name": "Rampini"}}, {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "O Gambyte é gratuito?", "acceptedAnswer": {"@type": "Answer", "text": "Sim. A análise completa da partida até a profundidade 16, com gráfico, classificações, precisão, Modo Livre e exportação do PGN, é gratuita e não tem limite de partidas. O Gambyte Pro é opcional e acrescenta análise mais profunda e ferramentas de estudo."}}, {"@type": "Question", "name": "Preciso criar uma conta?", "acceptedAnswer": {"@type": "Answer", "text": "Não. Para analisar basta colar o PGN. A conta só é necessária para quem assina o Pro, porque é nela que o acesso fica registrado."}}, {"@type": "Question", "name": "Minhas partidas ficam guardadas em algum servidor?", "acceptedAnswer": {"@type": "Answer", "text": "Não. O PGN é lido e analisado no seu navegador, e o Gambyte não mantém um histórico remoto das suas partidas. Um resumo das últimas análises fica guardado apenas no seu aparelho e pode ser apagado quando você quiser. Os detalhes estão na política de privacidade."}}, {"@type": "Question", "name": "Que motor de xadrez é usado?", "acceptedAnswer": {"@type": "Answer", "text": "O Stockfish 18, um motor de código aberto, na versão Stockfish.js que roda dentro do navegador. O Gambyte é um projeto independente e não representa o projeto Stockfish. Veja os créditos e a licença."}}, {"@type": "Question", "name": "Por que a classificação é diferente da de outros sites?", "acceptedAnswer": {"@type": "Answer", "text": "Cada ferramenta usa profundidade e critérios próprios. No Gambyte, por exemplo, um lance só é chamado de gafe quando há perda material real ou mate forçado. Os limites de cada etiqueta estão descritos em como o Gambyte classifica cada lance."}}, {"@type": "Question", "name": "Funciona no celular?", "acceptedAnswer": {"@type": "Answer", "text": "Funciona. Como o motor roda no próprio aparelho, a análise leva mais tempo e consome mais bateria do que em um computador. Mantenha a aba aberta até a barra de progresso terminar."}}, {"@type": "Question", "name": "Posso usar durante uma partida em andamento?", "acceptedAnswer": {"@type": "Answer", "text": "Não use. Consultar um motor durante o jogo viola as regras de fair play dos sites e dos torneios. O Gambyte foi feito para revisar partidas já terminadas."}}]}]</script>
@@ -257,251 +257,66 @@
       <div class="summary-panel">
         <!-- INSIGHTS PREMIUM SECTION -->
         <div id="insights-section" class="insights-section">
-          <div class="insights-tabs">
-            <button class="insights-tab active" data-onclick="index-2" title="Resumo da Partida">🧠 Resumo</button>
-            <button class="insights-tab" data-onclick="index-3" title="Análise por Lance">🔄 Lances</button>
-            <button class="insights-tab" data-onclick="index-4" title="DNA do Jogador">🧬 DNA</button>
-          </div>
-
-          <!-- Banner de análise parcial (depth 18 pronta, depth 22 ainda processando) -->
-          <div id="insights-partial-banner" style="display:none;align-items:center;gap:10px;
-            background:rgba(232,201,122,.07);border:1px solid rgba(232,201,122,.2);
-            border-radius:var(--radius);padding:9px 14px;margin-bottom:14px;font-size:12px;color:var(--accent);">
-            <span style="animation:pulse 1.5s infinite;font-size:14px">⚡</span>
-            <span><strong>Análise Profunda em andamento.</strong> Os valores abaixo são preliminares e serão atualizados quando a profundidade 22 terminar.</span>
-          </div>
-
-          <!-- TAB: GLOBAL INSIGHTS -->
-          <div id="insights-tab-global" class="insights-tab-content active">
-
-            <!-- FREE: precisão geral -->
-            <div id="insight-accuracy-free" class="insights-grid" style="margin-bottom:0">
-              <div class="insight-card green">
-                <div class="insight-card-icon">🎯</div>
-                <div class="insight-card-label">Precisão Geral</div>
-                <div class="insight-card-value" id="ig-accuracy-w">—</div>
-                <div class="insight-card-sub">Brancas</div>
-              </div>
-              <div class="insight-card blue">
-                <div class="insight-card-icon">🎯</div>
-                <div class="insight-card-label">Precisão Geral</div>
-                <div class="insight-card-value" id="ig-accuracy-b">—</div>
-                <div class="insight-card-sub">Pretas</div>
-              </div>
-              <div class="insight-card yellow">
-                <div class="insight-card-icon">💀</div>
-                <div class="insight-card-label">Gafes</div>
-                <div class="insight-card-value" id="ig-blunders-free">—</div>
-                <div class="insight-card-sub">Total</div>
+          <div class="ins-head">
+            <div class="pov" role="group" aria-label="Mostrar análise de qual jogador">
+              <span class="pov-label">Mostrar análise de</span>
+              <div class="pov-seg">
+                <button type="button" data-pov="both">Os dois</button>
+                <button type="button" data-pov="white">Brancas</button>
+                <button type="button" data-pov="black">Pretas</button>
               </div>
             </div>
+            <p class="pov-hint" id="pov-hint"></p>
+          </div>
 
-            <!-- PREMIUM content -->
+          <div class="insights-tabs" role="tablist">
+            <button type="button" class="insights-tab active" role="tab" aria-selected="true" data-ins-tab="global">Resumo</button>
+            <button type="button" class="insights-tab" role="tab" aria-selected="false" data-ins-tab="move">Lances</button>
+            <button type="button" class="insights-tab" role="tab" aria-selected="false" data-ins-tab="dna">Perfil</button>
+          </div>
+
+          <!-- Análise Profunda ainda rodando: os números abaixo são preliminares -->
+          <div id="insights-partial-banner" class="ins-partial" hidden>
+            <span class="ins-partial-dot" aria-hidden="true"></span>
+            <span><strong>Análise Profunda em andamento.</strong> Os valores são preliminares e serão atualizados quando a profundidade 22 terminar.</span>
+          </div>
+
+          <!-- Resumo -->
+          <div id="insights-tab-global" class="insights-tab-content active" role="tabpanel">
+            <div id="ins-free"></div>
             <div class="premium-blur-wrap" id="premium-global-wrap">
-              <div class="premium-blur-inner">
-                  <div class="insights-grid" style="margin-top:12px">
-                  <div class="insight-card gold">
-                    <div class="insight-card-icon">⚡</div>
-                    <div class="insight-card-label">Momento Crítico</div>
-                    <div class="insight-card-value" id="ig-critical-move">—</div>
-                    <div class="insight-card-sub" id="ig-critical-desc">—</div>
-                  </div>
-                  <div class="insight-card red">
-                    <div class="insight-card-icon">💀</div>
-                    <div class="insight-card-label">Gafes / Erros / Imprecisões</div>
-                    <div class="insight-card-value" id="ig-errors-total">—</div>
-                    <div class="insight-card-sub" id="ig-errors-sub">—</div>
-                  </div>
-                  <div class="insight-card blue">
-                    <div class="insight-card-icon">📊</div>
-                    <div class="insight-card-label">Fase mais Fraca</div>
-                    <div class="insight-card-value" id="ig-weak-phase">—</div>
-                    <div class="insight-card-sub" id="ig-weak-phase-sub">—</div>
-                  </div>
-                </div>
-
-                <!-- Phase precision bars -->
-                <div class="insight-wide">
-                  <div class="insight-wide-title" style="display:flex;justify-content:space-between;align-items:center;">
-                    <span>Precisão por Fase</span>
-                    <span style="display:flex;gap:12px;font-size:10px;font-family:'JetBrains Mono',monospace;">
-                      <span style="color:#ddd;">Brancas</span>
-                      <span style="color:#8888bb;">Pretas</span>
-                    </span>
-                  </div>
-                  <div class="phase-bars">
-                    <!-- ABERTURA -->
-                    <div style="margin-bottom:10px;">
-                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                        <span style="font-size:11px;color:var(--text2);">🏁 Abertura</span>
-                        <span style="display:flex;gap:10px;font-size:11px;font-family:'JetBrains Mono',monospace;">
-                          <span id="phase-pct-opening-w" style="color:#ddd;">—</span>
-                          <span id="phase-pct-opening-b" style="color:#8888bb;">—</span>
-                        </span>
-                      </div>
-                      <div style="display:flex;flex-direction:column;gap:3px;">
-                        <div class="phase-bar-track"><div class="phase-bar-fill opening" id="phase-bar-opening-w" style="width:0%"></div></div>
-                        <div class="phase-bar-track"><div class="phase-bar-fill opening" id="phase-bar-opening-b" style="width:0%;opacity:.6;"></div></div>
-                      </div>
-                    </div>
-                    <!-- MEIO-JOGO -->
-                    <div style="margin-bottom:10px;">
-                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                        <span style="font-size:11px;color:var(--text2);">⚔️ Meio-jogo</span>
-                        <span style="display:flex;gap:10px;font-size:11px;font-family:'JetBrains Mono',monospace;">
-                          <span id="phase-pct-midgame-w" style="color:#ddd;">—</span>
-                          <span id="phase-pct-midgame-b" style="color:#8888bb;">—</span>
-                        </span>
-                      </div>
-                      <div style="display:flex;flex-direction:column;gap:3px;">
-                        <div class="phase-bar-track"><div class="phase-bar-fill midgame" id="phase-bar-midgame-w" style="width:0%"></div></div>
-                        <div class="phase-bar-track"><div class="phase-bar-fill midgame" id="phase-bar-midgame-b" style="width:0%;opacity:.6;"></div></div>
-                      </div>
-                    </div>
-                    <!-- FINAL -->
-                    <div>
-                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                        <span style="font-size:11px;color:var(--text2);">🏆 Final</span>
-                        <span style="display:flex;gap:10px;font-size:11px;font-family:'JetBrains Mono',monospace;">
-                          <span id="phase-pct-endgame-w" style="color:#ddd;">—</span>
-                          <span id="phase-pct-endgame-b" style="color:#8888bb;">—</span>
-                        </span>
-                      </div>
-                      <div style="display:flex;flex-direction:column;gap:3px;">
-                        <div class="phase-bar-track"><div class="phase-bar-fill endgame" id="phase-bar-endgame-w" style="width:0%"></div></div>
-                        <div class="phase-bar-track"><div class="phase-bar-fill endgame" id="phase-bar-endgame-b" style="width:0%;opacity:.6;"></div></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Best move lost -->
-                <div class="best-move-lost" id="best-move-lost-card">
-                  <div class="bml-header">
-                    <div class="bml-icon">🚨</div>
-                    <div class="bml-title">Maior Erro da Partida</div>
-                  </div>
-                  <div class="bml-detail">
-                    <div class="bml-item"><div class="bml-item-label">Lance</div><div class="bml-item-value" id="bml-move">—</div></div>
-                    <div class="bml-item"><div class="bml-item-label">Vantagem Perdida</div><div class="bml-item-value" id="bml-loss">—</div></div>
-                    <div class="bml-item"><div class="bml-item-label">Lance Jogado</div><div class="bml-item-value" id="bml-played">—</div></div>
-                    <div class="bml-item"><div class="bml-item-label">Melhor Lance</div><div class="bml-item-value" id="bml-best">—</div></div>
-                  </div>
-                  <div class="bml-explanation" id="bml-explanation">—</div>
-                </div>
-
-                <!-- Chart insights -->
-                <div class="insight-wide">
-                  <div class="insight-wide-title">Interpretação do Gráfico</div>
-                  <div class="chart-insights" id="chart-insights-list"></div>
-                </div>
-
-                <!-- Rating estimate -->
-                <div class="rating-estimate">
-                  <div>
-                    <div class="rating-est-label">Nível Estimado da Partida</div>
-                    <div class="rating-est-value" id="ig-rating">—</div>
-                    <div class="rating-est-range" id="ig-rating-range">—</div>
-                    <div id="ig-rating-extra" style="font-size:12px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace;letter-spacing:.5px;"></div>
-                  </div>
-                  <div style="font-size:36px">📈</div>
-                </div>
-
-                <!-- Personalized suggestions -->
-                <div class="insight-wide" style="margin-top:10px">
-                  <div class="insight-wide-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                    <span>💡 Sugestões Personalizadas</span>
-                    <div style="display:flex;gap:4px;background:var(--bg3);border-radius:6px;padding:3px;">
-                      <button id="sugg-tab-w" data-onclick="index-5"
-                        style="padding:3px 10px;border:none;border-radius:4px;font-size:11px;cursor:pointer;
-                        background:var(--bg2);color:#ddd;font-family:'Outfit',sans-serif;">Brancas</button>
-                      <button id="sugg-tab-b" data-onclick="index-6"
-                        style="padding:3px 10px;border:none;border-radius:4px;font-size:11px;cursor:pointer;
-                        background:transparent;color:var(--text3);font-family:'Outfit',sans-serif;">Pretas</button>
-                    </div>
-                  </div>
-                  <div id="suggestions-list-w" class="suggestions-list"></div>
-                  <div id="suggestions-list-b" class="suggestions-list" style="display:none"></div>
-                </div>
-              </div>
-
-              <!-- Premium overlay -->
+              <div class="premium-blur-inner" id="ins-pro"></div>
               <div class="premium-blur-overlay">
-                <div style="font-size:28px">🔒</div>
-                <span>Gambyte Pro — insights completos</span>
-                <button class="btn-unlock-premium" data-onclick="index-7">
-                  Gambyte Pro — R$ 9,90 por um mês
-                </button>
+                <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                <strong>Resumo completo no Gambyte Pro</strong>
+                <span>Momentos decisivos com o melhor lance, precisão por fase, o que treinar e a leitura do gráfico.</span>
+                <button type="button" class="btn-unlock-premium" data-ins-pro>Conhecer o Pro · R$ 9,90 por um mês</button>
               </div>
             </div>
           </div>
 
-          <!-- TAB: MOVE INSIGHTS -->
-          <div id="insights-tab-move" class="insights-tab-content">
+          <!-- Lances -->
+          <div id="insights-tab-move" class="insights-tab-content" role="tabpanel">
             <div class="premium-blur-wrap" id="premium-move-wrap">
-              <div class="premium-blur-inner">
-                <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">
-                  Navegue pelos lances usando ← → para atualizar a análise abaixo.
-                </div>
-                <div class="move-insight-panel" id="move-insight-panel">
-                  <div class="move-insight-header">
-                    <div class="move-insight-move" id="mi-san">—</div>
-                    <div class="move-insight-cls" id="mi-cls-badge">—</div>
-                  </div>
-                  <div class="move-insight-eval-row">
-                    <div class="move-insight-eval-item">
-                      <div class="mie-label">Avaliação Antes</div>
-                      <div class="mie-value" id="mi-eval-before">—</div>
-                    </div>
-                    <div class="move-insight-eval-item">
-                      <div class="mie-label">Avaliação Depois</div>
-                      <div class="mie-value" id="mi-eval-after">—</div>
-                    </div>
-                    <div class="move-insight-eval-item">
-                      <div class="mie-label">Diferença</div>
-                      <div class="mie-value" id="mi-eval-diff">—</div>
-                    </div>
-                  </div>
-                  <div class="move-insight-comment" id="mi-comment">Selecione um lance para ver a análise.</div>
-                  <div class="move-insight-flags" id="mi-flags"></div>
-                  <div class="best-move-suggestion" id="mi-best-suggestion" style="display:none">
-                    <span class="bms-label">Melhor lance:</span>
-                    <span class="bms-move" id="mi-best-move">—</span>
-                    <span class="bms-gain" id="mi-best-gain"></span>
-                  </div>
-                </div>
-              </div>
+              <div class="premium-blur-inner" id="ins-move"></div>
               <div class="premium-blur-overlay">
-                <div style="font-size:28px">🔒</div>
-                <span>Análise por lance — exclusivo Gambyte Pro</span>
-                <button class="btn-unlock-premium" data-onclick="index-8">
-                  Desbloquear Gambyte Pro
-                </button>
+                <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                <strong>Análise lance a lance no Gambyte Pro</strong>
+                <span>Avaliação antes e depois, quanto o lance custou, o comentário e a alternativa do motor.</span>
+                <button type="button" class="btn-unlock-premium" data-ins-pro>Conhecer o Pro</button>
               </div>
             </div>
           </div>
 
-          <!-- TAB: DNA -->
-          <div id="insights-tab-dna" class="insights-tab-content">
+          <!-- Perfil -->
+          <div id="insights-tab-dna" class="insights-tab-content" role="tabpanel">
             <div class="premium-blur-wrap" id="premium-dna-wrap">
-              <div class="premium-blur-inner">
-                <div class="dna-card">
-                  <div class="dna-title">🧬 DNA do Jogador</div>
-                  <div class="dna-profile" id="dna-profile">—</div>
-                  <div class="dna-desc" id="dna-desc">—</div>
-                  <div class="dna-tags" id="dna-tags"></div>
-                </div>
-                <div class="insight-wide">
-                  <div class="insight-wide-title">Padrões Recorrentes</div>
-                  <div class="insight-wide-body" id="dna-patterns">—</div>
-                </div>
-              </div>
+              <div class="premium-blur-inner" id="ins-dna"></div>
               <div class="premium-blur-overlay">
-                <div style="font-size:28px">🔒</div>
-                <span>DNA do Jogador — exclusivo Gambyte Pro</span>
-                <button class="btn-unlock-premium" data-onclick="index-9">
-                  Desbloquear Gambyte Pro
-                </button>
+                <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                <strong>Perfil da partida no Gambyte Pro</strong>
+                <span>Como cada lado jogou, a distribuição dos lances e os padrões que se repetiram.</span>
+                <button type="button" class="btn-unlock-premium" data-ins-pro>Conhecer o Pro</button>
               </div>
             </div>
           </div>

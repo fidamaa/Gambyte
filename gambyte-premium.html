@@ -20,13 +20,13 @@
   --text:    #e8eaf0;
   --text2:   #8890a8;
   --text3:   #555d78;
-  --accent:  #e8c97a;
-  --accent2: #c9a84c;
+  --accent:  #ecbd6e;
+  --accent2: #d39a45;
   --green:   #5bc97a;
   --red:     #e05c5c;
   --blue:    #5b8fe0;
   --purple:  #9b7de0;
-  --gold:    #e8c97a;
+  --gold:    #ecbd6e;
   --radius:  8px;
   --radius-lg: 14px;
 }
@@ -44,7 +44,7 @@ body::before {
   content: '';
   position: fixed; inset: 0;
   background:
-    radial-gradient(ellipse 80% 60% at 10% -10%, rgba(232,201,122,0.10) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 60% at 10% -10%, rgba(236,189,110,0.10) 0%, transparent 50%),
     radial-gradient(ellipse 60% 50% at 90% 110%, rgba(91,143,224,0.08) 0%, transparent 50%),
     radial-gradient(ellipse 50% 40% at 50% 50%, rgba(155,125,224,0.04) 0%, transparent 55%);
   pointer-events: none;
@@ -95,8 +95,8 @@ header {
 .hero-badge {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 5px 16px; border-radius: 99px;
-  background: rgba(232,201,122,.12); color: var(--gold);
-  border: 1px solid rgba(232,201,122,.3);
+  background: rgba(236,189,110,.12); color: var(--gold);
+  border: 1px solid rgba(236,189,110,.3);
   font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
   margin-bottom: 20px;
   animation: fadeInDown .5s ease both;
@@ -156,8 +156,8 @@ header {
 }
 .pricing-card:hover { transform: translateY(-3px); }
 .pricing-card.featured {
-  border-color: rgba(232,201,122,.4);
-  background: linear-gradient(160deg, rgba(232,201,122,.06), rgba(13,15,20,0));
+  border-color: rgba(236,189,110,.4);
+  background: linear-gradient(160deg, rgba(236,189,110,.06), rgba(13,15,20,0));
 }
 .pricing-card.featured::before {
   content: 'MAIS POPULAR';
@@ -194,11 +194,11 @@ header {
 .btn-plan.premium-cta {
   background: linear-gradient(135deg, var(--gold), var(--accent2));
   color: #0d0f14;
-  box-shadow: 0 4px 20px rgba(232,201,122,.3);
+  box-shadow: 0 4px 20px rgba(236,189,110,.3);
 }
 .btn-plan.premium-cta:hover {
   opacity: .92; transform: translateY(-1px);
-  box-shadow: 0 8px 28px rgba(232,201,122,.4);
+  box-shadow: 0 8px 28px rgba(236,189,110,.4);
 }
 
 /* ── Features Grid ── */
@@ -217,8 +217,8 @@ header {
   display: inline-block; margin-top: 8px;
   font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
   padding: 2px 7px; border-radius: 4px;
-  background: rgba(232,201,122,.12); color: var(--gold);
-  border: 1px solid rgba(232,201,122,.3);
+  background: rgba(236,189,110,.12); color: var(--gold);
+  border: 1px solid rgba(236,189,110,.3);
 }
 
 /* ── Checkout Modal ── */
@@ -303,7 +303,7 @@ header {
   transition: all .2s; background: var(--bg3);
 }
 .pay-method:hover { border-color: var(--accent); color: var(--text); }
-.pay-method.active { border-color: var(--accent); background: rgba(232,201,122,.08); color: var(--accent); }
+.pay-method.active { border-color: var(--accent); background: rgba(236,189,110,.08); color: var(--accent); }
 .pay-method-icon { font-size: 22px; display: block; margin-bottom: 4px; }
 
 .btn-pay {
@@ -313,9 +313,9 @@ header {
   color: #0d0f14; font-family: 'Outfit', sans-serif;
   font-size: 15px; font-weight: 800; cursor: pointer;
   transition: all .2s; letter-spacing: .3px;
-  box-shadow: 0 4px 20px rgba(232,201,122,.3);
+  box-shadow: 0 4px 20px rgba(236,189,110,.3);
 }
-.btn-pay:hover { opacity: .92; transform: translateY(-1px); box-shadow: 0 8px 28px rgba(232,201,122,.4); }
+.btn-pay:hover { opacity: .92; transform: translateY(-1px); box-shadow: 0 8px 28px rgba(236,189,110,.4); }
 .btn-pay:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
 
 .pay-security {
@@ -332,7 +332,7 @@ header {
   background: linear-gradient(135deg, var(--gold), var(--accent2));
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 36px; margin-bottom: 20px;
-  box-shadow: 0 8px 32px rgba(232,201,122,.4);
+  box-shadow: 0 8px 32px rgba(236,189,110,.4);
   animation: popIn .5s cubic-bezier(.17,.89,.32,1.28) both;
 }
 @keyframes popIn {
@@ -400,8 +400,8 @@ header {
 .ubar-name { font-size: 13px; color: var(--text2); }
 .ubar-badge {
   font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px;
-  background: rgba(232,201,122,.15); color: var(--gold);
-  border: 1px solid rgba(232,201,122,.35); letter-spacing: .5px;
+  background: rgba(236,189,110,.15); color: var(--gold);
+  border: 1px solid rgba(236,189,110,.35); letter-spacing: .5px;
 }
 
 /* Pix QR placeholder */
@@ -437,8 +437,8 @@ h2.section-title { margin-top:0; font-family:'DM Serif Display',Georgia,serif; f
 .plan-feature.locked::before { width:10px; height:0; border-left:0; border-bottom:2px solid var(--text3); transform:none; top:.7em; }
 .btn-plan { font-size:15px; padding:13px; border-radius:10px; }
 .btn-plan.free { color:#cdd4e3; }
-.btn-plan.premium-cta, .btn-pay, .btn-go-analyze { background:linear-gradient(135deg,#f0d489,#c9a84c); color:#1b1a14; border:1px solid #f2d991; }
-.btn-plan:focus-visible, .btn-pay:focus-visible, .btn-go-analyze:focus-visible, .faq-question:focus-visible, .modal-close:focus-visible, .link-btn:focus-visible { outline:2px solid #f2d991; outline-offset:3px; }
+.btn-plan.premium-cta, .btn-pay, .btn-go-analyze { background:linear-gradient(135deg,#f4cc80,#d39a45); color:#1b1a14; border:1px solid #f6d391; }
+.btn-plan:focus-visible, .btn-pay:focus-visible, .btn-go-analyze:focus-visible, .faq-question:focus-visible, .modal-close:focus-visible, .link-btn:focus-visible { outline:2px solid #f6d391; outline-offset:3px; }
 .features-grid { grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); }
 .feature-title { font-size:16px; margin:0 0 8px; }
 .feature-desc { font-size:14px; line-height:1.65; margin:0; }
@@ -448,13 +448,13 @@ h2.section-title { margin-top:0; font-family:'DM Serif Display',Georgia,serif; f
 .steps-section { margin-bottom:56px; }
 .steps-list { max-width:680px; margin:0 auto; padding:0; list-style:none; counter-reset:passo; display:flex; flex-direction:column; gap:12px; }
 .steps-list li { counter-increment:passo; position:relative; padding:16px 18px 16px 58px; background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); font-size:14.5px; line-height:1.6; color:var(--text2); }
-.steps-list li::before { content:counter(passo); position:absolute; left:16px; top:15px; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; color:var(--accent); background:rgba(232,201,122,.12); border:1px solid rgba(232,201,122,.35); }
+.steps-list li::before { content:counter(passo); position:absolute; left:16px; top:15px; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; color:var(--accent); background:rgba(236,189,110,.12); border:1px solid rgba(236,189,110,.35); }
 .steps-list strong { color:var(--text); font-weight:600; }
 .faq-question { width:100%; background:none; border:0; font-family:inherit; text-align:left; font-size:15.5px; }
 .faq-answer { font-size:14.5px; }
 .faq-item.open .faq-answer { max-height:420px; }
 .pro-status { margin:22px 0 0; padding:14px 18px; border-radius:var(--radius-lg); border:1px solid rgba(91,201,122,.4); background:rgba(91,201,122,.08); color:#cfe9d7; font-size:14.5px; line-height:1.6; text-align:center; }
-.pro-status.ending { border-color:rgba(232,201,122,.45); background:rgba(232,201,122,.08); color:#f3e2b4; }
+.pro-status.ending { border-color:rgba(236,189,110,.45); background:rgba(236,189,110,.08); color:#f3e2b4; }
 .pro-status[hidden] { display:none; }
 .pay-steps { margin:0 0 16px; padding-left:20px; font-size:14px; line-height:1.65; color:var(--text2); }
 .pay-steps li { margin-bottom:6px; }
@@ -465,7 +465,7 @@ h2.section-title { margin-top:0; font-family:'DM Serif Display',Georgia,serif; f
 .toast { max-width:340px; line-height:1.45; }
 @media (prefers-reduced-motion:reduce) { .hero-badge,.hero-title,.hero-sub,.hero-stats,.pricing-section,.features-section,.faq-section { animation:none; } body::before { animation:none; } }
 </style>
-<link rel="stylesheet" href="site-info.css?v=4">
+<link rel="stylesheet" href="site-info.css?v=5">
 </head>
 <body data-site="gambyte">
 <nav class="info-nav" aria-label="Navegação do Gambyte"><a class="info-brand" href="index.html" aria-label="Gambyte: página inicial"><img src="logo.png" alt="" width="32" height="32"><span>Gambyte</span></a><div class="info-links"><a href="index.html">Analisar partida</a><a href="aprender/">Aprender xadrez</a><a href="como-usar.html">Como usar</a><a href="guia.html">Guia de análise</a><a href="sobre.html">Sobre</a><a href="contato.html">Contato</a></div><div class="info-nav-side user-status-bar" id="user-status-bar"></div></nav>

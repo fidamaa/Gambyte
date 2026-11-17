@@ -200,5 +200,5 @@ const ProTools = (() => {
     });
   }
 
-  return { init, setGame, markComplete, bestSan, buildAnnotatedPGN, buildReport };
+  return { init, setGame, markComplete, bestSan, buildAnnotatedPGN, buildReport, getGame: () => game };
 })();
