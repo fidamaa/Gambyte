@@ -162,7 +162,7 @@ const StockfishManager = (() => {
     if (analysisRunning || analysisQueue.length === 0) return;
     analysisRunning = true;
 
-    const { fen, depth, multiPV, movesUCI, resolve, onUpdate } = analysisQueue.shift();
+    const { fen, depth, multiPV, movesUCI, resolve, onUpdate, movetime } = analysisQueue.shift();
     currentOnUpdate = onUpdate || null;
     const movesSuffix = (movesUCI && movesUCI.length) ? ` moves ${movesUCI.join(' ')}` : '';
     console.log(
@@ -218,12 +218,17 @@ const StockfishManager = (() => {
       const bmMatch = result.bestmove.match(/bestmove (\S+)/);
       const bestMove = bmMatch ? bmMatch[1] : null;
 
-      resolve({ evals, mateNs, pvLines, bestMove });
+      // Profundidade da linha principal efetivamente concluída. Com limite
+      // de tempo (movetime), pode ficar abaixo da profundidade pedida.
+      const reachedDepth = pvMap[1] ? pvMap[1].depth : 0;
+      resolve({ evals, mateNs, pvLines, bestMove, reachedDepth });
     };
 
     worker.postMessage(`setoption name MultiPV value ${multiPV}`);
     worker.postMessage(`position fen ${fen}${movesSuffix}`);
-    worker.postMessage(`go depth ${depth}`);
+    // movetime é só uma trava de segurança: o motor para na profundidade
+    // pedida OU quando o tempo acaba, o que vier primeiro.
+    worker.postMessage(`go depth ${depth}` + (movetime ? ` movetime ${movetime}` : ''));
   }
 
   /**
@@ -243,7 +248,7 @@ const StockfishManager = (() => {
    *                            mostrar o melhor lance atual progressivamente,
    *                            sem esperar o "go depth" terminar.
    */
-  function analyzePosition(fen, depth, multiPV = 3, movesUCI = [], onUpdate = null) {
+  function analyzePosition(fen, depth, multiPV = 3, movesUCI = [], onUpdate = null, opts = {}) {
     return new Promise((resolve) => {
       if (!worker) {
         console.warn('[Stockfish] Worker não disponível, retornando eval 0');
@@ -251,7 +256,7 @@ const StockfishManager = (() => {
         return;
       }
       console.log(`[Stockfish] Enfileirando análise. Fila: ${analysisQueue.length + 1}`);
-      analysisQueue.push({ fen, depth, multiPV, movesUCI, resolve, onUpdate });
+      analysisQueue.push({ fen, depth, multiPV, movesUCI, resolve, onUpdate, movetime: opts.movetime || 0 });
       _runNext();
     });
   }

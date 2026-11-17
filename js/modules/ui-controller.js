@@ -629,22 +629,43 @@ const UIController = (() => {
   }
 
   function updateProgress(data) {
-    const { phase, done, total, depth } = data;
-    const pct         = total > 0 ? (done / total) * 100 : 0;
-    const adjustedPct = phase === 1 ? pct * 0.6 : 60 + pct * 0.4;
-    els.progressFill.style.width = adjustedPct + '%';
+    const { phase, done, total, depth, liveDepth, deep } = data;
+    // Fração concluída nesta passada; dentro de um lance da passada
+    // profunda, a profundidade ao vivo avança a barra aos poucos.
+    // Cada lance tem duas posições (antes e depois); a parcial avança de
+    // 0 a 1 ao longo das duas, então a barra nunca recua dentro do lance.
+    const partial = liveDepth ? Math.min(0.95, ((data.liveHalf || 0) + Math.min(1, liveDepth / depth)) / 2) : 0;
+    let frac = total > 0 ? Math.min(1, (done + partial) / total) : 1;
+    // Fase 1 ocupa 0–35% da barra; cada passada da fase 2 ganha uma faixa
+    // própria do restante, então a barra nunca volta para trás.
+    let pct;
+    if (phase === 1) pct = frac * 35;
+    else {
+      const n = data.passCount || 1, k = data.pass || 0;
+      pct = 35 + 65 * (k + frac) / n;
+    }
+    els.progressFill.style.width = pct.toFixed(1) + '%';
     els.progressTitle.textContent = phase === 1
-      ? `Fase 1 — Análise rápida (depth ${depth})`
-      : `Fase 2 — Refinamento (depth ${depth})`;
-    els.progressDepth.textContent = `depth ${depth}`;
-    els.progressMoves.textContent = `${done} / ${total} posições`;
+      ? `Leitura rápida · profundidade ${depth}`
+      : deep ? `Análise Profunda · profundidade ${depth}` : `Refinamento · profundidade ${depth}`;
+    els.progressDepth.textContent = liveDepth ? `profundidade ${liveDepth} de ${depth}` : `profundidade ${depth}`;
+    els.progressMoves.textContent = phase === 1
+      ? `${done} de ${total} lances`
+      : total === 0 ? 'nada a refinar nesta profundidade' : `${Math.min(done + (liveDepth ? 1 : 0), total)} de ${total} lances revisados`;
     els.phaseText.textContent     = `Fase ${phase}`;
-    if (analysisStartTime && done > 0) {
-      const elapsed = (Date.now() - analysisStartTime) / 1000;
-      const eta     = (total - done) / (done / elapsed);
+    // Tempo restante desta passada, medido com o ritmo real dela.
+    const start = data.passStart || analysisStartTime;
+    const feito = done + partial;
+    if (start && feito >= 0.25 && total > feito) {
+      const elapsed = (Date.now() - start) / 1000;
+      const eta     = (total - feito) * (elapsed / feito);
       els.progressEta.textContent = eta < 60
-        ? `~${Math.ceil(eta)}s restantes`
-        : `~${Math.ceil(eta / 60)}min restantes`;
+        ? `~${Math.max(1, Math.ceil(eta))}s nesta etapa`
+        : `~${Math.ceil(eta / 60)} min nesta etapa`;
+    } else if (feito < 0.25 && total > 0) {
+      els.progressEta.textContent = deep ? 'cada lance leva alguns segundos' : 'calculando…';
+    } else {
+      els.progressEta.textContent = '';
     }
   }
 
@@ -666,18 +687,18 @@ const UIController = (() => {
 
     els.whiteRating.textContent  = wRatingFinal;
     els.whiteAcpl.textContent    = wStats.acpl;
-    els.whiteAcc.textContent     = wStats.accuracy + '%';
+    els.whiteAcc.textContent     = String(wStats.accuracy).replace('.', ',') + '%';
     els.whiteMistakes.textContent = movesData.filter(m => m.color==='white' && m.classification==='mistake').length;
     els.whiteBlunders.textContent = movesData.filter(m => m.color==='white' && m.classification==='blunder').length;
 
     els.blackRating.textContent  = bRatingFinal;
     els.blackAcpl.textContent    = bStats.acpl;
-    els.blackAcc.textContent     = bStats.accuracy + '%';
+    els.blackAcc.textContent     = String(bStats.accuracy).replace('.', ',') + '%';
     els.blackMistakes.textContent = movesData.filter(m => m.color==='black' && m.classification==='mistake').length;
     els.blackBlunders.textContent = movesData.filter(m => m.color==='black' && m.classification==='blunder').length;
 
-    els.accWhitePct.textContent = wStats.accuracy + '%';
-    els.accBlackPct.textContent = bStats.accuracy + '%';
+    els.accWhitePct.textContent = String(wStats.accuracy).replace('.', ',') + '%';
+    els.accBlackPct.textContent = String(bStats.accuracy).replace('.', ',') + '%';
     els.accWhiteBar.style.width = wStats.accuracy + '%';
     els.accBlackBar.style.width = bStats.accuracy + '%';
 

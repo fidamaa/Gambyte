@@ -103,6 +103,13 @@ const App = (() => {
         // ── INSIGHTS FINAIS (sempre atualiza ao completar) ──
         InsightsUI.renderGlobalInsights(allMoves, /*isPartial=*/false);
         ProTools.markComplete(deepMode ? 22 : 16);
+        if (deepMode) {
+          const revisados = allMoves.filter(m => m._deepRefined && !m.isCheckmate);
+          const completos = revisados.filter(m => (m.depthReached || 0) >= 22).length;
+          AuthUI.showToast(revisados.length
+            ? `Análise Profunda concluída: ${completos} de ${revisados.length} lances revisados chegaram à profundidade 22.`
+            : 'Análise Profunda concluída: as avaliações já estavam estáveis antes da profundidade 22.', 'success');
+        }
         GameHistory.save(parsedGame, allMoves, pgn);
       }
     });

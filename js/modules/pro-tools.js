@@ -112,9 +112,9 @@ const ProTools = (() => {
       const st = MoveClassifier.computeStats(md, isW);
       const fases = InsightsEngine.calcPhaseAccuracy(md, cor);
       const conta = c => md.filter(m => m.color === cor && m.classification === c).length;
-      const f = v => (v == null ? '—' : v + '%');
+      const f = v => InsightsEngine.pct(v);
       L.push(`${isW ? 'Brancas' : 'Pretas'}: ${nome}`);
-      L.push(`  Precisão ${InsightsEngine.calcAccuracy(md, cor)}%  ·  ACPL ${Math.round(st.acpl)}`);
+      L.push(`  Precisão ${InsightsEngine.pct(InsightsEngine.calcAccuracy(md, cor))}  ·  ACPL ${Math.round(st.acpl)}`);
       L.push(`  Por fase: abertura ${f(fases.opening)} · meio-jogo ${f(fases.midgame)} · final ${f(fases.endgame)}`);
       L.push(`  Imprecisões ${conta('inaccuracy')} · Erros ${conta('mistake')} · Chances perdidas ${conta('miss')} · Gafes ${conta('blunder')}`);
       const destaques = conta('brilliant') + conta('great');

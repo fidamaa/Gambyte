@@ -67,7 +67,7 @@ const GameHistory = (() => {
       return `<li><button type="button" class="hist-item" data-hist="abrir" data-id="${x.id}" title="Carregar esta partida no campo de PGN">
         <span class="hist-data">${data}</span>
         <span class="hist-nomes">${esc(x.brancas)} <i>x</i> ${esc(x.pretas)}<small>${esc(x.abertura || '')}</small></span>
-        <span class="hist-acc" title="Precisão das brancas e das pretas">${x.accB}% · ${x.accP}%</span>
+        <span class="hist-acc" title="Precisão das brancas e das pretas">${InsightsEngine.pct(x.accB)} · ${InsightsEngine.pct(x.accP)}</span>
         <span class="hist-res">${esc(x.resultado)}</span>
       </button></li>`;
     }).join('');

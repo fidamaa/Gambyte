@@ -520,6 +520,7 @@ h2.section-title { margin-top:0; font-family:'DM Serif Display',Georgia,serif; f
           <li class="plan-feature">Precisão, ACPL e rating estimado por jogador</li>
           <li class="plan-feature">Abertura identificada pelo código ECO</li>
           <li class="plan-feature">Modo Livre com avaliação até a profundidade 12</li>
+          <li class="plan-feature">Importação pelo usuário do Chess.com e do Lichess</li>
           <li class="plan-feature">Copiar e baixar o PGN</li>
           <li class="plan-feature locked">Análise Profunda (profundidade 22)</li>
           <li class="plan-feature locked">Painel de insights e análise por lance</li>
@@ -546,6 +547,7 @@ h2.section-title { margin-top:0; font-family:'DM Serif Display',Georgia,serif; f
           <li class="plan-feature">Comentário e melhor alternativa em cada lance</li>
           <li class="plan-feature">PGN anotado com avaliações, para abrir em outros programas</li>
           <li class="plan-feature">Relatório de estudo em texto</li>
+          <li class="plan-feature">Escolha do seu lado: erros e o que treinar só dos seus lances</li>
           <li class="plan-feature">Histórico das suas análises neste aparelho</li>
           <li class="plan-feature">Sem anúncios</li>
         </ul>
@@ -562,7 +564,7 @@ h2.section-title { margin-top:0; font-family:'DM Serif Display',Georgia,serif; f
     <div class="features-grid">
       <div class="feature-card">
         <h3 class="feature-title">Análise Profunda</h3>
-        <p class="feature-desc">Com a chave ativada, o refinamento passa pelas profundidades 14, 18 e 22 em vez de 12 e 16. O motor enxerga táticas mais longas, e as classificações ficam mais estáveis. A análise demora mais, principalmente no celular.</p>
+        <p class="feature-desc">Com a chave ativada, o refinamento passa pelas profundidades 14, 18 e 22, em vez de 12 e 16. Os lances cuja avaliação ainda está mudando são levados até a profundidade 22, onde o motor enxerga táticas mais longas. A barra mostra a profundidade ao vivo e, no fim, quantos lances chegaram a 22.</p>
       </div>
       <div class="feature-card">
         <h3 class="feature-title">Insights da partida</h3>
@@ -587,6 +589,10 @@ h2.section-title { margin-top:0; font-family:'DM Serif Display',Georgia,serif; f
       <div class="feature-card">
         <h3 class="feature-title">Histórico neste aparelho</h3>
         <p class="feature-desc">As últimas trinta análises ficam guardadas no seu navegador, com a precisão de cada lado e a abertura. Um clique recarrega o PGN. Nada é enviado ao servidor, e você pode apagar quando quiser.</p>
+      </div>
+      <div class="feature-card">
+        <h3 class="feature-title">A partida do seu lado</h3>
+        <p class="feature-desc">Revendo uma partida sua? Escolha brancas ou pretas e o painel passa a mostrar só a sua precisão, os seus momentos decisivos e o que você precisa treinar. Ao importar pelo usuário, o lado é escolhido sozinho.</p>
       </div>
       <div class="feature-card">
         <h3 class="feature-title">Perfil da partida e sugestões</h3>
@@ -618,7 +624,7 @@ h2.section-title { margin-top:0; font-family:'DM Serif Display',Georgia,serif; f
       </div>
       <div class="faq-item">
         <button class="faq-question" type="button" aria-expanded="false"><span>A Análise Profunda demora mais?</span><span class="faq-arrow">›</span></button>
-        <div class="faq-answer">Sim. Cada nível de profundidade custa mais tempo que o anterior, e a análise roda no seu aparelho. Uma partida longa pode levar vários minutos em um computador comum, e mais do que isso no celular, com consumo de bateria. Você pode desligar a chave e usar a análise normal quando estiver com pressa.</div>
+        <div class="faq-answer">Sim, porque a análise roda no seu aparelho e cada nível de profundidade custa bem mais que o anterior. Para encurtar a espera, só os lances cuja avaliação ainda está mudando vão até 22; os que já se estabilizaram ficam na profundidade anterior. Em um computador comum, uma partida típica termina em poucos minutos. No celular demora mais e consome bateria. A barra mostra a profundidade ao vivo, e você pode navegar pelos lances enquanto ela trabalha.</div>
       </div>
       <div class="faq-item">
         <button class="faq-question" type="button" aria-expanded="false"><span>Como funciona o pagamento?</span><span class="faq-arrow">›</span></button>
@@ -642,7 +648,7 @@ h2.section-title { margin-top:0; font-family:'DM Serif Display',Georgia,serif; f
       </div>
       <div class="faq-item">
         <button class="faq-question" type="button" aria-expanded="false"><span>O Gambyte funciona com qualquer PGN?</span><span class="faq-arrow">›</span></button>
-        <div class="faq-answer">Com PGNs de xadrez padrão que começam da posição inicial, como os exportados pelo Chess.com e pelo Lichess ou por programas de xadrez. Comentários, variantes e marcações de relógio são ignorados. Variantes como Chess960 não são suportadas.</div>
+        <div class="faq-answer">Com PGNs de xadrez padrão que começam da posição inicial, como os exportados pelo Chess.com e pelo Lichess ou por programas de xadrez. Comentários, variantes e marcações de relógio são ignorados. Variantes como Chess960 não são suportadas. Também dá para importar sem copiar nada: digite o seu usuário do Chess.com ou do Lichess, ou cole o link de uma partida do Lichess.</div>
       </div>
       <div class="faq-item">
         <button class="faq-question" type="button" aria-expanded="false"><span>Preciso de conta para usar o plano gratuito?</span><span class="faq-arrow">›</span></button>

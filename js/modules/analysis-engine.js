@@ -17,6 +17,15 @@ const AnalysisEngine = (() => {
   const PHASE2_DEPTHS_PRO  = [14, 18, 22];
   const STABILITY_THRESHOLD = 30; // cp change below which we stop refining
   const MULTIPV = 3;
+  // Passada final da Análise Profunda (profundidade 22). Medido no
+  // navegador: com 3 linhas (MultiPV 3) cada posição levava ~19 s até a
+  // profundidade 22; com 1 linha, ~9 s. As 3 linhas só servem para
+  // detectar "lance único" e "peça pendurada", e esses sinais já vêm da
+  // passada anterior (profundidade 18, ainda com 3 linhas), reaproveitada
+  // do cache. A trava de tempo evita que uma posição patológica segure a
+  // análise inteira; a profundidade realmente alcançada fica registrada.
+  const DEEP_MULTIPV  = 1;
+  const DEEP_MOVETIME = 40000;
 
   let onProgress = null;
   let onMoveUpdate = null;
@@ -183,6 +192,17 @@ const AnalysisEngine = (() => {
       const key = `${fen}@${depth}`;
       if (cache.has(key)) return cache.get(key);
       const result = await StockfishManager.analyzePosition(fen, depth, MULTIPV);
+      cache.set(key, result);
+      return result;
+    }
+
+    // Busca da passada final da Análise Profunda: 1 linha, trava de tempo
+    // e atualização ao vivo da profundidade alcançada.
+    async function getDeepAnalysis(fen, depth, onLive) {
+      const key = `${fen}@${depth}#deep`;
+      if (cache.has(key)) return cache.get(key);
+      const result = await StockfishManager.analyzePosition(fen, depth, DEEP_MULTIPV, [],
+        onLive ? (u => onLive(u.depth)) : null, { movetime: DEEP_MOVETIME });
       cache.set(key, result);
       return result;
     }
@@ -354,20 +374,31 @@ const AnalysisEngine = (() => {
 
     const isProMode = document.getElementById('pro-deep-toggle')?.checked ?? false;
     const PHASE2_DEPTHS = isProMode ? PHASE2_DEPTHS_PRO : PHASE2_DEPTHS_FREE;
-    for (const depth of PHASE2_DEPTHS) {
+    for (let pass = 0; pass < PHASE2_DEPTHS.length; pass++) {
+      const depth = PHASE2_DEPTHS[pass];
       if (aborted) return;
+      const deep = isProMode && pass === PHASE2_DEPTHS.length - 1;
+      const prevDepth = pass > 0 ? PHASE2_DEPTHS[pass - 1] : PHASE1_DEPTH;
+      // Só entram na conta os lances que serão de fato recalculados nesta
+      // profundidade (os estáveis são pulados) — assim a barra e o tempo
+      // restante refletem o trabalho real.
+      const toRefine = candidates.filter(c => {
+        const mm = movesData[c.index];
+        return !mm.isBook && !(mm._stable && depth > PHASE1_DEPTH);
+      });
+      const passInfo = { pass, passCount: PHASE2_DEPTHS.length, passStart: Date.now(), deep };
 
-      if (onProgress) onProgress({ phase: 2, done: 0, total: candidates.length, depth });
+      if (onProgress) onProgress({ phase: 2, done: 0, total: toRefine.length, depth, ...passInfo });
 
-      for (let ci = 0; ci < candidates.length; ci++) {
+      for (let ci = 0; ci < toRefine.length; ci++) {
         if (aborted) return;
 
-        const i = candidates[ci].index;
+        const i = toRefine[ci].index;
         const m = movesData[i];
-        if (m.isBook) continue;
-
-        // Pular lances já estabilizados em depth anterior
-        if (m._stable && depth > PHASE1_DEPTH) continue;
+        let lastLive = 0, half = 0;
+        const onLive = deep && onProgress ? (d) => {
+          if (d > lastLive) { lastLive = d; onProgress({ phase: 2, done: ci, total: toRefine.length, depth, ...passInfo, liveDepth: d, liveHalf: half }); }
+        } : null;
 
         const fenBefore = fensBefore[i];
         const fenAfter  = fensAfter[i];
@@ -375,8 +406,20 @@ const AnalysisEngine = (() => {
         // Only refine if not stable
         const prevBestEval = m.bestEval;
 
-        const bRes = await getAnalysis(fenBefore, depth);
-        const aRes = await getAnalysis(fenAfter,  depth);
+        let bRes, aRes;
+        if (deep) {
+          bRes = await getDeepAnalysis(fenBefore, depth, onLive);
+          lastLive = 0; half = 1;
+          aRes = await getDeepAnalysis(fenAfter, depth, onLive);
+        } else {
+          bRes = await getAnalysis(fenBefore, depth);
+          aRes = await getAnalysis(fenAfter,  depth);
+        }
+        // Na passada profunda, as 3 linhas (lance único, peça pendurada)
+        // vêm da passada anterior, que ainda usou MultiPV 3.
+        const aResLines = deep ? (cache.get(`${fenAfter}@${prevDepth}`) || aRes) : aRes;
+        m.depthReached = Math.min(bRes.reachedDepth ?? depth, aRes.reachedDepth ?? depth);
+        if (deep) m._deepRefined = true;
 
         const newBestEval  = bRes.evals[0] ?? m.bestEval;
         const newEvalAfter = aRes.evals[0] ?? m.evalAfter;
@@ -393,8 +436,12 @@ const AnalysisEngine = (() => {
         m.bestEval     = newBestEval;
         m.evalAfter    = m.isCheckmate ? 29999 : -(newEvalAfter);  // ← perspectiva do jogador
         m.bestMoveUCI  = bRes.bestMove ?? m.bestMoveUCI;
-        m.multiPVEvals = bRes.evals;
-        m.mateNs       = bRes.mateNs || m.mateNs;
+        if (!deep) {
+          m.multiPVEvals = bRes.evals;
+          m.mateNs       = bRes.mateNs || m.mateNs;
+        } else if (bRes.mateNs) {
+          m.mateNs = [bRes.mateNs[0], ...((m.mateNs || []).slice(1))];
+        }
         m._stable      = isStable;
         // m.evalBefore mantém o valor original da Phase 1 — NÃO atualizar aqui
 
@@ -407,7 +454,7 @@ const AnalysisEngine = (() => {
           ? pieceValueAtSquare(fenBefore, m.playedMoveUCI.slice(2, 4))
           : 0;
         const sacrificeValue2   = m.immediateCaptureValue - capturedByMoverValue2;
-        const pieceIsHanging2   = isSquareHanging(fenAfter, m.playedMoveUCI, aRes);
+        const pieceIsHanging2   = isSquareHanging(fenAfter, m.playedMoveUCI, aResLines);
         const sacrificeIsRecapturable2 = isRecapturable(fenAfter, aRes.bestMove, m.color === 'white');
 
         // Reclassify
@@ -449,8 +496,9 @@ const AnalysisEngine = (() => {
         if (onProgress) onProgress({
           phase: 2,
           done: ci + 1,
-          total: candidates.length,
+          total: toRefine.length,
           depth,
+          ...passInfo,
           movesData: [...movesData]
         });
       }
@@ -460,9 +508,10 @@ const AnalysisEngine = (() => {
       // mesmo quando muitos lances foram pulados por estabilidade.
       if (onProgress) onProgress({
         phase: 2,
-        done: candidates.length,
-        total: candidates.length,
+        done: toRefine.length,
+        total: toRefine.length,
         depth,
+        ...passInfo,
         depthComplete: true,          // ← sinaliza fim de depth
         movesData: [...movesData]
       });

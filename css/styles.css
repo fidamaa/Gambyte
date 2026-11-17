@@ -1111,3 +1111,47 @@ textarea#pgn-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(23
 .legend-col-label{font-size:11px!important;letter-spacing:.6px;white-space:nowrap}
 .legend-header{gap:10px}
 @media (prefers-reduced-motion:reduce){.ins-partial-dot{animation:none}.ins-bar-fill{transition:none}}
+
+/* Lista de lances: sem a bolinha; só a faixa colorida, fina e arredondada */
+.move-item .move-class-icon{display:none}
+.move-item{position:relative;border-left:0!important;padding-left:12px;border-radius:7px}
+.move-item::before{content:"";position:absolute;left:3px;top:6px;bottom:6px;width:3px;border-radius:3px;background:var(--border2);opacity:.9;transition:top .15s,bottom .15s,width .15s}
+.move-item.book::before{background:var(--book)}.move-item.brilliant::before{background:var(--brilliant)}.move-item.great::before{background:var(--great)}
+.move-item.excellent::before{background:var(--excellent)}.move-item.best-move::before{background:var(--best-move)}.move-item.good::before{background:var(--good)}
+.move-item.inaccuracy::before{background:var(--inaccuracy)}.move-item.mistake::before{background:var(--mistake)}.move-item.miss::before{background:var(--miss)}
+.move-item.blunder::before{background:var(--blunder)}
+.move-item.active::before{top:3px;bottom:3px;width:4px;opacity:1}
+/* Tela bloqueada do Pro: altura limitada para o aviso ficar sempre à vista */
+.premium-blur-wrap.locked{max-height:340px}
+
+/* Importar partida */
+.import-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 22px;margin-bottom:16px}
+.imp-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.imp-head .section-label{margin:0}
+.imp-sites{display:inline-flex;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:3px;gap:2px}
+.imp-sites button{border:0;background:none;color:var(--text2);font-family:inherit;font-size:13px;font-weight:500;padding:7px 14px;border-radius:7px;cursor:pointer}
+.imp-sites button:hover{color:var(--text)}
+.imp-sites button.active{background:linear-gradient(135deg,var(--gold-1),var(--gold-2));color:#1b1a14;font-weight:700}
+.imp-sites button:focus-visible{outline:2px solid var(--gold-1);outline-offset:2px}
+.imp-row{display:flex;gap:10px;flex-wrap:wrap}
+.imp-input{flex:1 1 240px;min-width:0;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-family:inherit;font-size:14.5px;padding:11px 14px;outline:none;transition:border-color .2s,box-shadow .2s}
+.imp-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(236,189,110,.12)}
+.imp-input::placeholder{color:var(--text3)}
+.imp-row .btn-primary{flex:0 0 auto}
+.imp-row .btn-primary:disabled{opacity:.6;cursor:wait}
+.imp-status{margin-top:9px;font-size:13px;line-height:1.5;color:var(--text3)}
+.imp-status.ok{color:var(--green)}
+.imp-status.error{color:#ef9a9a}
+.imp-list{margin-top:12px;display:flex;flex-direction:column;gap:6px;max-height:360px;overflow-y:auto;padding-right:2px}
+.imp-list[hidden]{display:none}
+.imp-game{display:grid;grid-template-columns:66px minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;text-align:left;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;color:var(--text);font-family:inherit;font-size:14px;transition:border-color .15s,background .15s}
+.imp-game:hover{border-color:var(--accent);background:#1e2331}
+.imp-game:focus-visible{outline:2px solid var(--gold-1);outline-offset:2px}
+.imp-g-date{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--text2);line-height:1.35}
+.imp-g-date small{display:block;font-family:'Outfit',sans-serif;font-size:11px;color:var(--text3)}
+.imp-g-players{display:flex;flex-direction:column;gap:3px;min-width:0}
+.imp-g-players span{display:flex;align-items:center;gap:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.imp-g-players small{color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:11.5px}
+.imp-g-res{font-size:12.5px;font-weight:600;color:var(--text2);white-space:nowrap}
+.imp-g-res.win{color:var(--green)}.imp-g-res.loss{color:#ef7a7a}.imp-g-res.draw{color:var(--text2)}
+@media (max-width:560px){.import-box{padding:16px}.imp-game{grid-template-columns:52px minmax(0,1fr) auto;gap:9px}.imp-row .btn-primary{width:100%}}

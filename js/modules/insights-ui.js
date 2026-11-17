@@ -23,6 +23,7 @@ const InsightsUI = (() => {
   const cores = () => (_pov === 'both' ? ['white', 'black'] : [_pov]);
   const nome = cor => (($(cor + '-name') || {}).textContent || LADO[cor]).trim();
   const num = cp => (cp / 100).toFixed(2).replace('.', ',');
+  const pct = v => InsightsEngine.pct(v);
 
   // Avaliação no padrão do gráfico: positiva = bom para as brancas.
   function evalBrancas(v, cor) {
@@ -78,9 +79,9 @@ const InsightsUI = (() => {
     const gafes = cor => _moves.filter(m => m.color === cor && m.classification === 'blunder').length;
     const outro = _pov === 'white' ? 'black' : 'white';
     const tiles = _pov === 'both'
-      ? [['Precisão das brancas', acc.white + '%', nome('white')], ['Precisão das pretas', acc.black + '%', nome('black')],
+      ? [['Precisão das brancas', pct(acc.white), nome('white')], ['Precisão das pretas', pct(acc.black), nome('black')],
          ['Gafes', `${gafes('white')} · ${gafes('black')}`, 'brancas · pretas']]
-      : [['Sua precisão', acc[_pov] + '%', LADO[_pov]], ['Precisão do adversário', acc[outro] + '%', LADO[outro]],
+      : [['Sua precisão', pct(acc[_pov]), LADO[_pov]], ['Precisão do adversário', pct(acc[outro]), LADO[outro]],
          ['Suas gafes', String(gafes(_pov)), `adversário: ${gafes(outro)}`]];
     box.innerHTML = `<p class="ins-lead">${esc(InsightsEngine.headline(_moves, resultado())[0])}</p>
       <div class="ins-stats">${tiles.map(t => `<div class="ins-stat"><span class="ins-stat-label">${t[0]}</span><strong>${t[1]}</strong><span class="ins-stat-sub">${esc(t[2])}</span></div>`).join('')}</div>`;
@@ -93,7 +94,7 @@ const InsightsUI = (() => {
     return `<section class="ins-block"><h4>Momentos decisivos</h4><ol class="ins-moments">${lista.map(({ move: m, loss }) => `
       <li><button type="button" class="ins-moment" data-goto="${m.index}" title="Ir para este lance no tabuleiro">
         <span class="ins-moment-top"><strong>${esc(InsightsEngine.moveLabel(m))}</strong>${chip(m.classification)}${_pov === 'both' ? `<span class="ins-who">${LADO[m.color]}</span>` : ''}<span class="ins-loss">−${num(loss)}</span></span>
-        <span class="ins-moment-sub">${m.bestMoveUCI && m.bestMoveUCI !== m.playedMoveUCI ? `O motor preferia <b>${esc(melhor(m))}</b>. ` : ''}${esc(InsightsEngine.describeEval(m.evalBefore))} → ${esc(InsightsEngine.describeEval(m.evalAfter))}</span>
+        <span class="ins-moment-sub">${m.bestMoveUCI && m.bestMoveUCI !== m.playedMoveUCI ? `Melhor lance <b>${esc(melhor(m))}</b> · ` : ''}${LADO[m.color]}: de ${esc(InsightsEngine.describeEval(m.bestEval ?? m.evalBefore))} para ${esc(InsightsEngine.describeEval(m.evalAfter))}</span>
       </button></li>`).join('')}</ol><p class="ins-note">Clique em um lance para abri-lo no tabuleiro.</p></section>`;
   }
 
@@ -103,12 +104,12 @@ const InsightsUI = (() => {
         <div class="ins-phase-name">${rotulo}<small>${faixa}</small></div>
         <div class="ins-phase-bars">${cores().map(cor => {
           const v = dados[cor][k];
-          return `<div class="ins-bar-row"><span class="ins-side ins-side-${cor}" title="${LADO[cor]}"></span><div class="ins-bar"><i class="ins-bar-fill ins-fill-${cor}" style="width:${v == null ? 0 : v}%"></i></div><span class="ins-bar-val">${v == null ? '—' : v + '%'}</span></div>`;
+          return `<div class="ins-bar-row"><span class="ins-side ins-side-${cor}" title="${LADO[cor]}"></span><div class="ins-bar"><i class="ins-bar-fill ins-fill-${cor}" style="width:${v == null ? 0 : v}%"></i></div><span class="ins-bar-val">${pct(v)}</span></div>`;
         }).join('')}</div></div>`).join('');
     const fracas = cores().map(cor => {
       const f = FASES.filter(x => dados[cor][x[0]] != null).sort((a, b) => dados[cor][a[0]] - dados[cor][b[0]])[0];
       if (!f) return '';
-      return `<li>${_pov === 'both' ? LADO[cor] + ': fase' : 'Fase'} mais fraca foi ${f[1].toLowerCase() === 'abertura' ? 'a abertura' : 'o ' + f[1].toLowerCase()}, com ${dados[cor][f[0]]}%.</li>`;
+      return `<li>${_pov === 'both' ? LADO[cor] + ': fase' : 'Fase'} mais fraca foi ${f[1].toLowerCase() === 'abertura' ? 'a abertura' : 'o ' + f[1].toLowerCase()}, com ${pct(dados[cor][f[0]])}.</li>`;
     }).join('');
     const legenda = _pov === 'both' ? `<div class="ins-legend"><span><i class="ins-side ins-side-white"></i>Brancas</span><span><i class="ins-side ins-side-black"></i>Pretas</span></div>` : '';
     return `<section class="ins-block"><div class="ins-block-head"><h4>Precisão por fase</h4>${legenda}</div>${linhas}${fracas ? `<ul class="ins-bullets">${fracas}</ul>` : ''}<p class="ins-note">Um traço indica que a partida não chegou àquela fase.</p></section>`;
@@ -159,14 +160,14 @@ const InsightsUI = (() => {
     const doAdversario = _pov !== 'both' && m.color !== _pov;
     box.innerHTML = `<div class="mi-head"><span class="mi-move">${esc(InsightsEngine.moveLabel(m))}</span>${chip(m.classification)}<span class="ins-who">${doAdversario ? 'Adversário' : LADO[m.color]}</span></div>
       <div class="mi-evals">
-        <div class="mi-eval"><span>Avaliação antes</span><strong>${evalBrancas(m.evalBefore, m.color)}</strong></div>
+        <div class="mi-eval"><span>Avaliação antes</span><strong>${evalBrancas(m.bestEval ?? m.evalBefore, m.color)}</strong></div>
         <div class="mi-eval"><span>Avaliação depois</span><strong>${evalBrancas(m.evalAfter, m.color)}</strong></div>
         <div class="mi-eval"><span>Perda do lance</span><strong class="${info.loss >= 100 ? 'neg' : info.loss < 20 ? 'pos' : ''}">${num(info.loss)}</strong></div>
       </div>
       <p class="mi-comment cls-border-${m.classification}">${esc(info.comment)}</p>
       ${temMelhor ? `<div class="mi-best"><span>Melhor lance do motor</span><strong>${esc(melhor(m))}</strong></div>` : ''}
       ${info.flags.length ? `<div class="mi-flags">${info.flags.map(f => `<span class="mi-flag ${f.type}">${esc(f.text)}</span>`).join('')}</div>` : ''}
-      <p class="ins-note">Avaliações no padrão do gráfico: número positivo favorece as brancas. A perda compara o lance jogado com o melhor lance do motor.</p>`;
+      <p class="ins-note">Avaliações no padrão do gráfico: número positivo favorece as brancas. "Antes" é a avaliação da posição com o melhor lance; a perda é a diferença para o lance jogado.</p>`;
   }
 
   /* ── Aba Perfil ───────────────────────────────────────────────── */
@@ -174,7 +175,7 @@ const InsightsUI = (() => {
     const box = $('ins-dna');
     if (!box) return;
     const dna = InsightsEngine.dna(_moves);
-    const GRUPOS = [['top', 'Melhores', 'excellent'], ['good', 'Boas', 'good'], ['book', 'Livro', 'book'], ['inaccuracy', 'Imprecisões', 'inaccuracy'], ['mistake', 'Erros', 'mistake'], ['blunder', 'Gafes', 'blunder']];
+    const GRUPOS = [['book', 'Livro', 'book'], ['top', 'Melhores', 'excellent'], ['good', 'Boas', 'good'], ['inaccuracy', 'Imprecisões', 'inaccuracy'], ['mistake', 'Erros', 'mistake'], ['blunder', 'Gafes', 'blunder']];
     const cartao = cor => {
       const p = dna[cor], d = InsightsEngine.distribution(_moves, cor), total = d.total || 1;
       return `<article class="dna-card">

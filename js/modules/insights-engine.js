@@ -8,45 +8,15 @@ const InsightsEngine = (() => {
 
   // ── FIX 1: Usa EXATAMENTE o mesmo algoritmo do card de jogadores (computeStats)
   // Assim precisão global e por fase são sempre coerentes entre si.
+  // Precisão de um conjunto de lances de UM jogador. Usa exatamente a mesma
+  // conta do cartão do jogador (MoveClassifier.computeStats), para que o
+  // painel, o relatório e o cartão nunca mostrem números diferentes.
+  // Retorna null quando não há lance fora do livro para avaliar.
   function _computeAccuracyForSlice(movesSlice) {
-    // Replica a lógica de MoveClassifier.computeStats para um subconjunto de lances
-    const eligible = movesSlice.filter(m =>
-      m.evalBefore !== null && m.evalAfter !== null && m.bestEval !== null
-    );
-    if (!eligible.length) return null;
-
-    let weightedScoreSum = 0;
-    let weightSum = 0;
-
-    for (const m of eligible) {
-      if (m.classification === 'book') continue;
-      if (m.isCheckmate) {
-        weightedScoreSum += 100 * 1.0;
-        weightSum += 1.0;
-        continue;
-      }
-      const evalPlayed = m.evalAfter;
-      const evalBest   = m.bestEval;
-      const isOnlyMove = (
-        m.multiPVEvals && m.multiPVEvals.length >= 2 &&
-        m.multiPVEvals[1] !== null &&
-        Math.abs(evalBest - m.multiPVEvals[1]) > 500
-      );
-      let rawLoss = m.classification === 'best-move'
-        ? 0
-        : Math.max(0, evalBest - evalPlayed);
-      if (isOnlyMove) rawLoss = Math.min(rawLoss, 30);
-      const isDecided = Math.abs(m.evalBefore) > 800;
-      const weight    = isDecided ? 0.3 : 1.0;
-      const t_score   = Math.max(0, Math.min(1, 1 - rawLoss / 80));
-      const divisor   = 118 + t_score * 15;
-      const moveScore = Math.max(5, 100 * Math.exp(-rawLoss / divisor));
-      weightedScoreSum += moveScore * weight;
-      weightSum        += weight;
-    }
-
-    if (!weightSum) return null;
-    return Math.round(Math.max(20, Math.min(100, weightedScoreSum / weightSum)));
+    const avaliaveis = movesSlice.filter(m =>
+      m.classification !== 'book' && m.evalBefore != null && m.evalAfter != null && m.bestEval != null);
+    if (!avaliaveis.length) return null;
+    return MoveClassifier.computeStats(avaliaveis, avaliaveis[0].color === 'white').accuracy;
   }
 
   // Precisão geral — espelha computeStats para manter valores idênticos
@@ -167,6 +137,8 @@ const InsightsEngine = (() => {
   }
   function moveLabel(m) { return `${Math.floor(m.index / 2) + 1}${m.color === 'white' ? '.' : '...'} ${m.san}`; }
   function _num(cp) { return (cp / 100).toFixed(2).replace('.', ','); }
+  /** Percentual em pt-BR (80,9%). */
+  function pct(v) { return v == null ? '—' : String(v).replace('.', ',') + '%'; }
   function _plural(n, um, varios) { return `${n} ${n === 1 ? um : varios}`; }
   function _lista(itens) {
     if (itens.length <= 1) return itens.join('');
@@ -365,6 +337,12 @@ const InsightsEngine = (() => {
     if (misses.length)
       s.push({ level: 'high', text: `${_plural(misses.length, 'chance perdida', 'chances perdidas')} (${ref(misses)}): havia um ganho claro na posição. Volte a esses lances e tente achá-lo sem olhar a seta.`,
                href: 'aprender/garfo.html', link: 'Garfo e ataques duplos' });
+    const errosSimples = de('mistake').filter(m => !(m.evalBefore >= 150));
+    if (errosSimples.length)
+      s.push({ level: 'high', text: errosSimples.length === 1
+        ? `O erro ${ref(errosSimples)} custou caro sem perder material na hora. Volte a esse lance e pergunte o que o adversário ameaçava e qual era o plano do lance sugerido.`
+        : `${errosSimples.length} erros (${ref(errosSimples)}) custaram caro sem perder material na hora. Volte a cada um e pergunte o que o adversário ameaçava e qual era o plano do lance sugerido.`,
+               href: 'aprender/como-estudar-suas-partidas.html', link: 'Como estudar as próprias partidas' });
     const deVantagem = graves.filter(m => (m.evalBefore ?? 0) >= 150);
     if (deVantagem.length >= 2)
       s.push({ level: 'mid', text: `${deVantagem.length} erros graves vieram com a posição já favorável (${ref(deVantagem)}). Com vantagem, simplifique: troque peças e evite complicações.`,
@@ -376,7 +354,7 @@ const InsightsEngine = (() => {
       .filter(f => phase[f[0]] != null).sort((a, b) => phase[a[0]] - phase[b[0]]);
     if (fases.length && phase[fases[0][0]] < fases[0][2]) {
       const f = fases[0];
-      s.push({ level: 'mid', text: `A fase mais fraca foi ${f[1] === 'abertura' ? 'a abertura' : 'o ' + f[1]}, com ${phase[f[0]]}% de precisão.`, href: f[3], link: f[4] });
+      s.push({ level: 'mid', text: `A fase mais fraca foi ${f[1] === 'abertura' ? 'a abertura' : 'o ' + f[1]}, com ${pct(phase[f[0]])} de precisão.`, href: f[3], link: f[4] });
     }
     if (inaccuracies.length / total > 0.3)
       s.push({ level: 'low', text: `${inaccuracies.length} imprecisões em ${cm.length} lances: a posição piorou aos poucos. Quando não houver tática, escolha o lance pelo plano que a estrutura de peões indica.`,
@@ -396,7 +374,7 @@ const InsightsEngine = (() => {
     const frases = [];
     const accW = calcAccuracy(moves, 'white'), accB = calcAccuracy(moves, 'black');
     const res = result === '1-0' ? 'As brancas venceram' : result === '0-1' ? 'As pretas venceram' : result === '1/2-1/2' ? 'A partida terminou empatada' : '';
-    frases.push(`${res ? res + '. ' : ''}Precisão de ${accW}% para as brancas e ${accB}% para as pretas.`);
+    frases.push(`${res ? res + '. ' : ''}Precisão de ${pct(accW)} para as brancas e ${pct(accB)} para as pretas.`);
     const pior = keyMoments(moves, null, 1)[0];
     if (pior) {
       const m = pior.move;
@@ -415,7 +393,10 @@ const InsightsEngine = (() => {
     if (!move) return null;
     const cls  = move.classification;
     const loss = moveLoss(move);
-    const antes = describeEval(move.evalBefore), depois = describeEval(move.evalAfter);
+    // "Antes" = avaliação refinada da posição com o melhor lance (bestEval),
+    // a mesma base da perda; evalBefore vem só da leitura rápida.
+    const base = move.bestEval ?? move.evalBefore;
+    const antes = describeEval(base), depois = describeEval(move.evalAfter);
     const outro = bestSan && move.bestMoveUCI && move.bestMoveUCI !== move.playedMoveUCI ? bestSan : null;
     const melhor = outro ? ` O motor preferia ${outro}.` : '';
     const mudou = antes !== depois ? `A posição de quem jogou passou de ${antes} para ${depois}.` : `A posição de quem jogou continua sendo ${depois}.`;
@@ -428,7 +409,7 @@ const InsightsEngine = (() => {
     else if (cls === 'book') comment = 'Lance de livro: faz parte da teoria desta abertura e não entra no cálculo de precisão.';
     else if (cls === 'brilliant') comment = `Brilhante. Um sacrifício que o motor confirma: mesmo entregando material, a avaliação fica em ${depois}.`;
     else if (cls === 'great') {
-      if ((move.evalBefore ?? 0) <= -150) comment = `Ótimo. Recupera uma posição difícil: de ${antes} para ${depois}.`;
+      if ((move.evalBefore ?? 0) <= -150) comment = `Ótimo. Recupera uma posição difícil: de ${describeEval(move.evalBefore)} para ${depois}.`;
       else if (Math.abs(move.evalBefore ?? 0) <= 50 && (move.evalAfter ?? 0) >= 150) comment = `Ótimo. Transforma uma posição igual em ${depois}.`;
       else comment = 'Ótimo. Era a única jogada que mantinha a posição: a segunda opção do motor era bem pior.';
     }
@@ -461,6 +442,6 @@ const InsightsEngine = (() => {
     calcAccuracy, calcPhaseAccuracy, findCriticalMoment,
     findBiggestBlunder, estimateRating, playerProfile,
     chartInsights, suggestions, dna, moveInsight, detectPatterns,
-    keyMoments, distribution, headline, moveLoss, moveLabel, describeEval, NOMES
+    keyMoments, distribution, headline, moveLoss, moveLabel, describeEval, pct, NOMES
   };
 })();

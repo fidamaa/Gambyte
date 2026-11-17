@@ -27,6 +27,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     ProTools.init();
     GameHistory.init();
+    GameImport.init();
     const pedido = new URLSearchParams(location.search).get('exemplo');
     if (pedido && ids.includes(pedido)) {
       proximo = ids.indexOf(pedido) + 1;

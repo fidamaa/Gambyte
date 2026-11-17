@@ -6,7 +6,7 @@
 <title>Gambyte — Analise suas partidas de xadrez com Stockfish 18</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=4">
+<link rel="stylesheet" href="css/styles.css?v=6">
 <meta name="google-adsense-account" content="ca-pub-7858747311725137">
 <!-- Veiculação de anúncios desativada durante a preparação para avaliação. -->
 <link rel="stylesheet" href="site-info.css?v=5">
@@ -20,10 +20,27 @@
 <div class="container">
 
 
-  <section class="info-intro" aria-labelledby="tool-title"><h1 id="tool-title">Entenda os momentos decisivos da sua partida.</h1><p>Cole o PGN de uma partida concluída e revise avaliações, precisão e alternativas com Stockfish. Os cálculos acontecem no seu navegador. <a href="como-usar.html" style="color:var(--info-accent)">Veja como começar.</a></p></section>
-<!-- PGN Input -->
+  <section class="info-intro" aria-labelledby="tool-title"><h1 id="tool-title">Entenda os momentos decisivos da sua partida.</h1><p>Importe pelo seu usuário do Chess.com ou do Lichess, ou cole o PGN, e revise avaliações, precisão e alternativas com Stockfish. Os cálculos acontecem no seu navegador. <a href="como-usar.html" style="color:var(--info-accent)">Veja como começar.</a></p></section>
+<!-- Importar partida do Chess.com / Lichess -->
+  <section class="import-box" id="import-box" aria-labelledby="imp-title">
+    <div class="imp-head">
+      <h2 class="section-label" id="imp-title">Importar partida</h2>
+      <div class="imp-sites" role="group" aria-label="Site da partida">
+        <button type="button" data-imp-site="chesscom">Chess.com</button>
+        <button type="button" data-imp-site="lichess">Lichess</button>
+      </div>
+    </div>
+    <div class="imp-row">
+      <input type="text" id="imp-input" class="imp-input" autocomplete="off" spellcheck="false" aria-label="Usuário ou link da partida">
+      <button type="button" class="btn-primary" id="imp-btn">Buscar partidas</button>
+    </div>
+    <p class="imp-status" id="imp-status" role="status">Digite seu usuário para ver as últimas partidas, ou cole um link do Lichess.</p>
+    <div class="imp-list" id="imp-list" hidden></div>
+  </section>
+
+  <!-- PGN Input -->
   <section class="input-section">
-    <div class="section-label">Cole seu PGN</div>
+    <div class="section-label">Ou cole o PGN</div>
     <textarea id="pgn-input" placeholder='[Event "Rated Blitz game"]
 [White "Kasparov"]
 [Black "Karpov"]
@@ -386,7 +403,7 @@
 <section class="info-home" aria-labelledby="como-title">
 <h2 id="como-title">Como funciona</h2>
 <ol class="home-steps">
-<li><span class="home-step-n">1</span><h3>Cole o PGN da partida</h3><p>Exporte o jogo do Chess.com ou do Lichess, ou digite os lances de uma partida de tabuleiro. Não tem um PGN à mão? Use o botão “Carregar exemplo” para testar com uma partida clássica. <a href="aprender/exportar-pgn.html">Como exportar o PGN</a></p></li>
+<li><span class="home-step-n">1</span><h3>Traga a partida</h3><p>Digite seu usuário do Chess.com ou do Lichess e escolha a partida na lista, cole um link do Lichess, ou cole o PGN de qualquer partida. Não tem um PGN à mão? Use o botão “Carregar exemplo” para testar com uma partida clássica. <a href="aprender/exportar-pgn.html">Como exportar o PGN</a></p></li>
 <li><span class="home-step-n">2</span><h3>O Stockfish analisa no seu navegador</h3><p>O motor avalia a posição antes e depois de cada lance, primeiro em uma leitura rápida e depois em passagens mais profundas. A partida não é enviada para um servidor de análise, e você pode navegar pelos lances enquanto o refinamento termina.</p></li>
 <li><span class="home-step-n">3</span><h3>Estude os momentos decisivos</h3><p>O gráfico de vantagem mostra onde a partida virou. Vá até o lance, compare com a seta do melhor lance e teste alternativas no Modo Livre. <a href="aprender/como-estudar-suas-partidas.html">Um método de estudo em cinco etapas</a></p></li>
 </ol>
@@ -403,9 +420,10 @@
 <li><strong>Seta do melhor lance</strong> e barra de avaliação em cada posição.</li>
 <li><strong>Modo Livre</strong> para jogar variantes a partir de qualquer lance e ver a resposta do motor.</li>
 <li><strong>Rating estimado da partida</strong>, uma referência interna calculada a partir da qualidade dos lances.</li>
+<li><strong>Importação pelo usuário</strong> do Chess.com e do Lichess, sem copiar o PGN.</li>
 <li><strong>Exportação do PGN</strong> para copiar ou baixar.</li>
 </ul>
-<p class="home-pro-line">O <a href="gambyte-premium.html">Gambyte Pro</a> acrescenta a análise profunda até a profundidade 22, o painel completo de insights, o PGN anotado com avaliações, o relatório de estudo em texto e o histórico das suas análises.</p>
+<p class="home-pro-line">O <a href="gambyte-premium.html">Gambyte Pro</a> acrescenta a análise profunda até a profundidade 22, o painel completo de insights com a escolha do seu lado, o PGN anotado com avaliações, o relatório de estudo em texto e o histórico das suas análises.</p>
 </section>
 
 <section class="info-home" aria-labelledby="learn-title">
@@ -477,6 +495,7 @@
 <script src="js/modules/insights-ui.js"></script>
 <script src="js/modules/auth-ui.js"></script>
 <script src="js/modules/game-history.js"></script>
+<script src="js/modules/game-import.js"></script>
 
 <!-- Controlador de UI (precisa que o DOM acima já exista) -->
 <script src="js/modules/ui-controller.js"></script>
