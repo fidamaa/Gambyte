@@ -9,3 +9,8 @@ document.querySelector('[data-onclick="gambyte-login-8"]').addEventListener('cli
 document.querySelector('[data-onclick="gambyte-login-9"]').addEventListener('click', function(event) { doRegister() });
 document.querySelector('[data-onclick="gambyte-login-10"]').addEventListener('click', function(event) { doLogout() });
 document.querySelector('[data-onclick="gambyte-login-11"]').addEventListener('click', function(event) { window.open('gambyte-premium.html','_blank') });
+document.getElementById('li-portal')?.addEventListener('click', async function () {
+  this.disabled = true;
+  const r = await AuthSystem.abrirStripe('portal');
+  if (!r.ok) { this.disabled = false; alert(r.msg); }
+});

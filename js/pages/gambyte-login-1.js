@@ -145,6 +145,9 @@ function renderSession(sess) {
     document.getElementById('li-name').textContent   = sess.name || 'Usuário';
     document.getElementById('li-email').textContent  = sess.email;
     const badge = document.getElementById('li-badge');
+    // Assinatura no cartão (Stripe): mostra o acesso ao portal de gestão.
+    const portal = document.getElementById('li-portal');
+    if (portal) portal.hidden = !sess.assinaturaCartao;
     if (sess.premium) {
       badge.textContent = 'Gambyte Pro';
       badge.className   = 'logged-in-badge premium';

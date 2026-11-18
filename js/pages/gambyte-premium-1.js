@@ -9,7 +9,7 @@ const NUBANK_URL = 'https://nubank.com.br/cobrar/54sp2d/6ad303d5-0da2-4794-b326-
 const WHATS_URL  = 'https://wa.me/5521986996374?text=';
 // Assinatura por cartão (Stripe). Fica escondida até o Stripe estar
 // configurado no Supabase (chaves, preço e webhook): aí basta trocar para true.
-const CARTAO_LIGADO = false;
+const CARTAO_LIGADO = true;
 const comCartao = sess => !!(sess && ['active', 'trialing', 'past_due'].includes(sess.assinaturaCartao));
 
 /* ── UI ── */
