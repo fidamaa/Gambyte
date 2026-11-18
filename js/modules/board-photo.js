@@ -175,17 +175,65 @@ const BoardPhoto = (() => {
       normalizar(rec, RW, RH, x, (r * 8 + c) * 3 * n);
     }
     const res = await s.casas.run({ x: new ort.Tensor('float32', x, [64, 3, RH, RW]) });
-    const z = res.y.data, out = [];
+    const z = res.y.data, pr = [];
     for (let i = 0; i < 64; i++) {
       let m = -1e9;
       for (let k = 0; k < 13; k++) m = Math.max(m, z[i * 13 + k]);
       let soma = 0; const p = [];
       for (let k = 0; k < 13; k++) { const e = Math.exp(z[i * 13 + k] - m); p.push(e); soma += e; }
-      let best = 0;
-      for (let k = 1; k < 13; k++) if (p[k] > p[best]) best = k;
-      out.push({ peca: CLASSES[best], prob: p[best] / soma });
+      pr.push(p.map(v => v / soma));
     }
-    return out;
+    const esc = decodificar(ajustarCores(pr));
+    return esc.map((peca, i) => ({ peca, prob: pr[i][CLASSES.indexOf(peca)] }));
+  }
+
+  // Separa as peças da foto em dois grupos de cor pelo maior "salto" em
+  // quanto cada uma parece branca (igual a scripts/ler_foto.py).
+  function ajustarCores(pr0) {
+    const pr = pr0.map(p => p.slice());
+    const ocup = [];
+    for (let i = 0; i < 64; i++) if (pr[i][0] < 0.5) ocup.push(i);
+    if (ocup.length < 4) return pr;
+    const s = pr.map(p => { const b = p.slice(1, 7).reduce((a, c) => a + c, 0), n = p.slice(7, 13).reduce((a, c) => a + c, 0); return b / (b + n + 1e-9); });
+    const ordem = ocup.slice().sort((a, b) => s[a] - s[b]);
+    const n = ordem.length;
+    let melhor = null;
+    for (let j = 0; j < n - 1; j++) {
+      if (j + 1 < 1 || j + 1 > 16 || n - (j + 1) > 16) continue;
+      const salto = s[ordem[j + 1]] - s[ordem[j]];
+      if (!melhor || salto > melhor.salto) melhor = { salto, j };
+    }
+    if (!melhor || melhor.salto < 0.15) return pr;
+    const brancas = new Set(ordem.slice(melhor.j + 1));
+    for (const i of ocup) {
+      const tipo = [1, 2, 3, 4, 5, 6].map(k => pr[i][k] + pr[i][k + 6]);
+      for (let k = 1; k < 13; k++) pr[i][k] = 0;
+      for (let k = 0; k < 6; k++) pr[i][(brancas.has(i) ? 1 : 7) + k] = tipo[k];
+    }
+    return pr;
+  }
+
+  // Escolhe a peça de cada casa respeitando quantas cabem de cada tipo
+  // (um rei de cada cor, até 8 peões…), as escolhas mais seguras primeiro.
+  const LIMITE = { '.': 64, P: 8, p: 8, N: 2, n: 2, B: 2, b: 2, R: 2, r: 2, Q: 1, q: 1, K: 1, k: 1 };
+  function decodificar(pr) {
+    const ops = [];
+    for (let i = 0; i < 64; i++) for (let k = 0; k < 13; k++) ops.push([pr[i][k], i, k]);
+    ops.sort((a, b) => b[0] - a[0]);
+    const usados = Object.fromEntries(CLASSES.map(c => [c, 0]));
+    const esc = new Array(64).fill(null);
+    for (const [, i, k] of ops) {
+      const c = CLASSES[k];
+      if (esc[i] === null && usados[c] < LIMITE[c]) { esc[i] = c; usados[c]++; }
+    }
+    for (const rei of ['K', 'k']) {
+      if (usados[rei]) continue;
+      const k = CLASSES.indexOf(rei);
+      let iM = 0;
+      for (let i = 1; i < 64; i++) if ((esc[i] === 'K' || esc[i] === 'k' ? -1 : pr[i][k]) > (esc[iM] === 'K' || esc[iM] === 'k' ? -1 : pr[iM][k])) iM = i;
+      esc[iM] = rei;
+    }
+    return esc;
   }
 
   // ── 4. Orientação ───────────────────────────────────────────

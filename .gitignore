@@ -12,3 +12,7 @@ supabase/.temp/
 stockfish-18-single.wasm
 stockfish-18-multi.js
 stockfish-18-multi.wasm
+
+# testes locais
+_prints/
+.playwright-mcp/
