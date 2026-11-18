@@ -57,6 +57,18 @@ const App = (() => {
     if (!stockfishReady) { UIController.showError('Stockfish ainda não está pronto.'); return; }
 
     UIController.hideError();
+    // No celular a caixa da partida fica no topo: ao analisar, desce até
+    // os jogadores e o tabuleiro.
+    // (espera a barra de progresso aparecer, senão a rolagem para antes).
+    if (window.matchMedia && matchMedia('(max-width:760px)').matches) {
+      const jogadores = () => document.querySelector('#results-section .players-row');
+      setTimeout(() => jogadores()?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 400);
+      // A caixa de cima encolhe um pouco quando a análise começa: confere de novo.
+      setTimeout(() => {
+        const el = jogadores();
+        if (el && Math.abs(el.getBoundingClientRect().top - 8) > 24) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 1400);
+    }
 
     // Toda transição pra uma nova análise reinicia do zero: aborta
     // qualquer análise anterior ainda rodando (o motor realmente para, não
@@ -223,6 +235,14 @@ const App = (() => {
     // O tabuleiro já aparece pronto pra uso antes mesmo de colar um PGN —
     // como se o Modo Livre estivesse sempre ativo por padrão.
     UIController.showEmptyBoard();
+
+    // Vitrine do Pro (só aparece no celular): some para quem já é Pro.
+    const vitrine = document.getElementById('pro-vitrine');
+    if (vitrine && typeof AuthSystem !== 'undefined') {
+      const ajustar = () => { vitrine.hidden = AuthSystem.isPremium(); };
+      ajustar();
+      AuthSystem.onChange(ajustar);
+    }
   }
 
   // Abre uma posição montada (foto ou print do tabuleiro): para a análise

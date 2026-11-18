@@ -1500,3 +1500,42 @@ body.pos-ed-aberto{overflow:hidden}
 .foto-box[data-compacta] .foto-exp>p:first-child{display:none}
 .foto-planos{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:3px;font-size:12.5px;color:var(--text2)}
 .foto-planos b{color:var(--text)}
+
+/* ══════════════════════════════════════════════════════════════
+   Celular: a caixa da partida vem primeiro; ao analisar, a página desce
+   até os jogadores e o tabuleiro. Depois vêm as classificações (em duas
+   colunas, para caber mais numa tela), os lances, o resumo e a vitrine
+   do Pro.
+   ══════════════════════════════════════════════════════════════ */
+.pro-vitrine{display:none}
+@media(max-width:760px){
+  #results-section.visible{display:flex;flex-direction:column;gap:12px}
+  #results-section>.analysis-layout{display:contents}
+  .summary-panel>#trazer{order:1}
+  #results-section>.players-row{order:2;scroll-margin-top:8px}
+  .analysis-layout>.board-panel{order:3}
+  .analysis-layout>.middle-panel{order:4}
+  .summary-panel>*{order:5}
+  .summary-panel>.pro-vitrine{order:6}
+  /* A faixa da abertura não pode encolher (o texto ficava por cima da caixa) */
+  .game-strip{height:auto}
+  .game-strip>.opening-banner,.game-strip>.progress-container{flex:none}
+  /* Gráfico: título e legenda quebram em duas linhas em vez de vazar */
+  .chart-head{flex-wrap:wrap;row-gap:6px}
+  .chart-head .chart-labels{flex-wrap:wrap}
+  /* Classificações em duas colunas */
+  .classification-legend .legend-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:16px}
+  .classification-legend .legend-row:nth-last-child(2){border-bottom:none}
+  /* Vitrine do Pro */
+  .pro-vitrine{display:block;padding:16px;border-radius:var(--radius-lg);border:1px solid rgba(236,189,110,.45);background:linear-gradient(135deg,rgba(236,189,110,.14),rgba(236,189,110,.03))}
+  .pro-vitrine[hidden]{display:none}
+  .pv-topo{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .pv-topo h2{margin:0;font-size:17px;color:var(--text)}
+  .pro-vitrine ul{margin:0 0 12px;padding:0;list-style:none;display:grid;gap:7px}
+  .pro-vitrine li{font-size:13.5px;line-height:1.45;color:var(--text2);padding-left:18px;position:relative}
+  .pro-vitrine li::before{content:"✓";position:absolute;left:0;color:var(--accent);font-weight:700}
+  .pro-vitrine li b{color:var(--text)}
+  .pro-vitrine .btn-primary{display:flex;justify-content:center;text-decoration:none;padding:11px 14px}
+  /* Toques mais fáceis: botões de navegação maiores */
+  .nav-controls button{min-height:44px;min-width:48px}
+}

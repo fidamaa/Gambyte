@@ -51,7 +51,7 @@ const GameImport = (() => {
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
     const campo = $('imp-input');
-    if (campo) campo.placeholder = site === 'lichess' ? 'Usuário ou link da partida no Lichess' : 'Usuário no Chess.com (o seu ou de qualquer jogador)';
+    if (campo) campo.placeholder = site === 'lichess' ? 'Usuário ou link da partida no Lichess' : 'Usuário do Chess.com';
   }
 
   async function getResp(url, opts) {
@@ -367,8 +367,11 @@ const GameImport = (() => {
   function initAbas() {
     const caixa = $('trazer');
     if (!caixa) return;
-    let aba = 'importar';
-    try { const a = localStorage.getItem(KEY_ABA); if (a === 'pgn' || a === 'foto') aba = a; } catch (e) { /* sem armazenamento */ }
+    // No celular, colar o PGN é o caminho mais rápido: abre nessa aba
+    // (a não ser que a pessoa já tenha escolhido outra).
+    const celular = window.matchMedia && matchMedia('(max-width:760px)').matches;
+    let aba = celular ? 'pgn' : 'importar';
+    try { const a = localStorage.getItem(KEY_ABA); if (a === 'pgn' || a === 'foto' || (celular && a === 'importar')) aba = a; } catch (e) { /* sem armazenamento */ }
     mostrarAba(aba);
     caixa.querySelector('.trazer-tabs')?.addEventListener('click', e => {
       const b = e.target.closest('[data-trazer]');
