@@ -263,6 +263,23 @@ const UIController = (() => {
       ghost.style.transform = 'translate(' + (e.clientX - r.left - sz / 2) + 'px,' + (e.clientY - r.top - sz / 2 - sobe) + 'px)';
     };
 
+    // No celular: o dedo que começa numa casa vazia rola a página
+    // normalmente; o que começa numa peça que pode andar (ou no destino da
+    // peça escolhida) mexe no tabuleiro, como antes. O CSS deixa o
+    // tabuleiro com touch-action: pan-y, e aqui a rolagem é cancelada
+    // quando o toque é para jogar.
+    cv.addEventListener('touchstart', e => {
+      if (e.touches.length !== 1) return;
+      const t = e.touches[0], r = cv.getBoundingClientRect();
+      const sq = BoardUI.xyToSq(t.clientX - r.left, t.clientY - r.top);
+      if (!sq) return;
+      const sel = FreePlay.isActive() ? FreePlay.getSelection() : null;
+      const jogar = FreePlay.isActive()
+        ? FreePlay.isMovable(sq) || !!(sel && sel.sq && FreePlay.resolveTarget(sel.sq, sq))
+        : _movivelNaRevisao(sq);
+      if (jogar && e.cancelable) e.preventDefault();
+    }, { passive: false });
+
     cv.addEventListener('pointerdown', e => {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       ArrowSystem.clearManual();
