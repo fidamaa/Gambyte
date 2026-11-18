@@ -464,6 +464,12 @@ h2.section-title { margin-top:0; font-family:'DM Serif Display',Georgia,serif; f
 .order-value { text-align:right; }
 .toast { max-width:340px; line-height:1.45; }
 @media (prefers-reduced-motion:reduce) { .hero-badge,.hero-title,.hero-sub,.hero-stats,.pricing-section,.features-section,.faq-section { animation:none; } body::before { animation:none; } }
+.hero-foto{display:flex;gap:14px;align-items:center;max-width:620px;margin:18px auto 0;padding:14px 18px;border-radius:12px;border:1px solid rgba(236,189,110,.45);background:linear-gradient(135deg,rgba(236,189,110,.16),rgba(236,189,110,.04));color:#cdd4e3;text-decoration:none;text-align:left;font-size:14px;line-height:1.5}
+.hero-foto:hover{border-color:var(--gold)}
+.hero-foto strong{display:block;color:var(--gold);font-size:16px;margin-bottom:2px}
+.hero-foto-ico{flex:none;width:46px;height:46px;border-radius:12px;display:grid;place-items:center;background:rgba(236,189,110,.18);color:var(--gold)}
+.plan-feature.destaque{color:#f3e2bf}
+.plan-feature.destaque strong{color:var(--gold)}
 </style>
 <link rel="stylesheet" href="site-info.css?v=5">
 </head>
@@ -485,6 +491,10 @@ h2.section-title { margin-top:0; font-family:'DM Serif Display',Georgia,serif; f
     <p class="hero-sub">
       O plano gratuito já analisa a partida inteira. O Pro leva a busca até a profundidade 22, abre o painel completo de insights e exporta a análise para você estudar fora do site.
     </p>
+    <a class="hero-foto" href="index.html#trazer">
+      <span class="hero-foto-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
+      <span><strong>Novo: tire uma foto do tabuleiro e analise.</strong>Fotografe um tabuleiro de verdade, ou envie o print do Chess.com, do Lichess ou de um livro. A posição abre no Gambyte, pronta para o motor.</span>
+    </a>
     <div class="hero-stats">
       <div class="hero-stat">
         <div class="hero-stat-num">22</div>
@@ -522,6 +532,7 @@ h2.section-title { margin-top:0; font-family:'DM Serif Display',Georgia,serif; f
           <li class="plan-feature">Análise ao vivo no tabuleiro até a profundidade 18</li>
           <li class="plan-feature">Importação pelo usuário do Chess.com e do Lichess</li>
           <li class="plan-feature">Copiar e baixar o PGN</li>
+          <li class="plan-feature locked">Foto do tabuleiro e leitura de print</li>
           <li class="plan-feature locked">Análise Profunda (profundidade 22)</li>
           <li class="plan-feature locked">Painel de insights e análise por lance</li>
           <li class="plan-feature locked">PGN anotado, relatório e histórico</li>
@@ -540,6 +551,7 @@ h2.section-title { margin-top:0; font-family:'DM Serif Display',Georgia,serif; f
         <div class="plan-desc">Pagamento por Pix · sem débito automático</div>
         <ul class="plan-features">
           <li class="plan-feature">Tudo do plano gratuito</li>
+          <li class="plan-feature destaque"><strong>Foto do tabuleiro:</strong> fotografe ou envie um print e analise a posição</li>
           <li class="plan-feature">Análise Profunda em três passagens: profundidade 14, 18 e 22</li>
           <li class="plan-feature">Análise ao vivo no tabuleiro até a profundidade 22</li>
           <li class="plan-feature">Insights da partida: momento crítico, maior erro, fase mais fraca</li>
@@ -620,7 +632,11 @@ h2.section-title { margin-top:0; font-family:'DM Serif Display',Georgia,serif; f
     <div class="faq-list" id="faq-list">
       <div class="faq-item">
         <button class="faq-question" type="button" aria-expanded="false"><span>O que exatamente muda em relação ao plano gratuito?</span><span class="faq-arrow">›</span></button>
-        <div class="faq-answer">A análise gratuita vai até a profundidade 16 e mostra gráfico, classificações, precisão, ACPL e rating estimado. O Pro acrescenta a Análise Profunda até a profundidade 22, o painel de insights, a análise comentada por lance, o PGN anotado, o relatório de estudo, o histórico local e a remoção dos anúncios.</div>
+        <div class="faq-answer">A análise gratuita vai até a profundidade 16 e mostra gráfico, classificações, precisão, ACPL e rating estimado. O Pro acrescenta a foto do tabuleiro, a Análise Profunda até a profundidade 22, o painel de insights, a análise comentada por lance, o PGN anotado, o relatório de estudo, o histórico local e a remoção dos anúncios.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" type="button" aria-expanded="false"><span>Como funciona a foto do tabuleiro?</span><span class="faq-arrow">›</span></button>
+        <div class="faq-answer">Na caixa “Analisar uma partida”, abra a aba Foto. Para um tabuleiro de verdade, tire a foto ou escolha uma imagem: ela é reduzida no seu aparelho e lida por IA em alguns segundos (até 40 fotos por dia). Para um print do Chess.com, do Lichess ou de um diagrama, a leitura é feita no próprio aparelho, sem enviar a imagem. Nos dois casos, a posição abre num editor para você conferir as peças, a vez de jogar e os roques antes de analisar.</div>
       </div>
       <div class="faq-item">
         <button class="faq-question" type="button" aria-expanded="false"><span>A Análise Profunda demora mais?</span><span class="faq-arrow">›</span></button>

@@ -6,7 +6,7 @@
 <title>Gambyte — Analise suas partidas de xadrez com Stockfish 18</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=11">
+<link rel="stylesheet" href="css/styles.css?v=12">
 <meta name="google-adsense-account" content="ca-pub-7858747311725137">
 <!-- Veiculação de anúncios desativada durante a preparação para avaliação. -->
 <link rel="stylesheet" href="site-info.css?v=5">
@@ -20,7 +20,7 @@
 <div class="container">
 
 
-  <section class="info-intro tool-intro" aria-labelledby="tool-title"><h1 id="tool-title">Entenda os momentos decisivos da sua partida.</h1><p>Busque suas partidas pelo usuário do Chess.com ou do Lichess, ou cole o PGN, <a href="#trazer">na coluna da direita</a>. O Stockfish 18 calcula tudo no seu navegador. <a href="como-usar.html">Veja como começar.</a></p></section>
+  <section class="info-intro tool-intro" aria-labelledby="tool-title"><h1 id="tool-title">Entenda os momentos decisivos da sua partida.</h1><p>Busque suas partidas pelo usuário do Chess.com ou do Lichess, ou cole o PGN, <a href="#trazer">na coluna da direita</a>. No Pro, também dá para <a href="#trazer" data-ir-foto>tirar uma foto do tabuleiro</a>. O Stockfish 18 calcula tudo no seu navegador. <a href="como-usar.html">Veja como começar.</a></p></section>
 
   <!-- Faixa da partida: abertura e progresso da análise -->
   <div class="game-strip">
@@ -307,6 +307,10 @@
           <div class="section-title">Resumo da partida</div>
           <p>Depois da análise, aqui aparecem os momentos decisivos, o que cada lado precisa treinar e a leitura do gráfico. Traga uma partida logo abaixo.</p>
           <p class="se-dica">Sem partida à mão? Arraste as peças no tabuleiro: o motor analisa cada lance na hora.</p>
+          <a href="#trazer" class="se-foto" data-ir-foto>
+            <span class="se-foto-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
+            <span><strong>Novo no Pro: foto do tabuleiro</strong>Tire uma foto do tabuleiro (ou um print) e a posição abre aqui, pronta para analisar.</span>
+          </a>
         </div>
 
         <!-- Trazer a partida: busca por usuário ou PGN colado -->
@@ -316,7 +320,46 @@
             <div class="trazer-tabs" role="tablist" aria-label="Como trazer a partida">
               <button type="button" role="tab" data-trazer="importar" aria-selected="true">Buscar por usuário</button>
               <button type="button" role="tab" data-trazer="pgn" aria-selected="false">Colar PGN</button>
+              <button type="button" role="tab" data-trazer="foto" aria-selected="false" class="tab-foto">Foto <span class="tab-pro">PRO</span></button>
             </div>
+          </div>
+
+          <div class="trazer-pane foto-box" id="foto-box" data-pane="foto" hidden>
+            <div class="foto-hero">
+              <span class="pro-badge">Gambyte Pro</span>
+              <strong>Tire uma foto do tabuleiro e analise.</strong>
+              <span>Do tabuleiro de verdade, do print do Chess.com ou do Lichess, ou do diagrama de um livro. A posição vai direto para o tabuleiro, com o motor ao vivo.</span>
+            </div>
+            <div class="foto-opcoes">
+              <div class="foto-opcao">
+                <h3>Foto do tabuleiro</h3>
+                <p>Tabuleiro físico, de cima ou de lado. A IA do Gambyte lê a posição em alguns segundos.</p>
+                <div class="foto-botoes">
+                  <button type="button" class="btn-primary" data-foto="camera">Tirar foto</button>
+                  <button type="button" class="btn-secondary" data-foto="galeria">Escolher imagem</button>
+                </div>
+              </div>
+              <div class="foto-opcao">
+                <h3>Print de tela</h3>
+                <p>Print de site ou diagrama de livro. Lido no seu aparelho, na hora, sem enviar a imagem.</p>
+                <div class="foto-botoes">
+                  <button type="button" class="btn-primary" data-foto="print">Escolher print</button>
+                </div>
+                <p class="foto-dica">No computador, também dá para colar o print com Ctrl+V.</p>
+              </div>
+            </div>
+            <div class="foto-lock" id="foto-lock" hidden>
+              <strong>A foto do tabuleiro faz parte do Gambyte Pro.</strong>
+              <span>Assine para ler posições por foto e por print, junto com a Análise Profunda, os insights e o histórico.</span>
+              <div class="foto-botoes">
+                <a class="btn-primary" href="gambyte-premium.html">Conhecer o Pro</a>
+                <a class="btn-secondary" href="gambyte-login.html" data-foto-entrar>Entrar</a>
+              </div>
+            </div>
+            <p class="foto-status" id="foto-status" role="status"></p>
+            <input type="file" id="foto-camera" accept="image/*" capture="environment" hidden>
+            <input type="file" id="foto-arquivo" accept="image/*" hidden>
+            <input type="file" id="foto-print" accept="image/*" hidden>
           </div>
 
           <div class="trazer-pane import-box" id="import-box" data-pane="importar">
@@ -338,7 +381,7 @@
           </div>
 
           <div class="trazer-pane input-section" data-pane="pgn" hidden>
-            <p class="pgn-hint">Aceita o PGN de qualquer site, inclusive o arquivo exportado do Chess.com. Links não funcionam neste campo: para o Chess.com, use a busca por usuário.</p>
+            <p class="pgn-hint">Aceita o PGN de qualquer site, inclusive o arquivo exportado do Chess.com, ou um <strong>FEN</strong> para abrir só uma posição. Links não funcionam neste campo: para o Chess.com, use a busca por usuário.</p>
             <textarea id="pgn-input" placeholder='[Event "Rated Blitz game"]
 [White "Kasparov"]
 [Black "Karpov"]
@@ -499,6 +542,8 @@
 <script src="js/modules/auth-ui.js"></script>
 <script src="js/modules/game-history.js"></script>
 <script src="js/modules/game-import.js"></script>
+<script src="js/modules/board-scan.js"></script>
+<script src="js/modules/photo-position.js"></script>
 
 <!-- Controlador de UI (precisa que o DOM acima já exista) -->
 <script src="js/modules/ui-controller.js"></script>

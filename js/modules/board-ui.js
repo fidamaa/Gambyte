@@ -243,112 +243,133 @@ const BoardUI = (() => {
   }
 
   // ── Animação de movimento ─────────────────────────────────────
-  // Guarda o estado da animação em curso. `pieces` é uma lista porque o
-  // roque precisa animar Rei E Torre ao mesmo tempo — sem isso a torre
-  // "teleportava" instantaneamente enquanto só o rei era animado.
-  let _anim = null;  // { pieces: [{fromX,fromY,toX,toY,piece,isKnight}], board, exceptSqs, startTime, duration }
+  // Uma animação mostra a posição final com algumas peças "em trânsito":
+  //   moves: peças deslizando em linha reta (todas, cavalo incluído,
+  //          como nos grandes sites); no roque, rei e torre juntos.
+  //   fades: peça capturada sumindo quando o atacante chega (ou
+  //          reaparecendo, quando o lance é desfeito).
+  let _anim = null;  // { moves, fades, board, exceptSqs, hl, startTime, duration, raf }
+  const ANIM_MS = 200;
 
-  function _pieceAnimSpec(board, fromSq, toSq) {
-    const { x: fx, y: fy } = sqToCanvas(fromSq);
-    const { x: tx, y: ty } = sqToCanvas(toSq);
-    const tc = toSq.charCodeAt(0) - 97;
-    const tr = 8 - parseInt(toSq[1]);
-    const piece = board[tr][tc];
-    const fc = fromSq.charCodeAt(0) - 97;
-    const fr = 8 - parseInt(fromSq[1]);
-    const dc = Math.abs(tc - fc), dr = Math.abs(tr - fr);
-    const isKnight = (dc === 2 && dr === 1) || (dc === 1 && dr === 2);
-    return { fromX: fx, fromY: fy, toX: tx, toY: ty, piece, toSq, isKnight };
-  }
+  const _corDe = p => (p === p.toUpperCase() ? 'w' : 'b');
 
   // Detecta roque a partir do movimento do rei (2 casas na horizontal, na
   // fileira de origem) e devolve o par from/to correspondente da torre.
   function _castlingRookSquares(fromSq, toSq) {
     const fc = fromSq.charCodeAt(0) - 97, fr = fromSq[1];
     const tc = toSq.charCodeAt(0) - 97;
-    if (Math.abs(tc - fc) !== 2) return null;
-    const row = fr; // '1' ou '8' — mesma fileira do rei
+    if (Math.abs(tc - fc) !== 2 || fromSq[1] !== toSq[1]) return null;
     const kingSide = tc > fc;
-    const rookFrom = (kingSide ? 'h' : 'a') + row;
-    const rookTo   = (kingSide ? 'f' : 'd') + row;
-    return { rookFrom, rookTo };
+    return { rookFrom: (kingSide ? 'h' : 'a') + fr, rookTo: (kingSide ? 'f' : 'd') + fr };
   }
 
-  function _animatePiece(board, fromSq, toSq, duration = 180) {
-    if (_anim && _anim.raf) cancelAnimationFrame(_anim.raf);
-    if (!fromSq || !toSq) { _anim = null; return; }
-
-    const specs = [_pieceAnimSpec(board, fromSq, toSq)];
-    const exceptSqs = [toSq];
-
-    // Roque: verifica se a peça movida é um rei e a distância é de 2 casas
-    const movedPiece = specs[0].piece;
-    if (movedPiece && movedPiece.toUpperCase() === 'K') {
-      const rookSqs = _castlingRookSquares(fromSq, toSq);
-      if (rookSqs) {
-        const { rookFrom, rookTo } = rookSqs;
-        const rc = board[8 - parseInt(rookTo[1])];
-        if (rc) { // torre já está na posição final em `board` (pós-lance)
-          specs.push(_pieceAnimSpec(board, rookFrom, rookTo));
-          exceptSqs.push(rookTo);
+  // Monta a animação do lance from→to.
+  //   board:    posição que fica na tela no fim;
+  //   prev:     posição que estava antes (para achar a peça capturada);
+  //   reverso:  o lance está sendo desfeito (a peça volta de "to" para "from");
+  //   semMover: a peça já foi solta ali pelo arraste — só anima a torre do
+  //             roque e a captura.
+  function _montarAnim(board, prev, fromSq, toSq, reverso, semMover) {
+    const at = (b, sq) => _boardPieceAt(b, sq);
+    const moves = [], fades = [];
+    if (!reverso) {
+      const piece = at(board, toSq);
+      if (!piece) return null;
+      if (!semMover) moves.push({ piece, de: fromSq, para: toSq });
+      // Só confia na posição anterior se ela for mesmo a de antes do lance.
+      const antes = prev && at(prev, fromSq);
+      if (antes && _corDe(antes) === _corDe(piece) && !at(board, fromSq)) {
+        const alvo = at(prev, toSq);
+        if (alvo && _corDe(alvo) !== _corDe(piece)) fades.push({ piece: alvo, sq: toSq, sai: true });
+        else if (!alvo && antes.toUpperCase() === 'P' && fromSq[0] !== toSq[0]) {
+          const ep = toSq[0] + fromSq[1];
+          const pe = at(prev, ep);
+          if (pe && !at(board, ep)) fades.push({ piece: pe, sq: ep, sai: true });
         }
       }
+      if (piece.toUpperCase() === 'K') {
+        const r = _castlingRookSquares(fromSq, toSq);
+        if (r && at(board, r.rookTo)) moves.push({ piece: at(board, r.rookTo), de: r.rookFrom, para: r.rookTo });
+      }
+    } else {
+      const piece = at(board, fromSq);
+      if (!piece) return null;
+      moves.push({ piece, de: toSq, para: fromSq });
+      const volta = at(board, toSq);
+      if (volta && _corDe(volta) !== _corDe(piece)) fades.push({ piece: volta, sq: toSq, sai: false });
+      else if (!volta && piece.toUpperCase() === 'P' && fromSq[0] !== toSq[0]) {
+        const ep = toSq[0] + fromSq[1];
+        const pe = at(board, ep);
+        if (pe && _corDe(pe) !== _corDe(piece)) fades.push({ piece: pe, sq: ep, sai: false });
+      }
+      if (piece.toUpperCase() === 'K') {
+        const r = _castlingRookSquares(fromSq, toSq);
+        if (r && at(board, r.rookFrom)) moves.push({ piece: at(board, r.rookFrom), de: r.rookTo, para: r.rookFrom });
+      }
     }
+    const exceptSqs = moves.map(m => m.para).concat(fades.filter(f => !f.sai).map(f => f.sq));
+    return { moves, fades, exceptSqs };
+  }
 
-    _anim = { pieces: specs, board, fromSq, toSq, exceptSqs,
-              startTime: performance.now(), duration, raf: null };
+  function _desenharPeca(piece, x, y, alpha, escala, sombraForte) {
+    const img = _getPieceImg(piece);
+    if (!img || !img.complete || img.naturalWidth === 0) return;
+    const pad = sqSize * 0.04;
+    const tam = (sqSize - pad * 2) * escala;
+    const off = (sqSize - tam) / 2;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.shadowColor   = sombraForte ? 'rgba(0,0,0,0.40)' : 'rgba(0,0,0,0.30)';
+    ctx.shadowBlur    = sqSize * (sombraForte ? 0.14 : 0.08);
+    ctx.shadowOffsetX = sqSize * (sombraForte ? 0.03 : 0.02);
+    ctx.shadowOffsetY = sqSize * (sombraForte ? 0.06 : 0.04);
+    ctx.drawImage(img, x + off, y + off, tam, tam);
+    ctx.restore();
+  }
+
+  function _animatePiece(board, fromSq, toSq, opts = {}) {
+    if (_anim && _anim.raf) cancelAnimationFrame(_anim.raf);
+    _anim = null;
+    if (!fromSq || !toSq) return false;
+    const plano = _montarAnim(board, opts.prev || null, fromSq, toSq, !!opts.reverso, !!opts.semMover);
+    if (!plano || (!plano.moves.length && !plano.fades.length)) return false;
+    const hl = [];
+    if (opts.hlFrom) hl.push({ sq: opts.hlFrom, color: THEME.hlFrom });
+    if (opts.hlTo)   hl.push({ sq: opts.hlTo,   color: THEME.hlTo });
+    if (selectedSq)  hl.push({ sq: selectedSq,  color: THEME.hlSelect });
+    _anim = { ...plano, board, hl, startTime: performance.now(), duration: opts.duration || ANIM_MS, raf: null };
     _runAnim();
+    return true;
   }
 
   function _runAnim() {
     if (!_anim) return;
-    const now  = performance.now();
-    const prog = Math.min(1, (now - _anim.startTime) / _anim.duration);
-    const t    = 1 - Math.pow(1 - prog, 3);  // ease-out cubic
+    const prog = Math.min(1, (performance.now() - _anim.startTime) / _anim.duration);
+    const t    = 1 - Math.pow(1 - prog, 3);  // ease-out cúbico: sai rápido, pousa macio
 
-    // Fundo + highlights
-    const hl = [
-      { sq: _anim.fromSq, color: THEME.hlFrom },
-      { sq: _anim.toSq,   color: THEME.hlTo   },
-    ];
-    drawSquares(hl);
-    // Todas as peças exceto as que estão sendo animadas (rei + torre no roque)
+    drawSquares(_anim.hl);
     drawPiecesExcept(_anim.board, _anim.exceptSqs);
 
-    // Desenha cada peça em animação (rei + torre simultaneamente no roque)
-    for (const p of _anim.pieces) {
-      let ax, ay;
-      if (p.isKnight) {
-        // Arco parabólico para o cavalo
-        const mx = (p.fromX + p.toX) / 2;
-        const arcH = sqSize * 1.1;
-        const cpy = Math.min(p.fromY, p.toY) - arcH;
-        ax = (1-t)*(1-t)*p.fromX + 2*(1-t)*t*mx  + t*t*p.toX;
-        ay = (1-t)*(1-t)*p.fromY + 2*(1-t)*t*cpy + t*t*p.toY;
-      } else {
-        ax = p.fromX + (p.toX - p.fromX) * t;
-        ay = p.fromY + (p.toY - p.fromY) * t;
-      }
-      const img = _getPieceImg(p.piece);
-      if (img && img.complete && img.naturalWidth > 0) {
-        const pad = sqSize * 0.04;
-        ctx.save();
-        ctx.shadowColor   = 'rgba(0,0,0,0.40)';
-        ctx.shadowBlur    = sqSize * 0.14;
-        ctx.shadowOffsetX = sqSize * 0.03;
-        ctx.shadowOffsetY = sqSize * 0.06;
-        ctx.drawImage(img, ax + pad, ay + pad, sqSize - pad*2, sqSize - pad*2);
-        ctx.restore();
-      }
+    // Capturada: some quando o atacante está chegando (encolhe um pouco);
+    // ao desfazer o lance, reaparece do mesmo jeito.
+    for (const f of _anim.fades) {
+      const { x, y } = sqToCanvas(f.sq);
+      const k = f.sai ? Math.max(0, Math.min(1, (prog - 0.45) / 0.55)) : Math.min(1, prog / 0.7);
+      const alpha = f.sai ? 1 - k : k;
+      const escala = f.sai ? 1 - 0.18 * k : 0.82 + 0.18 * k;
+      _desenharPeca(f.piece, x, y, alpha, escala, false);
     }
-    // Setas por cima
+    for (const m of _anim.moves) {
+      const a = sqToCanvas(m.de), b = sqToCanvas(m.para);
+      _desenharPeca(m.piece, a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, 1, 1, true);
+    }
     ArrowSystem.redraw();
 
     if (prog < 1) {
       _anim.raf = requestAnimationFrame(_runAnim);
     } else {
+      const hl = _anim.hl;
       _anim = null;
-      // Render final limpo
       drawSquares(hl);
       drawPieces(_lastBoard);
       ArrowSystem.redraw();
@@ -408,21 +429,25 @@ const BoardUI = (() => {
   // renderWithAnim() — igual a render(), mas dispara a animação de movimento.
   // Usado por renderBoardAtMove (navegação de lances) e por FreePlay
   // (lances livres também recebem a animação tradicional).
-  function renderWithAnim(board, fromSq, toSq, selSq, dots) {
+  // opts: { prev, reverso, semMover, hlFrom, hlTo } (ver _montarAnim).
+  // Sem prev, usa a posição que estava na tela (o caso normal: um lance
+  // depois do outro).
+  function renderWithAnim(board, fromSq, toSq, selSq, dots, opts = {}) {
     if (!canvas || !ctx) return;
-    _lastBoard = board; _lastFrom = fromSq; _lastTo = toSq;
+    const prev = 'prev' in opts ? opts.prev : _lastBoard;
+    const hlFrom = 'hlFrom' in opts ? opts.hlFrom : fromSq;
+    const hlTo = 'hlTo' in opts ? opts.hlTo : toSq;
+    _lastBoard = board; _lastFrom = hlFrom; _lastTo = hlTo;
     selectedSq = selSq || null;
     legalDots  = dots  || [];
-    if (fromSq && toSq && board) {
-      _animatePiece(board, fromSq, toSq, 180);
-    } else {
-      if (_anim) { cancelAnimationFrame(_anim.raf); _anim = null; }
-      const highlights = [];
-      if (toSq)       highlights.push({ sq: toSq,       color: THEME.hlTo });
-      if (selectedSq) highlights.push({ sq: selectedSq, color: THEME.hlSelect });
-      drawSquares(highlights);
-      drawPieces(board);
-    }
+    if (board && _animatePiece(board, fromSq, toSq, { ...opts, prev, hlFrom, hlTo })) return;
+    const highlights = [];
+    if (hlFrom)     highlights.push({ sq: hlFrom,     color: THEME.hlFrom });
+    if (hlTo)       highlights.push({ sq: hlTo,       color: THEME.hlTo });
+    if (selectedSq) highlights.push({ sq: selectedSq, color: THEME.hlSelect });
+    drawSquares(highlights);
+    drawPieces(board);
+    ArrowSystem.redraw();
   }
 
   // _forceRedraw: chamado pelo onload das imagens.

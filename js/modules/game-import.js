@@ -368,14 +368,14 @@ const GameImport = (() => {
     const caixa = $('trazer');
     if (!caixa) return;
     let aba = 'importar';
-    try { if (localStorage.getItem(KEY_ABA) === 'pgn') aba = 'pgn'; } catch (e) { /* sem armazenamento */ }
+    try { const a = localStorage.getItem(KEY_ABA); if (a === 'pgn' || a === 'foto') aba = a; } catch (e) { /* sem armazenamento */ }
     mostrarAba(aba);
     caixa.querySelector('.trazer-tabs')?.addEventListener('click', e => {
       const b = e.target.closest('[data-trazer]');
       if (!b) return;
       mostrarAba(b.dataset.trazer, true);
       if (b.dataset.trazer === 'pgn') $('pgn-input')?.focus();
-      else $('imp-input')?.focus();
+      else if (b.dataset.trazer === 'importar') $('imp-input')?.focus();
     });
     // Atalhos do cartão "Resumo da partida" (antes da primeira análise)
     document.addEventListener('click', e => {

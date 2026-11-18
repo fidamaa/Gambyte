@@ -40,6 +40,14 @@ const App = (() => {
     const pgn = document.getElementById('pgn-input').value.trim();
     if (!pgn) { UIController.showError('Cole um PGN válido antes de analisar.'); return; }
 
+    // Um FEN no lugar do PGN: abre a posição no tabuleiro livre.
+    if (/^[pnbrqkPNBRQK1-8]+(\/[pnbrqkPNBRQK1-8]+){7}(\s|$)/.test(pgn)) {
+      const erro = PhotoPosition.abrirFEN(pgn);
+      if (erro) UIController.showError(erro);
+      else document.getElementById('board-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+
     let parsedGame;
     try {
       parsedGame = PGNParser.parsePGN(pgn);
@@ -147,9 +155,20 @@ const App = (() => {
     const ajustarDireita = () => {
       if (!sum || !lista || !resumo) return;
       lista.style.maxHeight = ''; resumo.style.maxHeight = '';
+      // Aba da foto aberta: o cartão de destaque do resumo é redundante e,
+      // se ainda faltar espaço, a chamada da aba fica mais curta. (Estilo e
+      // data-*, que o MutationObserver abaixo não observa.)
+      const seFoto = sum.querySelector('.se-foto'), fotoBox = document.getElementById('foto-box');
+      if (seFoto) seFoto.style.display = '';
+      if (fotoBox) delete fotoBox.dataset.compacta;
       if (!sum.classList.contains('alinhado')) return;
       let excesso = sum.scrollHeight - sum.clientHeight;
       if (excesso <= 0) return;
+      if (fotoBox && !fotoBox.hidden) {
+        if (seFoto && seFoto.offsetHeight) { excesso -= seFoto.offsetHeight + 12; seFoto.style.display = 'none'; }
+        if (excesso > 0) { fotoBox.dataset.compacta = '1'; excesso = sum.scrollHeight - sum.clientHeight; }
+        if (excesso <= 0) return;
+      }
       if (lista.offsetHeight > 0) {
         const alvo = Math.max(120, lista.offsetHeight - excesso);
         excesso -= lista.offsetHeight - alvo;
@@ -206,7 +225,17 @@ const App = (() => {
     UIController.showEmptyBoard();
   }
 
-  return { init, run: runAnalysis };
+  // Abre uma posição montada (foto ou print do tabuleiro): para a análise
+  // que estiver rodando e deixa o tabuleiro livre a partir dela.
+  function loadPosition(fen, brancasEmbaixo) {
+    if (analyzing) { AnalysisEngine.abort(); analyzing = false; UIController.setAnalyzing(false); }
+    document.getElementById('progress-container').classList.remove('visible');
+    UIController.hideError();
+    currentMovesData = [];
+    UIController.showPosition(fen, brancasEmbaixo);
+  }
+
+  return { init, run: runAnalysis, loadPosition };
 })();
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -144,9 +144,11 @@ const FreePlay = (() => {
   // Volta ao lance anterior SEM apagar nada — pode avançar de novo depois.
   function goBack() {
     if (!canGoBack()) return;
+    const desfeito = ucis[idx];
     idx--;
     currentFEN = fens[idx + 1];
-    _afterNavigate(null, null);
+    // Anima o lance sendo desfeito: a peça volta e a capturada reaparece.
+    _afterNavigate(desfeito ? desfeito.slice(0, 2) : null, desfeito ? desfeito.slice(2, 4) : null, null, null, true);
   }
 
   // Avança pelo lance seguinte que já existia nesta linha.
@@ -167,11 +169,11 @@ const FreePlay = (() => {
     _afterNavigate(null, null);
   }
 
-  function _afterNavigate(fromSq, toSq, played, fenBefore) {
+  function _afterNavigate(fromSq, toSq, played, fenBefore, reverso = false) {
     selectedSq = null; legalTargets = [];
     _updateTurnLabel();
     _requestEval(played, fenBefore);
-    _redraw(fromSq, toSq, !!(fromSq && toSq));
+    _redraw(fromSq, toSq, true, reverso);
     if (onBranchCb) onBranchCb();
   }
 
@@ -207,12 +209,27 @@ const FreePlay = (() => {
   // Tenta o lance from→to. animate=false para peças soltas pelo arraste
   // (a peça já está na casa de destino, não faz sentido animar de novo).
   function tryMove(fromSq, toSq, animate) {
-    if (!active || _gameStatus || !isMovable(fromSq)) return false;
+    const destino = resolveTarget(fromSq, toSq);
+    if (!destino) return false;
+    _makeMove(fromSq, destino, PGNParser.fenToBoard(currentFEN), animate !== false);
+    return true;
+  }
+
+  // Destino de verdade de um lance pedido no tabuleiro, ou null se não
+  // for legal. Roque também vale levando o rei até a própria torre
+  // (Kxh1 vira e1→g1; Kxa1 vira e1→c1), como nos grandes sites.
+  function resolveTarget(fromSq, toSq) {
+    if (!active || _gameStatus || !fromSq || !toSq || !isMovable(fromSq)) return null;
     const st = PGNParser.fenToBoard(currentFEN);
     const alvos = _filterKingTargets(_getLegalTargets(fromSq, st, st.turn === 'w'), fromSq, st);
-    if (!alvos.includes(toSq)) return false;
-    _makeMove(fromSq, toSq, st, animate !== false);
-    return true;
+    if (alvos.includes(toSq)) return toSq;
+    const rei = _pieceAt(st.board, fromSq), torre = _pieceAt(st.board, toSq);
+    const fila = st.turn === 'w' ? '1' : '8';
+    if ((rei === 'K' || rei === 'k') && fromSq === 'e' + fila && torre === (rei === 'K' ? 'R' : 'r') && toSq[1] === fila) {
+      const roque = toSq[0] === 'h' ? 'g' + fila : toSq[0] === 'a' ? 'c' + fila : null;
+      if (roque && alvos.includes(roque)) return roque;
+    }
+    return null;
   }
 
   // ── Click handler — called from UIController ───────────────
@@ -511,20 +528,22 @@ const FreePlay = (() => {
     }
   }
 
-  // fromSq/toSq (opcionais): quando informados, anima o lance recém-feito
-  // com a mesma animação tradicional usada na revisão de PGN.
-  function _redraw(fromSq, toSq, animate = true) {
+  // fromSq/toSq (opcionais): o lance a animar.
+  //   animate=false: a peça já foi solta ali pelo arraste; ainda assim a
+  //                  torre do roque desliza e a peça capturada some.
+  //   reverso:       o lance está sendo desfeito (botão voltar).
+  function _redraw(fromSq, toSq, animate = true, reverso = false) {
     const state = PGNParser.fenToBoard(currentFEN);
     if (!state) return;
     const board = __fenToBoard8x8(currentFEN);
-    if (animate && fromSq && toSq) {
-      BoardUI.renderWithAnim(board, fromSq, toSq, selectedSq, legalTargets);
+    // Destaque: o último lance da linha (ou o da partida de onde ela começou).
+    const u = idx >= 0 ? ucis[idx] : null;
+    const de = u ? u.slice(0, 2) : (_baseCtx.lastFrom || null);
+    const para = u ? u.slice(2, 4) : (_baseCtx.lastTo || null);
+    if (fromSq && toSq) {
+      BoardUI.renderWithAnim(board, fromSq, toSq, selectedSq, legalTargets,
+        { semMover: !animate, reverso, hlFrom: de, hlTo: para });
     } else {
-      // Estático, mantendo o destaque do último lance da linha (ou do
-      // lance da partida de onde a linha começou).
-      const u = idx >= 0 ? ucis[idx] : null;
-      const de = u ? u.slice(0, 2) : (_baseCtx.lastFrom || null);
-      const para = u ? u.slice(2, 4) : (_baseCtx.lastTo || null);
       BoardUI.render(board, de, para, selectedSq, legalTargets);
     }
     ArrowSystem.redraw();
@@ -645,9 +664,20 @@ const FreePlay = (() => {
   function _buildPGN() {
     const moves = [..._baseCtx.moves, ...sans.slice(0, idx + 1)];
     const date  = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
-    let pgn = `[Event "Free Play"]\n[Date "${date}"]\n[White "${_pgnHeaders.White || '?'}"]\n[Black "${_pgnHeaders.Black || '?'}"]\n[Result "*"]\n\n`;
+    // Linha que começa numa posição montada (foto, print): PGN com FEN.
+    const inicio = fens[0] || PGNParser.INITIAL_FEN;
+    const deFEN = !_baseCtx.moves.length && inicio !== PGNParser.INITIAL_FEN;
+    let pgn = `[Event "Free Play"]\n[Date "${date}"]\n[White "${_pgnHeaders.White || '?'}"]\n[Black "${_pgnHeaders.Black || '?'}"]\n[Result "*"]\n`;
+    if (deFEN) pgn += `[SetUp "1"]\n[FEN "${inicio}"]\n`;
+    pgn += '\n';
+    const partes = inicio.split(' ');
+    const pretasComecam = deFEN && partes[1] === 'b';
+    const n0 = deFEN ? (parseInt(partes[5], 10) || 1) : 1;
     for (let i = 0; i < moves.length; i++) {
-      if (i % 2 === 0) pgn += `${Math.floor(i / 2) + 1}. `;
+      const j = i + (pretasComecam ? 1 : 0);
+      const num = n0 + Math.floor(j / 2);
+      if (j % 2 === 0) pgn += `${num}. `;
+      else if (i === 0) pgn += `${num}... `;
       pgn += moves[i] + ' ';
     }
     pgn += '*';
@@ -678,7 +708,7 @@ const FreePlay = (() => {
 
   return {
     start, stop, pause, resume, hasTree, isActive,
-    isMovable, select, deselect, getSelection, pieceAt, tryMove, lineLength: () => sans.length,
+    isMovable, select, deselect, getSelection, pieceAt, tryMove, resolveTarget, lineLength: () => sans.length,
     handleClick, undoMove, exportPGN, copyPGN,
     currentFEN: () => currentFEN, _redrawPublic,
     getBranchView, gotoIndex, goBack, goForward, canGoBack, canGoForward

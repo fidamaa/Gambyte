@@ -191,7 +191,7 @@ const UIController = (() => {
 
   function _enterFreePlay() {
     const startFEN = currentMoveIdx < 0
-      ? PGNParser.INITIAL_FEN
+      ? _fenInicial()
       : (parsedGameRef && parsedGameRef.fensAfter[currentMoveIdx]) || PGNParser.INITIAL_FEN;
     const baseIdx = currentMoveIdx;
     const ms = parsedGameRef && parsedGameRef.moveSquares && baseIdx >= 0 ? parsedGameRef.moveSquares[baseIdx] : null;
@@ -224,8 +224,11 @@ const UIController = (() => {
   }
 
   // FEN mostrado na revisão (sem linha livre)
+  // Posição de partida: a inicial do xadrez, ou a montada pela foto/print.
+  function _fenInicial() { return (parsedGameRef && parsedGameRef.startFEN) || PGNParser.INITIAL_FEN; }
+
   function _fenRevisao() {
-    if (!parsedGameRef || currentMoveIdx < 0) return PGNParser.INITIAL_FEN;
+    if (!parsedGameRef || currentMoveIdx < 0) return _fenInicial();
     return parsedGameRef.fensAfter[currentMoveIdx] || PGNParser.INITIAL_FEN;
   }
   function _movivelNaRevisao(sq) {
@@ -272,7 +275,7 @@ const UIController = (() => {
         _enterFreePlay();
       }
       const sel = FreePlay.getSelection();
-      if (sel.sq && sel.targets.includes(sq)) {          // clique no destino
+      if (sel.sq && FreePlay.resolveTarget(sel.sq, sq)) { // clique no destino (ou na torre, para rocar)
         FreePlay.tryMove(sel.sq, sq, true);
         press = null;
         return;
@@ -341,19 +344,28 @@ const UIController = (() => {
     if (!parsedGameRef) return;
     const fensAft = parsedGameRef.fensAfter;
 
-    const fen = idx < 0 ? PGNParser.INITIAL_FEN
+    const fen = idx < 0 ? _fenInicial()
               : idx < fensAft.length ? fensAft[idx]
               : fensAft[fensAft.length - 1];
 
     const board = __fenToBoard8x8(fen);
 
     let fromSq = null, toSq = null;
-    if (idx >= 0 && parsedGameRef.moveSquares && parsedGameRef.moveSquares[idx]) {
-      fromSq = parsedGameRef.moveSquares[idx].from;
-      toSq   = parsedGameRef.moveSquares[idx].to;
+    const ms = parsedGameRef.moveSquares || [];
+    if (idx >= 0 && ms[idx]) {
+      fromSq = ms[idx].from;
+      toSq   = ms[idx].to;
     }
 
-    BoardUI.renderWithAnim(board, fromSq, toSq);
+    // Um lance para a frente: anima o lance (com captura e roque).
+    // Um lance para trás: desfaz o lance seguinte (a peça volta e a
+    // capturada reaparece). Saltos maiores: anima só o lance mostrado.
+    if (idx === currentMoveIdx - 1 && ms[currentMoveIdx]) {
+      const m = ms[currentMoveIdx];
+      BoardUI.renderWithAnim(board, m.from, m.to, null, null, { reverso: true, hlFrom: fromSq, hlTo: toSq });
+    } else {
+      BoardUI.renderWithAnim(board, fromSq, toSq, null, null, idx === currentMoveIdx + 1 ? {} : { prev: null });
+    }
 
     // Engine arrow
     ArrowSystem.clearManual();
@@ -499,8 +511,14 @@ const UIController = (() => {
 
   // ── Opening banner ──────────────────────────────────────────
   function updateOpeningBanner(moves) {
-    const result = OpeningDetector.detect(moves);
     els.openingBanner.classList.add('visible');
+    if (parsedGameRef && parsedGameRef.startFEN) {
+      els.openingEco.textContent      = '—';
+      els.openingName.textContent     = 'Posição montada';
+      els.openingVariation.textContent = 'Lida da imagem. Jogue no tabuleiro ou siga a linha do motor.';
+      return;
+    }
+    const result = OpeningDetector.detect(moves);
     if (!moves.length) {
       els.openingEco.textContent      = '—';
       els.openingName.textContent     = 'Posição inicial';
@@ -571,6 +589,22 @@ const UIController = (() => {
     };
     showResults(emptyGame);
     initMovesList(emptyGame);
+    _enterFreePlay();
+  }
+
+  // Abre uma posição montada (foto ou print do tabuleiro) para jogar e
+  // analisar ao vivo. brancasEmbaixo decide o lado do tabuleiro.
+  function showPosition(fen, brancasEmbaixo = true) {
+    const game = {
+      headers: { White: 'Brancas', Black: 'Pretas', SetUp: '1', FEN: fen },
+      moves: [], fensBefore: [], fensAfter: [], moveSquares: [], startFEN: fen,
+    };
+    const virar = !brancasEmbaixo;
+    BoardUI.setFlipped(virar);
+    EvalBar.setFlipped(virar);
+    document.getElementById('btn-flip')?.classList.toggle('active', virar);
+    showResults(game);
+    initMovesList(game);
     _enterFreePlay();
   }
 
@@ -658,17 +692,29 @@ const UIController = (() => {
         k0 = 1;
       }
     }
+    // Posição montada (foto/print): a numeração segue o FEN e, se as
+    // pretas começam, o primeiro par tem a casa das brancas vazia.
+    const fenIni = parsedGameRef && parsedGameRef.startFEN;
+    const pretasComecam = !!fenIni && fenIni.split(' ')[1] === 'b';
+    const desloc = pretasComecam ? 1 : 0;
+    const n0 = fenIni ? (parseInt(fenIni.split(' ')[5], 10) || 1) : 1;
     let pairDiv = null;
     for (let k = k0; k < path.length; k++) {
-      const globalIdx = baseIdx + 1 + k;
+      const globalIdx = baseIdx + 1 + k + desloc;
       if (globalIdx % 2 === 0 || !pairDiv) {
         pairDiv = document.createElement('div');
         pairDiv.className = 'move-pair';
         pairDiv.dataset.branch = '1';
         const numDiv = document.createElement('div');
         numDiv.className = 'move-number';
-        numDiv.textContent = (Math.floor(globalIdx / 2) + 1) + '.';
+        numDiv.textContent = (n0 + Math.floor(globalIdx / 2)) + '.';
         pairDiv.appendChild(numDiv);
+        if (globalIdx % 2 === 1) {
+          const vazio = document.createElement('div');
+          vazio.className = 'move-item move-vazio';
+          vazio.textContent = '…';
+          pairDiv.appendChild(vazio);
+        }
         els.movesList.appendChild(pairDiv);
       }
       pairDiv.appendChild(_createBranchMoveEl(path[k]));
@@ -905,7 +951,7 @@ const UIController = (() => {
   return {
     showError, hideError, setAnalyzing, showResults,
     initMovesList, updateMoveElement, updateProgress,
-    updatePlayerStats, updateChart, showEmptyBoard, resizeBoard,
+    updatePlayerStats, updateChart, showEmptyBoard, showPosition, resizeBoard,
     // Fim da análise da partida: a barra ao vivo volta a analisar a posição mostrada.
     refreshLive: () => { if (!FreePlay.isActive()) _barraRevisao(_fenRevisao()); }
   };
