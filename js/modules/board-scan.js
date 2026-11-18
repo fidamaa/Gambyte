@@ -105,7 +105,15 @@ const BoardScan = (() => {
       const sx = Math.floor((x - ox) / k) + x0, sy = Math.floor((y - oy) / k) + y0;
       if (sx >= x0 && sx <= x1 && sy >= y0 && sy <= y1 && mask[sy * w + sx]) out[y * N + x] = 1;
     }
-    return { m: out, bw, bh };
+    // Versão "esticada": a silhueta ocupa o quadrado inteiro, ignorando a
+    // proporção. Compara a FORMA de peças mais largas ou mais estreitas que
+    // as dos moldes (as do Chess.com são bem mais largas).
+    const ms = new Float32Array(N * N);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const sx = x0 + Math.min(bw - 1, Math.floor(x * bw / N)), sy = y0 + Math.min(bh - 1, Math.floor(y * bh / N));
+      if (mask[sy * w + sx]) ms[y * N + x] = 1;
+    }
+    return { m: out, ms, bw, bh };
   }
 
   function iou(a, b) {
@@ -135,10 +143,15 @@ const BoardScan = (() => {
     return { assim: u ? 1 - i / u : 0, perfil: perfilL };
   }
 
+  // Pesos de cada pista, escolhidos testando 24 combinações em 23 prints
+  // reais (Lichess e Chess.com) e 30 tabuleiros sintéticos. A silhueta
+  // esticada (ms) e a proporção (asp) não ajudaram e ficam desligadas.
+  const P = { m: 1, ms: 0, relH: 0.9, assim: 0.8, perfil: 0.5, asp: 0 };
   function nota(c, m) {
     let dp = 0;
     for (let k = 0; k < 16; k++) dp += Math.abs(c.perfil[k] - m.perfil[k]);
-    return iou(c.mask, m.mask) - 0.9 * Math.abs(c.relH - m.relH) - 1.2 * Math.abs(c.assim - m.assim) - 0.5 * dp / 16;
+    return P.m * iou(c.mask, m.mask) + P.ms * iou(c.ms, m.ms) - P.relH * Math.abs(c.relH - m.relH)
+      - P.assim * Math.abs(c.assim - m.assim) - P.perfil * dp / 16 - P.asp * Math.abs(Math.log(c.asp / m.asp));
   }
 
   // ── Modelos: silhuetas dos dois conjuntos de peças do site ──
@@ -164,10 +177,10 @@ const BoardScan = (() => {
         for (let i = 0; i < L * L; i++) mask[i] = d[i * 4 + 3] > 100 ? 1 : 0;
         const cheia = preencher(mask, L, L);
         const n = normalizar(cheia, L, L);
-        if (n) doConjunto.push({ tipo: t, mask: n.m, h: n.bh });
+        if (n) doConjunto.push({ tipo: t, mask: n.m, ms: n.ms, asp: n.bw / n.bh, h: n.bh });
       }
       const rei = doConjunto.find(m => m.tipo === 'k');
-      for (const m of doConjunto) lista.push({ tipo: m.tipo, mask: m.mask, relH: rei ? m.h / rei.h : 1, ...descrever(m.mask) });
+      for (const m of doConjunto) lista.push({ tipo: m.tipo, mask: m.mask, ms: m.ms, asp: m.asp, relH: rei ? m.h / rei.h : 1, ...descrever(m.mask) });
     }
     modelos = lista;
     return modelos;
@@ -334,7 +347,7 @@ const BoardScan = (() => {
     const base = miolo.length >= 12 ? miolo : todos;
     base.sort((m, k) => m - k);
     const brilho = base[base.length >> 1];
-    return { vazia: false, mask: n.m, h: n.bh / lado, branca: brilho > 128, ...descrever(n.m) };
+    return { vazia: false, mask: n.m, ms: n.ms, asp: n.bw / n.bh, h: n.bh / lado, branca: brilho > 128, ...descrever(n.m) };
   }
 
   // Quantas peças de cada tipo cabem de cada lado (promoções são raras;
@@ -354,40 +367,87 @@ const BoardScan = (() => {
         if (c.notas[m.tipo] == null || v > c.notas[m.tipo]) c.notas[m.tipo] = v;
       }
     }
+    // 1. Num print, peças do mesmo tipo e cor são desenhadas iguais:
+    //    agrupa cada cor em grupos de peças idênticas.
+    const grupos = [];
     for (const branca of [true, false]) {
-      const lado = casas.filter(c => !c.vazia && c.branca === branca);
-      // Peças iguais no mesmo print têm o mesmo desenho: agrupa e decide
-      // o grupo inteiro de uma vez.
-      const grupos = [];
-      for (const c of lado) {
-        const g = grupos.find(gr => iou(gr[0].mask, c.mask) > 0.86 && Math.abs(gr[0].relH - c.relH) < 0.06);
-        if (g) g.push(c); else grupos.push([c]);
+      const doLado = [];
+      for (const c of casas.filter(x => !x.vazia && x.branca === branca)) {
+        const g = doLado.find(gr => iou(gr.membros[0].mask, c.mask) > 0.86 && Math.abs(gr.membros[0].relH - c.relH) < 0.06);
+        if (g) g.membros.push(c); else doLado.push({ branca, membros: [c] });
       }
-      const opcoes = [];
-      grupos.forEach((g, gi) => {
-        for (const t of TIPOS) opcoes.push({ gi, t, v: g.reduce((s, c) => s + c.notas[t], 0) / g.length });
-      });
-      opcoes.sort((a, b) => b.v - a.v);
-      const usados = { p: 0, n: 0, b: 0, r: 0, q: 0, k: 0 };
-      const tipoDo = new Array(grupos.length).fill(null);
-      // O rei primeiro: o grupo de 1 peça mais parecido com rei.
-      const reiOp = opcoes.filter(o => o.t === 'k' && grupos[o.gi].length === 1)[0];
-      if (reiOp) { tipoDo[reiOp.gi] = 'k'; usados.k = 1; }
-      for (const o of opcoes) {
-        if (tipoDo[o.gi] || o.t === 'k') continue;
-        if (usados[o.t] + grupos[o.gi].length > LIMITE[o.t]) continue;
-        tipoDo[o.gi] = o.t;
-        usados[o.t] += grupos[o.gi].length;
-      }
-      grupos.forEach((g, gi) => {
-        // Sobrou sem lugar (promoção, por exemplo): fica o mais parecido.
-        const t = tipoDo[gi] || TIPOS.filter(x => x !== 'k').sort((a, b) => g[0].notas[b] - g[0].notas[a])[0];
-        for (const c of g) {
-          c.tipo = t;
-          const ord = Object.values(c.notas).sort((a, b) => b - a);
-          c.duvida = c.notas[t] < ord[0] - 0.001 || ord[0] - ord[1] < 0.05;
+      // 2. O maior grupo com 3 ou mais peças só pode ser o dos peões, e
+      //    nenhum outro grupo dessa cor é peão.
+      const maior = doLado.slice().sort((a, b) => b.membros.length - a.membros.length)[0];
+      if (maior && maior.membros.length >= 3) {
+        maior.fixo = 'p';
+        const ref0 = maior.membros[0];
+        for (const g of doLado) {
+          if (g === maior) continue;
+          // Peão quase igual (na casa clara x escura o recorte muda um pouco)
+          // continua sendo peão; o resto não pode ser peão.
+          const c = g.membros[0];
+          if (iou(ref0.mask, c.mask) > 0.8 && Math.abs(ref0.relH - c.relH) < 0.04) g.fixo = 'p';
+          else g.semPeao = true;
         }
-      });
+      }
+      grupos.push(...doLado);
+    }
+    // 3. O mesmo desenho aparece nas duas cores: junta cada grupo branco
+    //    com o grupo preto de silhueta mais parecida (par mútuo), e o par
+    //    recebe o mesmo tipo.
+    const brancos = grupos.filter(g => g.branca && !g.fixo), pretos = grupos.filter(g => !g.branca && !g.fixo);
+    const parecido = (a, b) => iou(a.membros[0].mask, b.membros[0].mask) - Math.abs(a.membros[0].relH - b.membros[0].relH);
+    const unidades = [];
+    const usadosPretos = new Set();
+    for (const gb of brancos) {
+      const melhor = pretos.slice().sort((x, y) => parecido(gb, y) - parecido(gb, x))[0];
+      const volta = melhor && brancos.slice().sort((x, y) => parecido(y, melhor) - parecido(x, melhor))[0];
+      if (melhor && volta === gb && !usadosPretos.has(melhor) && parecido(gb, melhor) > 0.72) {
+        unidades.push([gb, melhor]); usadosPretos.add(melhor);
+      } else unidades.push([gb]);
+    }
+    for (const gp of pretos) if (!usadosPretos.has(gp)) unidades.push([gp]);
+    // 4. Escolha gulosa (melhor nota primeiro), respeitando quantas peças de
+    //    cada tipo cabem de cada lado. O rei vem primeiro.
+    const usados = { true: { p: 0, n: 0, b: 0, r: 0, q: 0, k: 0 }, false: { p: 0, n: 0, b: 0, r: 0, q: 0, k: 0 } };
+    for (const g of grupos) if (g.fixo) { usados[g.branca].p += g.membros.length; g.tipo = 'p'; }
+    const membrosDe = u => u.flatMap(g => g.membros);
+    const cabe = (u, t) => u.every(g => (t !== 'p' || !g.semPeao) && usados[g.branca][t] + g.membros.length <= LIMITE[t]);
+    const opcoes = [];
+    unidades.forEach((u, ui) => {
+      const ms = membrosDe(u);
+      for (const t of TIPOS) opcoes.push({ ui, t, v: ms.reduce((s, c) => s + c.notas[t], 0) / ms.length });
+    });
+    opcoes.sort((a, b) => (b.t === 'k') - (a.t === 'k') || b.v - a.v);
+    const tipoDa = new Array(unidades.length).fill(null);
+    for (const o of opcoes) {
+      if (tipoDa[o.ui]) continue;
+      const u = unidades[o.ui];
+      if (o.t === 'k' && (u.some(g => g.membros.length !== 1) || o.v < Math.max(...membrosDe(u).map(c => Math.max(...Object.values(c.notas)))) - 0.25)) continue;
+      if (!cabe(u, o.t)) continue;
+      tipoDa[o.ui] = o.t;
+      for (const g of u) usados[g.branca][o.t] += g.membros.length;
+    }
+    unidades.forEach((u, ui) => {
+      for (const g of u) {
+        // Sobrou sem lugar (promoção, por exemplo): fica o mais parecido.
+        g.tipo = tipoDa[ui] || TIPOS.filter(x => x !== 'k' && (x !== 'p' || !g.semPeao)).sort((a, b) => g.membros[0].notas[b] - g.membros[0].notas[a])[0];
+      }
+    });
+    // 5. Cada cor precisa de um rei: se faltou, vira rei o grupo de 1 peça
+    //    mais parecido com rei.
+    for (const branca of [true, false]) {
+      const lado = grupos.filter(g => g.branca === branca);
+      if (lado.length && !lado.some(g => g.tipo === 'k')) {
+        const cand = lado.filter(g => g.membros.length === 1 && g.tipo !== 'p').sort((a, b) => b.membros[0].notas.k - a.membros[0].notas.k)[0];
+        if (cand) cand.tipo = 'k';
+      }
+    }
+    for (const g of grupos) for (const c of g.membros) {
+      c.tipo = g.tipo;
+      const ord = Object.values(c.notas).sort((a, b) => b - a);
+      c.duvida = c.notas[g.tipo] < ord[0] - 0.001 || ord[0] - ord[1] < 0.05;
     }
   }
 
@@ -396,13 +456,14 @@ const BoardScan = (() => {
    *   { ok, linhas: 8 strings (fileira 8 → 1, colunas a → h, '.' vazio),
    *     duvidas: ['e4', ...], brancasEmbaixo, motivo }
    */
-  async function lerPrint(src) {
+  async function lerPrint(src, opts = {}) {
     await carregarModelos();
     const imgEl = await carregarImg(src);
     const img = canvasDe(imgEl, 900);
     const tab = acharTabuleiro(img);
+    if (opts.debug) console.log('[BoardScan] tabuleiro', JSON.stringify(tab));
     if (!tab || tab.xadrez < 1 || tab.linhas < 1.6 || tab.s < 8) {
-      return { ok: false, motivo: 'Não encontrei um tabuleiro reto nesta imagem. Recorte o print deixando o tabuleiro inteiro, ou use a foto com IA.' };
+      return { ok: false, motivo: 'Não encontrei um tabuleiro reto nesta imagem. Recorte o print deixando o tabuleiro inteiro. Se for foto de um tabuleiro de verdade, use "Tirar foto".' };
     }
     // Grade na tela (linha 0 = topo da imagem).
     const tela = [];
@@ -436,8 +497,10 @@ const BoardScan = (() => {
       }
       linhas.push(l);
     }
-    return { ok: true, linhas, duvidas, brancasEmbaixo };
+    const r = { ok: true, linhas, duvidas, brancasEmbaixo };
+    if (opts.debug) { r._casas = tela; r._tab = tab; }
+    return r;
   }
 
-  return { lerPrint, carregarModelos };
+  return { lerPrint, carregarModelos, _pesos: P };
 })();
