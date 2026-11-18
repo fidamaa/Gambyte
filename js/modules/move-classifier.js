@@ -269,10 +269,15 @@ const MoveClassifier = (() => {
     }
 
     // ── Escada de EP_loss ──────────────────────────────────────
-    if (epLoss < EP_THRESHOLDS.excellent)  return 'excellent';
-    if (epLoss < EP_THRESHOLDS.good)       return 'good';
-    if (epLoss < EP_THRESHOLDS.inaccuracy) return 'inaccuracy';
-    if (epLoss < EP_THRESHOLDS.mistake)    return 'mistake';
+    // Mede contra o MELHOR LANCE desta posição (bestEval), como o Chess.com
+    // e como a precisão: comparar com a avaliação anterior (evalBefore,
+    // de outra busca) chamava de "Excelente" lances que perdiam bem mais
+    // que isso, e a etiqueta contradizia a nota.
+    const epLossLadder = bestEval != null ? Math.max(0, epFromCp(bestEval) - epAfter) : epLoss;
+    if (epLossLadder < EP_THRESHOLDS.excellent)  return 'excellent';
+    if (epLossLadder < EP_THRESHOLDS.good)       return 'good';
+    if (epLossLadder < EP_THRESHOLDS.inaccuracy) return 'inaccuracy';
+    if (epLossLadder < EP_THRESHOLDS.mistake)    return 'mistake';
 
     return classifyBlunderOrMistake(evalBefore, immediateCaptureValue, opponentGetsMate);
   }
@@ -370,6 +375,15 @@ const MoveClassifier = (() => {
 
     const rating = RatingModel.fromAccuracy(accuracy, foraDoLivro, blunders, mistakes);
 
+    // Por quantos meios-lances a partida ficou sem ninguém com +3 (usado no
+    // nível estimado — ver RatingModel.estimarPartida).
+    let equilibrio = 0;
+    for (let i = 0; i < movesData.length; i++) {
+      const v = movesData[i] && movesData[i].evalAfter;
+      if (v != null && Math.abs(v) >= 300) break;
+      equilibrio = i + 1;
+    }
+
     console.log(
       `[computeStats ${color}] n=${eligibleMoves.length}` +
       ` acpl=${acpl.toFixed(1)}cp accuracy=${accuracy.toFixed(1)}%` +
@@ -381,7 +395,9 @@ const MoveClassifier = (() => {
       rating:    rating,
       accuracy:  Math.round(accuracy * 10) / 10,
       blunders:  blunders,
-      mistakes:  mistakes
+      mistakes:  mistakes,
+      lances:    foraDoLivro,
+      equilibrio
     };
   }
 

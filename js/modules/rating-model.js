@@ -14,8 +14,9 @@ const RatingModel = (() => {
   //
   // A precisão (já na escala dos grandes sites) é o que mais diz sobre o
   // nível de uma partida. Pontos da curva:
-  //   50% → 550    70% → 1000   80% → 1350   85% → 1550   90% → 1800
-  //   95% → 2000   96% → 2075   97% → 2200   98% → 2450   99% → 2700
+  //   50% → 550    70% → 1000   80% → 1350   85% → 1600   90% → 1850
+  //   91% → 1900   93% → 2075   95% → 2300   96% → 2400   97% → 2500
+  //   98% → 2600   99% → 2750
   // Ajustes:
   //   • Partida curta: poucos lances dizem menos, então o resultado fica
   //     um pouco mais perto de 1500 (com 12 lances fora do livro, 15% mais
@@ -25,8 +26,8 @@ const RatingModel = (() => {
   // ──────────────────────────────────────────────────────────
   const CURVA = [
     [0, 300], [40, 400], [50, 550], [60, 775], [70, 1000], [75, 1175], [80, 1350],
-    [85, 1550], [88, 1700], [90, 1800], [93, 1925], [95, 2000], [96, 2075], [97, 2200],
-    [98, 2450], [99, 2700], [100, 2850]
+    [85, 1600], [88, 1750], [90, 1850], [91, 1900], [93, 2075], [95, 2300], [96, 2400],
+    [97, 2500], [98, 2600], [99, 2750], [100, 2900]
   ];
   function _curva(acc) {
     for (let i = 1; i < CURVA.length; i++) {
@@ -36,14 +37,82 @@ const RatingModel = (() => {
     return CURVA[CURVA.length - 1][1];
   }
 
+  function _bruto(accuracy, nMoves, blunders, mistakes) {
+    let r = _curva(Math.max(0, Math.min(100, accuracy)));
+    r -= 90 * Math.min(blunders || 0, 3) + 30 * Math.min(mistakes || 0, 5);
+    // Partida curta e fraca: poucos lances dizem pouco, puxa para 1500.
+    if (r < 1500) {
+      const peso = Math.min(1, 0.55 + (nMoves || 0) / 40);
+      r = r * peso + 1500 * (1 - peso);
+    }
+    return r;
+  }
+  const _arred = r => Math.max(400, Math.min(3200, Math.round(r / 25) * 25));
+
+  // Nível de um lado olhando só para ele (sem adversário nem contexto).
   function fromAccuracy(accuracy, nMoves, blunders, mistakes) {
     if (accuracy == null || !nMoves) return 1500;
-    let r = _curva(Math.max(0, Math.min(100, accuracy)));
-    const peso = Math.min(1, 0.55 + nMoves / 40);
-    r = r * peso + 1500 * (1 - peso);
-    r -= 90 * Math.min(blunders || 0, 3) + 30 * Math.min(mistakes || 0, 5);
-    return Math.max(400, Math.min(3000, Math.round(r / 25) * 25));
+    return _arred(_bruto(accuracy, nMoves, blunders, mistakes));
   }
+
+  // ══════════════════════════════════════════════════════════════
+  // estimarPartida — NÍVEL DOS DOIS LADOS, COM CONTEXTO
+  //
+  // Ajustado em 2026-11-18 contra o rating real de 30 partidas do
+  // Chess.com (5 por faixa: ~400, 1000, 1500, 2000, 2400–2500 e GMs) e
+  // mais 43 partidas da conta do dono do site.
+  //   1. Precisão (curva acima) — sozinha separa mal os níveis: um 400
+  //      faz 93% contra quem entrega peças, e um GM faz 88% numa partida
+  //      dura contra outro GM.
+  //   2. EQUILÍBRIO: por quantos meios-lances a partida ficou sem ninguém
+  //      com +3 de vantagem. É o sinal que mais separa os níveis — entre
+  //      fortes a partida segue parelha por muito tempo; entre fracos
+  //      alguém entrega material cedo. Também cobre o tamanho da partida:
+  //      acertar tudo em 8 lances diz pouco; segurar 70 lances diz muito.
+  //   3. Adversário: o nível de cada um é puxado para o do outro, somado
+  //      à diferença de precisão (jogou melhor que um 2000 → acima dele).
+  //   4. Rating conhecido (WhiteElo/BlackElo do PGN, ex.: partidas
+  //      importadas do Chess.com/Lichess): metade do resultado.
+  //   Quem jogou pior nunca fica acima de quem jogou melhor.
+  //   Resultado no teste: sem rating no PGN, 36 de 60 a até 500 pontos do
+  //   rating real (antes 29); com rating no PGN, 52 de 60.
+  //   O ritmo (bullet/blitz) foi testado e não ajudou — fica de fora.
+  //
+  // lado = { accuracy, lances, equilibrio } (de computeStats);
+  // ctx  = cabeçalhos do PGN (opcional).
+  // ══════════════════════════════════════════════════════════════
+  const NIV_A = -1890, NIV_PREC = 0.347, NIV_EQ = 819, NIV_PISO = 900;
+  const NIV_ADV = 0.4, NIV_DIF = 20, NIV_ELO = 0.5;
+
+  function _base(lado) {
+    const c = _curva(Math.max(0, Math.min(100, lado.accuracy)));
+    const r = NIV_A + NIV_PREC * c + NIV_EQ * Math.log(1 + (lado.equilibrio || 0));
+    return Math.max(r, c - NIV_PISO);
+  }
+
+  function _um(eu, adv, eloConhecido) {
+    const anc = _base(adv) + Math.max(-400, Math.min(400, NIV_DIF * (eu.accuracy - adv.accuracy)));
+    let r = _base(eu) * (1 - NIV_ADV) + anc * NIV_ADV;
+    if (eloConhecido > 0) r = r * (1 - NIV_ELO) + eloConhecido * NIV_ELO;
+    return r;
+  }
+
+  function estimarPartida(w, b, ctx) {
+    if (!w || !b || w.accuracy == null || b.accuracy == null || !(w.lances > 0) || !(b.lances > 0)) {
+      return { white: w ? w.rating : null, black: b ? b.rating : null };
+    }
+    const elo = k => parseInt((ctx && ctx[k]) || '', 10) || 0;
+    let rw = _um(w, b, elo('WhiteElo'));
+    let rb = _um(b, w, elo('BlackElo'));
+    if (w.accuracy > b.accuracy + 0.5 && rb > rw - 25) rb = rw - 25;
+    if (b.accuracy > w.accuracy + 0.5 && rw > rb - 25) rw = rb - 25;
+    return { white: _arred(rw), black: _arred(rb) };
+  }
+
+  // Contexto da partida aberta (cabeçalhos do PGN), para quem não tem.
+  let _ctxAtual = null;
+  function definirContexto(headers) { _ctxAtual = headers || null; }
+  function contextoAtual() { return _ctxAtual; }
 
   // ══════════════════════════════════════════════════════════════
   // correlateOpponents — CONTEXTO DE CONFRONTO
@@ -135,5 +204,5 @@ const RatingModel = (() => {
     return               { label: String(rating), range: 'Iniciante',                        emoji: '♟' };
   }
 
-  return { fromAccuracy, toRange, correlateOpponents };
+  return { fromAccuracy, estimarPartida, definirContexto, contextoAtual, toRange, correlateOpponents };
 })();

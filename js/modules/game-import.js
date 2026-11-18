@@ -168,8 +168,8 @@ const GameImport = (() => {
     const w = MoveClassifier.computeStats(md, true), b = MoveClassifier.computeStats(md, false);
     return {
       accB: w.accuracy, accP: b.accuracy,
-      nivB: RatingModel.correlateOpponents(w.rating, w, b.rating),
-      nivP: RatingModel.correlateOpponents(b.rating, b, w.rating),
+      nivB: RatingModel.estimarPartida(w, b, g.headers).white,
+      nivP: RatingModel.estimarPartida(w, b, g.headers).black,
     };
   }
 

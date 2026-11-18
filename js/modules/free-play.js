@@ -667,7 +667,14 @@ const FreePlay = (() => {
     // Linha que começa numa posição montada (foto, print): PGN com FEN.
     const inicio = fens[0] || PGNParser.INITIAL_FEN;
     const deFEN = !_baseCtx.moves.length && inicio !== PGNParser.INITIAL_FEN;
-    let pgn = `[Event "Free Play"]\n[Date "${date}"]\n[White "${_pgnHeaders.White || '?'}"]\n[Black "${_pgnHeaders.Black || '?'}"]\n[Result "*"]\n`;
+    // Resultado: mate ou empate na posição exportada; senão, partida em aberto.
+    let resultado = '*';
+    try {
+      const fim = fens[idx + 1] ? _computeGameStatus(fens[idx + 1]) : null;
+      if (fim && fim.type === 'checkmate') resultado = fim.winner === 'white' ? '1-0' : '0-1';
+      else if (fim) resultado = '1/2-1/2';
+    } catch (e) { /* fica em aberto */ }
+    let pgn = `[Event "Free Play"]\n[Date "${date}"]\n[White "${_pgnHeaders.White || '?'}"]\n[Black "${_pgnHeaders.Black || '?'}"]\n[Result "${resultado}"]\n`;
     if (deFEN) pgn += `[SetUp "1"]\n[FEN "${inicio}"]\n`;
     pgn += '\n';
     const partes = inicio.split(' ');
@@ -680,7 +687,7 @@ const FreePlay = (() => {
       else if (i === 0) pgn += `${num}... `;
       pgn += moves[i] + ' ';
     }
-    pgn += '*';
+    pgn += resultado;
     return pgn;
   }
 

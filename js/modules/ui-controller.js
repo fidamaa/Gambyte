@@ -563,6 +563,7 @@ const UIController = (() => {
     currentMoveIdx = -1;
 
     const headers = parsedGame.headers;
+    RatingModel.definirContexto(headers);
     els.resultsSection.classList.add('visible');
     els.whiteName.textContent    = headers.White || 'Brancas';
     els.blackName.textContent    = headers.Black || 'Pretas';
@@ -859,14 +860,11 @@ const UIController = (() => {
     const wStats = MoveClassifier.computeStats(movesData, true);
     const bStats = MoveClassifier.computeStats(movesData, false);
 
-    // ── Correlação de nível entre os dois lados ─────────────────────────
-    // fromAccuracy avalia cada jogador isolado. Aqui corrigimos o caso em que
-    // um lado forte perde para outro lado forte e acaba com um rating
-    // artificialmente baixo (ex.: GM perdendo pra GM caindo a 1600-2150).
-    // Só o lado mais fraco pode subir, nunca ultrapassa o mais forte, e só
-    // sobe se não houver sinais reais de que jogou mal (ver rating-model.js).
-    const wRatingFinal = RatingModel.correlateOpponents(wStats.rating, wStats, bStats.rating);
-    const bRatingFinal = RatingModel.correlateOpponents(bStats.rating, bStats, wStats.rating);
+    // Nível dos dois lados juntos: precisão, equilíbrio da partida,
+    // adversário e rating do PGN (ver RatingModel.estimarPartida).
+    const niv = RatingModel.estimarPartida(wStats, bStats, parsedGameRef ? parsedGameRef.headers : null);
+    const wRatingFinal = niv.white;
+    const bRatingFinal = niv.black;
 
     els.whiteRating.textContent  = wRatingFinal;
     els.whiteAcpl.textContent    = wStats.acpl;

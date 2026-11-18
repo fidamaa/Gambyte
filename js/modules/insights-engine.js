@@ -107,28 +107,14 @@ const InsightsEngine = (() => {
     const bMoves = moves.filter(m => m.color === 'black' && !m.isBook &&
       m.evalBefore != null && m.evalAfter != null && m.bestEval != null);
 
-    const wRatingRaw = wMoves.length ? MoveClassifier.computeStats(moves, true).rating : null;
-    const bRatingRaw = bMoves.length ? MoveClassifier.computeStats(moves, false).rating : null;
+    const wSt = wMoves.length ? MoveClassifier.computeStats(moves, true) : null;
+    const bSt = bMoves.length ? MoveClassifier.computeStats(moves, false) : null;
 
-    // ── Correlação de nível entre os dois lados (ver rating-model.js) ──
-    // Evita que o lado mais fraco caia artificialmente baixo só por
-    // enfrentar um oponente muito forte, quando o próprio desempenho
-    // (precisão, ausência de blunders) mostra que ele sustentou um
-    // nível alto na partida. Nunca mexe no lado com rating maior.
-    let wRating = wRatingRaw, bRating = bRatingRaw;
-    if (wRatingRaw != null && bRatingRaw != null) {
-      const wSelfStats = {
-        accuracy: calcAccuracy(moves, 'white'),
-        blunders: wMoves.filter(m => m.classification === 'blunder').length,
-        mistakes: wMoves.filter(m => m.classification === 'mistake').length
-      };
-      const bSelfStats = {
-        accuracy: calcAccuracy(moves, 'black'),
-        blunders: bMoves.filter(m => m.classification === 'blunder').length,
-        mistakes: bMoves.filter(m => m.classification === 'mistake').length
-      };
-      wRating = RatingModel.correlateOpponents(wRatingRaw, wSelfStats, bRatingRaw);
-      bRating = RatingModel.correlateOpponents(bRatingRaw, bSelfStats, wRatingRaw);
+    // Mesmo cálculo do cartão do jogador (ver RatingModel.estimarPartida).
+    let wRating = wSt ? wSt.rating : null, bRating = bSt ? bSt.rating : null;
+    if (wSt && bSt) {
+      const niv = RatingModel.estimarPartida(wSt, bSt, RatingModel.contextoAtual());
+      wRating = niv.white; bRating = niv.black;
     }
 
     // Média entre os dois lados representa o nível geral da partida

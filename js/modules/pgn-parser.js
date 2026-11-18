@@ -172,14 +172,16 @@ const PGNParser = (() => {
       }
     }
 
-    for (const src of candidateSources) {
-      if (disambigFile && src[0] !== disambigFile) continue;
-      if (disambigRank && src[1] !== disambigRank) continue;
-      if (canPieceReach(newState.board, src, dest, pieceType, isWhite, state.ep)) {
-        sourceSquare = src;
-        break;
-      }
-    }
+    const alcancam = candidateSources.filter(src =>
+      (!disambigFile || src[0] === disambigFile) &&
+      (!disambigRank || src[1] === disambigRank) &&
+      canPieceReach(newState.board, src, dest, pieceType, isWhite, state.ep));
+    // Mais de uma peça chega lá: a que está cravada (deixaria o rei em
+    // xeque) não pode ir — o PGN padrão não desambigua esse caso.
+    const legais = alcancam.length > 1
+      ? alcancam.filter(src => _reiFicaSeguro(newState.board, src, dest, isWhite, state.ep, pieceType))
+      : alcancam;
+    sourceSquare = legais[0] || alcancam[0] || null;
 
     if (!sourceSquare) return null;
 
@@ -569,26 +571,81 @@ const PGNParser = (() => {
     return newState;
   }
 
-  // uciToSan: convert UCI move to SAN notation (best effort)
+  // O lance de `src` para `dest` deixa o próprio rei fora de xeque?
+  function _reiFicaSeguro(board, src, dest, isWhite, ep, type) {
+    const b = cloneBoard(board);
+    const p = pieceAt(b, src);
+    if (type === 'P' && ep && ep !== '-' && dest === ep && src[0] !== dest[0] && !pieceAt(b, dest)) {
+      setPiece(b, sqOf(rowOf(dest) + (isWhite ? 1 : -1), colOf(dest)), '');
+    }
+    setPiece(b, src, '');
+    setPiece(b, dest, p);
+    return !isInCheck(b, isWhite);
+  }
+
+  // O lado que joga em `state` tem algum lance legal? (para saber se é mate)
+  function _temLanceLegal(state) {
+    const isWhite = state.turn === 'w';
+    const ep = state.ep || '-';
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+      const p = state.board[r][c];
+      if (!p || (p === p.toUpperCase()) !== isWhite) continue;
+      const src = sqOf(r, c), type = p.toUpperCase();
+      for (let r2 = 0; r2 < 8; r2++) for (let c2 = 0; c2 < 8; c2++) {
+        const dest = sqOf(r2, c2);
+        if (dest === src) continue;
+        if (canPieceReach(state.board, src, dest, type, isWhite, ep) &&
+            _reiFicaSeguro(state.board, src, dest, isWhite, ep, type)) return true;
+      }
+    }
+    return false;
+  }
+
+  // uciToSan: lance UCI → SAN padrão (com desambiguação, xeque e mate),
+  // para o PGN exportado abrir certo em qualquer site.
   function uciToSan(state, uci) {
     const from = uci.slice(0, 2);
     const to   = uci.slice(2, 4);
     const promo = uci[4];
     const piece = pieceAt(state.board, from);
     if (!piece) return uci;
+    const isWhite     = piece === piece.toUpperCase();
     const pieceLetter = piece.toUpperCase();
     const destPiece   = pieceAt(state.board, to);
     const isCapture   = !!destPiece || (pieceLetter === 'P' && from[0] !== to[0]);
 
+    let s;
     if (pieceLetter === 'K' && Math.abs(from.charCodeAt(0) - to.charCodeAt(0)) === 2) {
-      return to[0] === 'g' ? 'O-O' : 'O-O-O';
-    }
-    if (pieceLetter === 'P') {
-      let s = (isCapture ? from[0] + 'x' : '') + to;
+      s = to[0] === 'g' ? 'O-O' : 'O-O-O';
+    } else if (pieceLetter === 'P') {
+      s = (isCapture ? from[0] + 'x' : '') + to;
       if (promo) s += '=' + promo.toUpperCase();
-      return s;
+    } else {
+      // Outra peça igual que também pode ir para a mesma casa?
+      let desamb = '';
+      if (pieceLetter !== 'K') {
+        const ep = state.ep || '-';
+        const rivais = [];
+        for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+          const sq = sqOf(r, c);
+          if (sq === from || state.board[r][c] !== piece) continue;
+          if (canPieceReach(state.board, sq, to, pieceLetter, isWhite, ep) &&
+              _reiFicaSeguro(state.board, sq, to, isWhite, ep, pieceLetter)) rivais.push(sq);
+        }
+        if (rivais.length) {
+          if (!rivais.some(sq => sq[0] === from[0])) desamb = from[0];
+          else if (!rivais.some(sq => sq[1] === from[1])) desamb = from[1];
+          else desamb = from;
+        }
+      }
+      s = pieceLetter + desamb + (isCapture ? 'x' : '') + to;
     }
-    return pieceLetter + (isCapture ? 'x' : '') + to;
+
+    try {
+      const depois = applyMoveUCI(state, uci);
+      if (depois && isInCheck(depois.board, !isWhite)) s += _temLanceLegal(depois) ? '+' : '#';
+    } catch (e) { /* só a marca de xeque fica de fora */ }
+    return s;
   }
 
   return {
