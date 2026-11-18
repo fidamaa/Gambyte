@@ -1487,3 +1487,16 @@ body.pos-ed-aberto{overflow:hidden}
 .pos-ed-dica{margin:-6px 0 0;font-size:11.5px;color:var(--text3)}
 .pos-ed-treino{display:flex;gap:8px;align-items:flex-start;margin-top:12px;font-size:12.5px;line-height:1.45;color:var(--text2);cursor:pointer}
 .pos-ed-treino input{margin-top:3px;flex:none}
+/* Foto do tabuleiro: aviso de experimental e autorização para treinar o leitor */
+.foto-exp{margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid rgba(91,143,224,.35);background:rgba(91,143,224,.08)}
+.foto-exp>p:first-child{margin:0;font-size:12.5px;line-height:1.5;color:var(--text2)}
+.foto-exp>p:first-child strong{color:#8fb3ef}
+.foto-exp .foto-nota{margin-top:6px}
+.foto-treino{display:flex;gap:8px;align-items:flex-start;margin-top:8px;font-size:12.5px;line-height:1.45;color:var(--text);cursor:pointer}
+.foto-treino input,.pos-ed-treino input{margin-top:3px;flex:none;width:16px;height:16px;accent-color:var(--accent)}
+.foto-treino a,.pos-ed-treino a{color:#8fb3ef}
+.pos-ed-treino{padding:10px 12px;border-radius:10px;border:1px solid rgba(236,189,110,.4);background:rgba(236,189,110,.07)}
+.pos-ed-treino strong{display:block;color:var(--accent);font-size:13px;margin-bottom:2px}
+.foto-box[data-compacta] .foto-exp>p:first-child{display:none}
+.foto-planos{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:3px;font-size:12.5px;color:var(--text2)}
+.foto-planos b{color:var(--text)}

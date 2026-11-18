@@ -1,7 +1,7 @@
 // Gambyte — Edge Function: guarda uma foto de tabuleiro corrigida pelo
 // usuário, para treinar de novo o leitor de fotos do Gambyte.
 //
-// Só chega aqui com a autorização da pessoa (caixa no editor de posição).
+// Só chega aqui com a autorização da pessoa (caixa na aba Foto e no editor).
 // A foto e a posição corrigida vão para o bucket privado "fotos-treino"
 // (só o service role lê). Nada disso é usado para outra coisa.
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
@@ -54,6 +54,13 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Cantos inválidos." }, 400);
     }
     if (!LADOS.includes(lado)) return json({ error: "Lado inválido." }, 400);
+    // Filtro leve: posição possível (um rei de cada cor, até 32 peças),
+    // cantos dentro de uma foto de até 1280 px e arquivo JPEG de verdade.
+    const pecas = fen.replace(/[^a-zA-Z]/g, "");
+    if ((pecas.match(/K/g) || []).length !== 1 || (pecas.match(/k/g) || []).length !== 1 || pecas.length > 32) {
+      return json({ error: "Posição inválida." }, 400);
+    }
+    if (!cantos.every(([x, y]) => x > -100 && x < 1400 && y > -100 && y < 1400)) return json({ error: "Cantos inválidos." }, 400);
 
     // Limite diário simples por conta (nos metadados de app).
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -68,9 +75,12 @@ Deno.serve(async (req: Request) => {
 
     const id = `${dia}/${crypto.randomUUID()}`;
     const bytes = Uint8Array.from(atob(imagem), (c) => c.charCodeAt(0));
+    if (bytes.length < 2000 || bytes[0] !== 0xff || bytes[1] !== 0xd8 || bytes[2] !== 0xff) return json({ error: "Imagem inválida." }, 400);
     const up1 = await admin.storage.from(BUCKET).upload(`${id}.jpg`, bytes, { contentType: "image/jpeg" });
     if (up1.error) throw up1.error;
-    const rotulo = { fen, corners: cantos, lado_brancas: lado, lido, fonte: "site", criado: new Date().toISOString() };
+    // "conta" é só o código interno da conta (sem nome nem e-mail), para
+    // achar e apagar as fotos se a pessoa pedir.
+    const rotulo = { fen, corners: cantos, lado_brancas: lado, lido, fonte: "site", conta: user.id, criado: new Date().toISOString() };
     const up2 = await admin.storage.from(BUCKET).upload(`${id}.json`, new Blob([JSON.stringify(rotulo)], { type: "application/json" }));
     if (up2.error) throw up2.error;
 

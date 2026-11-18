@@ -30,20 +30,44 @@ const PhotoPosition = (() => {
     el.className = 'foto-status' + (tipo ? ' ' + tipo : '');
   }
 
-  function mostrarBloqueio() {
+  function logado() { return typeof AuthSystem !== 'undefined' && !!AuthSystem.currentSession(); }
+
+  function mostrarBloqueio(titulo, texto) {
     const lock = $('foto-lock');
     if (!lock) return;
-    const logado = typeof AuthSystem !== 'undefined' && !!AuthSystem.currentSession();
     lock.hidden = false;
-    lock.querySelector('[data-foto-entrar]').hidden = logado;
+    const t = lock.querySelector('[data-foto-lock-titulo]'), x = lock.querySelector('[data-foto-lock-texto]');
+    if (t && titulo) t.textContent = titulo;
+    if (x && texto) x.textContent = texto;
+    lock.querySelector('[data-foto-entrar]').hidden = logado();
     lock.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
-  function liberado() {
+  // Antes de abrir a câmera ou o arquivo: todos seguem. O teste grátis é
+  // conferido no servidor na hora de ler a imagem (usarFoto).
+  function liberado() { return true; }
+
+  // Na hora de ler a imagem: o Pro usa à vontade. Quem não é Pro gasta o
+  // teste grátis, contado no servidor: com conta, uma vez por dia (por conta
+  // e por IP); sem conta, uma vez só por IP.
+  async function usarFoto() {
     if (ehPro()) return true;
+    status(logado() ? 'Conferindo seu teste grátis de hoje…' : 'Conferindo seu teste grátis…', 'lendo');
+    let r = null;
+    try {
+      const { data, error } = await supabaseClient.functions.invoke('foto-gratis', { body: {} });
+      r = error ? null : data;
+    } catch (e) { r = null; }
+    if (r && r.ok) {
+      if (r.semConta) status('Usando seu teste grátis. Para continuar depois, crie uma conta grátis: com ela você usa uma foto por dia.', 'lendo');
+      else if (r.gratis) status('Usando sua foto grátis de hoje. Amanhã você ganha outra; no Pro é à vontade.', 'lendo');
+      return true;
+    }
     status('');
     GameImport.mostrarAba('foto', true);
-    mostrarBloqueio();
+    if (r && r.motivo === 'usada') mostrarBloqueio('Você já usou sua foto grátis de hoje.', r.mensagem || 'Volte amanhã ou assine o Pro para usar quantas vezes quiser.');
+    else if (r && r.motivo === 'entrar') mostrarBloqueio('Você já usou o teste sem conta.', r.mensagem || 'Crie uma conta grátis para usar uma foto por dia, ou assine o Pro para usar quantas vezes quiser.');
+    else status('Não consegui conferir seu teste grátis agora. Verifique a conexão e tente de novo.', 'erro');
     return false;
   }
 
@@ -82,6 +106,7 @@ const PhotoPosition = (() => {
     if (!liberado()) return;
     let aberto;
     try { aberto = await lerArquivo(file); } catch (e) { status(e.message, 'erro'); return; }
+    if (!(await usarFoto())) { URL.revokeObjectURL(aberto.url); return; }
     const dataUrl = reduzir(aberto.im);
     URL.revokeObjectURL(aberto.url);
     try {
@@ -155,7 +180,7 @@ const PhotoPosition = (() => {
           <h2 id="pos-ed-titulo">Confira a posição</h2>
           <button type="button" class="pos-ed-x" data-ed="fechar" aria-label="Fechar">×</button>
         </div>
-        ${origem === 'foto' && !vazio ? '<p class="pos-ed-beta"><b>Beta</b> A leitura de fotos de tabuleiro ainda está aprendendo e pode errar várias peças. Confira tudo antes de analisar.</p>' : ''}
+        ${origem === 'foto' && !vazio ? '<p class="pos-ed-beta"><b>Experimental</b> A leitura de fotos de tabuleiro ainda está aprendendo e pode errar várias peças. Confira tudo antes de analisar. Ela melhora com as fotos que os jogadores autorizam enviar.</p>' : ''}
         <p class="pos-ed-sub">${vazio ?'Não deu para ler esta imagem. Monte a posição abaixo olhando a imagem ao lado.' : 'Compare com a imagem. Para corrigir uma casa, escolha a peça abaixo e clique na casa.'}${ed.duvidas.size ? ' As casas com contorno amarelo merecem um segundo olhar.' : ''}</p>
         <div class="pos-ed-corpo">
           <div class="pos-ed-esq">
@@ -196,7 +221,7 @@ const PhotoPosition = (() => {
           <button type="button" class="btn-secondary" data-ed="fen">Aplicar</button>
           <button type="button" class="btn-secondary" data-ed="copiar">Copiar</button>
         </div>
-        ${origem === 'foto' ? `<label class="pos-ed-treino"><input type="checkbox" id="pos-ed-treino" ${treinoAutorizado() ? 'checked' : ''}> Enviar esta foto e a posição corrigida para melhorar o leitor de fotos do Gambyte. A foto é guardada só para isso, sem seu nome.</label>` : ''}
+        ${origem === 'foto' ? `<label class="pos-ed-treino"><input type="checkbox" id="pos-ed-treino" data-treino-foto ${treinoAutorizado() ? 'checked' : ''}> <span><strong>Ajudar a melhorar o leitor de fotos</strong>Ao analisar, enviar esta foto com a posição que você conferiu, para treinar o leitor do Gambyte. Ela fica num armazenamento privado, sem seu nome ou e-mail, e é usada só para isso. <a href="privacidade.html#fotos-treino" target="_blank" rel="noopener">Saiba mais</a></span></label>` : ''}
         <p class="pos-ed-aviso" id="pos-ed-aviso" role="alert"></p>
         <div class="pos-ed-foot">
           <button type="button" class="btn-secondary" data-ed="fechar">Cancelar</button>
@@ -425,6 +450,33 @@ const PhotoPosition = (() => {
   function treinoAutorizado() {
     try { return localStorage.getItem(CHAVE_TREINO) === '1'; } catch (e) { return false; }
   }
+  function guardarAutorizacao(sim) {
+    try { localStorage.setItem(CHAVE_TREINO, sim ? '1' : '0'); } catch (e) { /* sem armazenamento */ }
+    document.querySelectorAll('[data-treino-foto]').forEach(c => { c.checked = sim; });
+  }
+  // Filtro leve antes de enviar: só fotos em que há um tabuleiro marcado de
+  // verdade (4 cantos formando um quadrilátero convexo que ocupa uma boa
+  // parte da imagem) e uma posição possível (um rei de cada cor, até 32
+  // peças). Isso já barra fotos que não são de tabuleiro.
+  function fotoServeParaTreino(est, fenFinal) {
+    const q = est.cantos;
+    if (!q || q.length !== 4) return false;
+    const img = est.tamanho || { w: 0, h: 0 };
+    if (!img.w || !img.h) return false;
+    if (!q.every(([x, y]) => x > -0.05 * img.w && x < 1.05 * img.w && y > -0.05 * img.h && y < 1.05 * img.h)) return false;
+    let sinal = 0, area = 0;
+    for (let i = 0; i < 4; i++) {
+      const a = q[i], b = q[(i + 1) % 4], c = q[(i + 2) % 4];
+      const z = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+      if (!z) return false;
+      if (sinal && Math.sign(z) !== sinal) return false;      // não convexo
+      sinal = Math.sign(z);
+      area += a[0] * b[1] - b[0] * a[1];
+    }
+    if (Math.abs(area) / 2 < 0.05 * img.w * img.h) return false;   // tabuleiro pequeno demais
+    const pecas = fenFinal.split(' ')[0].replace(/[^a-zA-Z]/g, '');
+    return pecas.length >= 2 && pecas.length <= 32 && (pecas.match(/K/g) || []).length === 1 && (pecas.match(/k/g) || []).length === 1;
+  }
   // giro (foto -> posição, anti-horário) -> de que lado da foto ficam as brancas
   const LADO_DO_GIRO = ['baixo', 'esquerda', 'cima', 'direita'];
   function enviarTreino(est, fenFinal) {
@@ -457,7 +509,11 @@ const PhotoPosition = (() => {
         for (const q of ed.cantos) { cx.beginPath(); cx.arc(q[0], q[1], k * 5, 0, 7); cx.fillStyle = '#5bc97a'; cx.fill(); cx.lineWidth = k; cx.strokeStyle = '#0d0f14'; cx.stroke(); }
       }
     };
-    img.onload = () => { cv.width = img.naturalWidth; cv.height = img.naturalHeight; desenharFoto(); };
+    img.onload = () => {
+      cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+      if (ed) ed.tamanho = { w: img.naturalWidth, h: img.naturalHeight };
+      desenharFoto();
+    };
     img.src = ed.dataUrl;
     const ponto = e => { const r = cv.getBoundingClientRect(), k = cv.width / r.width; return [(e.clientX - r.left) * k, (e.clientY - r.top) * k]; };
     cv.addEventListener('pointerdown', e => {
@@ -479,8 +535,8 @@ const PhotoPosition = (() => {
     const embaixo = ed.brancasEmbaixo;
     const caixa = $('pos-ed-treino');
     if (caixa) {
-      try { localStorage.setItem(CHAVE_TREINO, caixa.checked ? '1' : '0'); } catch (e) { /* sem armazenamento */ }
-      if (caixa.checked && ed.cantos.length === 4) enviarTreino(ed, f);
+      guardarAutorizacao(caixa.checked);
+      if (caixa.checked && logado() && fotoServeParaTreino(ed, f)) enviarTreino(ed, f);
     }
     fecharEditor();
     App.loadPosition(f, embaixo);
@@ -553,6 +609,12 @@ const PhotoPosition = (() => {
       $('trazer')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
     if (typeof AuthSystem !== 'undefined') AuthSystem.onChange(() => { if (ehPro()) { const l = $('foto-lock'); if (l) l.hidden = true; } });
+    // Autorização para usar as fotos no treino: a mesma escolha na aba e no editor.
+    const aut = $('foto-treino');
+    if (aut) aut.checked = treinoAutorizado();
+    document.addEventListener('change', e => {
+      if (e.target && e.target.matches && e.target.matches('[data-treino-foto]')) guardarAutorizacao(e.target.checked);
+    });
   }
 
   return { init, abrirEditor, abrirFEN };

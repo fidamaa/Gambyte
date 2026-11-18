@@ -6,7 +6,7 @@
 <title>Gambyte — Analise suas partidas de xadrez com Stockfish 18</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=15">
+<link rel="stylesheet" href="css/styles.css?v=16">
 <meta name="google-adsense-account" content="ca-pub-7858747311725137">
 <!-- Veiculação de anúncios desativada durante a preparação para avaliação. -->
 <link rel="stylesheet" href="site-info.css?v=5">
@@ -321,7 +321,7 @@
           <p class="se-dica">Sem partida à mão? Arraste as peças no tabuleiro: o motor analisa cada lance na hora.</p>
           <a href="#trazer" class="se-foto" data-ir-foto>
             <span class="se-foto-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
-            <span><strong>Novo no Pro: foto do tabuleiro</strong>Tire uma foto do tabuleiro (ou um print) e a posição abre aqui, pronta para analisar.</span>
+            <span><strong>Novo no Pro: foto do tabuleiro (experimental)</strong>Tire uma foto do tabuleiro (ou um print) e a posição abre aqui, pronta para conferir e analisar.</span>
           </a>
         </div>
 
@@ -341,7 +341,7 @@
               <div class="foto-zona-topo">
                 <span class="foto-zona-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
                 <div>
-                  <strong>Foto do tabuleiro <span class="tab-pro">PRO</span> <span class="tab-beta">BETA</span></strong>
+                  <strong>Foto do tabuleiro <span class="tab-pro">PRO</span> <span class="tab-beta">EXPERIMENTAL</span></strong>
                   <span>Fotografe o tabuleiro ou mande um print: a posição abre aqui, pronta para analisar.</span>
                 </div>
               </div>
@@ -351,13 +351,17 @@
               </div>
               <p class="foto-dica">Ou arraste a imagem para cá. No computador, cole com Ctrl+V.</p>
             </div>
-            <p class="foto-nota">Prints do Chess.com, do Lichess e de livros são lidos no seu aparelho, na hora. Fotos de tabuleiro de verdade são lidas pelo leitor próprio do Gambyte, também no aparelho: a imagem não sai do seu celular ou computador.</p>
+            <div class="foto-exp">
+              <p><strong>Recurso experimental.</strong> Prints do Chess.com, do Lichess e de livros já são lidos com segurança. A leitura de fotos de tabuleiro de verdade ainda está aprendendo e costuma errar algumas peças: você confere tudo antes de analisar. Ela melhora com as fotos que os jogadores autorizam enviar.</p>
+              <label class="foto-treino"><input type="checkbox" id="foto-treino" data-treino-foto> <span>Quero ajudar: autorizo enviar minhas fotos de tabuleiro, com a posição que eu conferir, para treinar o leitor do Gambyte. <a href="privacidade.html#fotos-treino">Como isso funciona</a></span></label>
+              <ul class="foto-planos" aria-label="Quem pode usar a foto do tabuleiro"><li><b>Sem conta:</b> 1 foto de teste, uma vez só.</li><li><b>Com conta grátis:</b> 1 foto por dia.</li><li><b>Gambyte Pro:</b> quantas fotos quiser.</li></ul><p class="foto-nota">Sem essa autorização, a imagem é lida só no seu aparelho e não sai do seu celular ou computador. Você pode desmarcar quando quiser.</p>
+            </div>
             <div class="foto-lock" id="foto-lock" hidden>
-              <strong>A foto do tabuleiro faz parte do Gambyte Pro.</strong>
-              <span>Assine para ler posições por foto e por print, junto com a Análise Profunda, os insights e o histórico.</span>
+              <strong data-foto-lock-titulo>A foto do tabuleiro faz parte do Gambyte Pro.</strong>
+              <span data-foto-lock-texto>Com uma conta grátis você testa uma foto por dia. Assine para usar quantas vezes quiser, junto com a Análise Profunda, os insights e o histórico.</span>
               <div class="foto-botoes">
                 <a class="btn-primary" href="gambyte-premium.html">Conhecer o Pro</a>
-                <a class="btn-secondary" href="gambyte-login.html" data-foto-entrar>Entrar</a>
+                <a class="btn-secondary" href="gambyte-login.html" data-foto-entrar>Entrar ou criar conta</a>
               </div>
             </div>
             <p class="foto-status" id="foto-status" role="status"></p>
