@@ -74,15 +74,17 @@ const RatingModel = (() => {
   //   4. Rating conhecido (WhiteElo/BlackElo do PGN, ex.: partidas
   //      importadas do Chess.com/Lichess): metade do resultado.
   //   Quem jogou pior nunca fica acima de quem jogou melhor.
-  //   Resultado no teste: sem rating no PGN, 36 de 60 a até 500 pontos do
-  //   rating real (antes 29); com rating no PGN, 52 de 60.
+  //   Piso: o nível nunca fica mais de 100 abaixo da curva da precisão
+  //   (pedido do dono: 95% x 74% numa partida curta ≈ 1875 x 1150).
+  //   Resultado no teste: sem rating no PGN, 35 de 60 a até 500 pontos do
+  //   rating real (antes 29); com rating no PGN, 51 de 60.
   //   O ritmo (bullet/blitz) foi testado e não ajudou — fica de fora.
   //
   // lado = { accuracy, lances, equilibrio } (de computeStats);
   // ctx  = cabeçalhos do PGN (opcional).
   // ══════════════════════════════════════════════════════════════
-  const NIV_A = -1890, NIV_PREC = 0.347, NIV_EQ = 819, NIV_PISO = 900;
-  const NIV_ADV = 0.4, NIV_DIF = 20, NIV_ELO = 0.5;
+  const NIV_A = -1890, NIV_PREC = 0.347, NIV_EQ = 819, NIV_PISO = 100;
+  const NIV_ADV = 0.2, NIV_DIF = 20, NIV_ELO = 0.5;
 
   function _base(lado) {
     const c = _curva(Math.max(0, Math.min(100, lado.accuracy)));
