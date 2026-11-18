@@ -16,7 +16,7 @@ const PhotoPosition = (() => {
   const $ = id => document.getElementById(id);
   const PECAS = ['K', 'Q', 'R', 'B', 'N', 'P', 'k', 'q', 'r', 'b', 'n', 'p'];
   const NOMES = { K: 'Rei', Q: 'Dama', R: 'Torre', B: 'Bispo', N: 'Cavalo', P: 'Peão' };
-  const MAX_LADO = 1568;
+  const MAX_LADO = 1280;   // menos pixels = leitura mais barata, ainda nítida para as peças
 
   let ed = null;   // estado do editor
 
@@ -36,12 +36,13 @@ const PhotoPosition = (() => {
     const logado = typeof AuthSystem !== 'undefined' && !!AuthSystem.currentSession();
     lock.hidden = false;
     lock.querySelector('[data-foto-entrar]').hidden = logado;
-    lock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    lock.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   function liberado() {
     if (ehPro()) return true;
     status('');
+    GameImport.mostrarAba('foto', true);
     mostrarBloqueio();
     return false;
   }
@@ -92,6 +93,15 @@ const PhotoPosition = (() => {
     const dataUrl = reduzir(aberto.im);
     URL.revokeObjectURL(aberto.url);
     try {
+      // Imagem escolhida ou colada: primeiro tenta ler como print, no
+      // aparelho (grátis e na hora). Só se não achar um tabuleiro reto é
+      // que vai para a IA, como foto de tabuleiro de verdade.
+      if (modo === 'auto') {
+        status('Procurando o tabuleiro na imagem…', 'lendo');
+        const r = await BoardScan.lerPrint(dataUrl);
+        if (r.ok) { status(''); abrirEditor(r, dataUrl, 'print'); return; }
+        modo = 'foto';
+      }
       if (modo === 'print') {
         status('Lendo o print no seu aparelho…', 'lendo');
         const r = await BoardScan.lerPrint(dataUrl);
@@ -423,31 +433,50 @@ const PhotoPosition = (() => {
   function init() {
     const box = $('foto-box');
     if (!box) return;
-    const cam = $('foto-camera'), arq = $('foto-arquivo'), prt = $('foto-print');
-    let modoArquivo = 'foto';
-    box.addEventListener('click', e => {
+    const cam = $('foto-camera'), arq = $('foto-arquivo');
+    const fecharMenu = () => { const m = $('foto-menu'); if (m) m.hidden = true; };
+    // Botões de foto: na aba e no menu da câmera ao lado do tabuleiro.
+    document.addEventListener('click', e => {
       const b = e.target.closest('[data-foto]');
       if (!b) return;
+      fecharMenu();
       if (!liberado()) return;
       if (b.dataset.foto === 'camera') cam.click();
-      else if (b.dataset.foto === 'galeria') { modoArquivo = 'foto'; arq.click(); }
-      else if (b.dataset.foto === 'print') prt.click();
+      else arq.click();
     });
     cam.addEventListener('change', () => { processar(cam.files[0], 'foto'); cam.value = ''; });
-    arq.addEventListener('change', () => { processar(arq.files[0], modoArquivo); arq.value = ''; });
-    prt.addEventListener('change', () => { processar(prt.files[0], 'print'); prt.value = ''; });
-    // Colar um print (Ctrl+V) com a aba aberta.
+    arq.addEventListener('change', () => { processar(arq.files[0], 'auto'); arq.value = ''; });
+    // Arrastar a imagem para a área da aba.
+    const zona = $('foto-zona');
+    if (zona) {
+      zona.addEventListener('dragover', e => { e.preventDefault(); zona.classList.add('sobre'); });
+      zona.addEventListener('dragleave', () => zona.classList.remove('sobre'));
+      zona.addEventListener('drop', e => {
+        e.preventDefault();
+        zona.classList.remove('sobre');
+        const f = e.dataTransfer?.files?.[0];
+        if (f) processar(f, 'auto');
+      });
+    }
+    // Colar uma imagem (Ctrl+V) com a aba aberta.
     document.addEventListener('paste', e => {
       if (box.hidden || ed) return;
       const item = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith('image/'));
       if (!item) return;
       e.preventDefault();
-      processar(item.getAsFile(), 'print');
+      processar(item.getAsFile(), 'auto');
     });
-    // Atalho do cartão de destaque para a aba.
+    // Botão da câmera ao lado do tabuleiro: abre o menu de opções.
+    const btn = $('btn-foto'), menu = $('foto-menu');
+    if (btn && menu) {
+      btn.addEventListener('click', e => { e.stopPropagation(); menu.hidden = !menu.hidden; });
+      document.addEventListener('click', e => { if (!menu.hidden && !e.target.closest('#foto-menu-wrap')) fecharMenu(); });
+    }
+    // Atalhos (cartão de destaque, texto de abertura) para a aba.
     document.addEventListener('click', e => {
       if (!e.target.closest('[data-ir-foto]')) return;
       e.preventDefault();
+      fecharMenu();
       GameImport.mostrarAba('foto', true);
       $('trazer')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });

@@ -6,7 +6,7 @@
 <title>Gambyte — Analise suas partidas de xadrez com Stockfish 18</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=12">
+<link rel="stylesheet" href="css/styles.css?v=13">
 <meta name="google-adsense-account" content="ca-pub-7858747311725137">
 <!-- Veiculação de anúncios desativada durante a preparação para avaliação. -->
 <link rel="stylesheet" href="site-info.css?v=5">
@@ -149,6 +149,18 @@
             <svg class="btn-board-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-4 4"/><path d="M21 7H8a4 4 0 0 0-4 4"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13a4 4 0 0 0 4-4"/></svg>
             <span>Inverter</span>
           </button>
+          <div class="btn-board-group" id="foto-menu-wrap">
+            <button class="btn-board btn-foto" id="btn-foto" type="button" title="Analisar uma posição pela foto do tabuleiro (Gambyte Pro)">
+              <svg class="btn-board-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+              <span>Foto</span><span class="tab-pro">PRO</span>
+            </button>
+            <div class="pgn-menu foto-menu" id="foto-menu" hidden>
+              <button type="button" data-foto="camera">Tirar foto do tabuleiro</button>
+              <button type="button" data-foto="galeria">Escolher imagem ou print</button>
+              <div class="pgn-menu-sep" role="separator"></div>
+              <button type="button" data-ir-foto>Ver como funciona</button>
+            </div>
+          </div>
           <div class="btn-board-group" id="pgn-menu-wrap">
             <button class="btn-board" id="btn-export-pgn" title="Exportar PGN">
               <svg class="btn-board-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/></svg>
@@ -320,34 +332,26 @@
             <div class="trazer-tabs" role="tablist" aria-label="Como trazer a partida">
               <button type="button" role="tab" data-trazer="importar" aria-selected="true">Buscar por usuário</button>
               <button type="button" role="tab" data-trazer="pgn" aria-selected="false">Colar PGN</button>
-              <button type="button" role="tab" data-trazer="foto" aria-selected="false" class="tab-foto">Foto <span class="tab-pro">PRO</span></button>
+              <button type="button" role="tab" data-trazer="foto" aria-selected="false" class="tab-foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Foto <span class="tab-pro">PRO</span></button>
             </div>
           </div>
 
           <div class="trazer-pane foto-box" id="foto-box" data-pane="foto" hidden>
-            <div class="foto-hero">
-              <span class="pro-badge">Gambyte Pro</span>
-              <strong>Tire uma foto do tabuleiro e analise.</strong>
-              <span>Do tabuleiro de verdade, do print do Chess.com ou do Lichess, ou do diagrama de um livro. A posição vai direto para o tabuleiro, com o motor ao vivo.</span>
-            </div>
-            <div class="foto-opcoes">
-              <div class="foto-opcao">
-                <h3>Foto do tabuleiro</h3>
-                <p>Tabuleiro físico, de cima ou de lado. A IA do Gambyte lê a posição em alguns segundos.</p>
-                <div class="foto-botoes">
-                  <button type="button" class="btn-primary" data-foto="camera">Tirar foto</button>
-                  <button type="button" class="btn-secondary" data-foto="galeria">Escolher imagem</button>
+            <div class="foto-zona" id="foto-zona">
+              <div class="foto-zona-topo">
+                <span class="foto-zona-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
+                <div>
+                  <strong>Foto do tabuleiro <span class="tab-pro">PRO</span></strong>
+                  <span>Fotografe o tabuleiro ou mande um print: a posição abre aqui, pronta para analisar.</span>
                 </div>
               </div>
-              <div class="foto-opcao">
-                <h3>Print de tela</h3>
-                <p>Print de site ou diagrama de livro. Lido no seu aparelho, na hora, sem enviar a imagem.</p>
-                <div class="foto-botoes">
-                  <button type="button" class="btn-primary" data-foto="print">Escolher print</button>
-                </div>
-                <p class="foto-dica">No computador, também dá para colar o print com Ctrl+V.</p>
+              <div class="foto-acoes">
+                <button type="button" class="btn-primary foto-btn" data-foto="camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Tirar foto</button>
+                <button type="button" class="btn-secondary foto-btn" data-foto="galeria"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>Escolher imagem</button>
               </div>
+              <p class="foto-dica">Ou arraste a imagem para cá. No computador, cole com Ctrl+V.</p>
             </div>
+            <p class="foto-nota">Prints do Chess.com, do Lichess e de livros são lidos no seu aparelho, na hora. Fotos de tabuleiro de verdade são lidas pela IA do Gambyte (até 10 por dia).</p>
             <div class="foto-lock" id="foto-lock" hidden>
               <strong>A foto do tabuleiro faz parte do Gambyte Pro.</strong>
               <span>Assine para ler posições por foto e por print, junto com a Análise Profunda, os insights e o histórico.</span>
@@ -359,7 +363,6 @@
             <p class="foto-status" id="foto-status" role="status"></p>
             <input type="file" id="foto-camera" accept="image/*" capture="environment" hidden>
             <input type="file" id="foto-arquivo" accept="image/*" hidden>
-            <input type="file" id="foto-print" accept="image/*" hidden>
           </div>
 
           <div class="trazer-pane import-box" id="import-box" data-pane="importar">

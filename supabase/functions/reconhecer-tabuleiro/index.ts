@@ -1,6 +1,6 @@
 // Gambyte — Edge Function: lê a posição de uma FOTO de tabuleiro (Pro).
 //
-// O navegador manda a foto já reduzida (JPEG, lado maior até 1568 px).
+// O navegador manda a foto já reduzida (JPEG, lado maior até 1280 px).
 // Aqui conferimos a sessão e o Pro, aplicamos um limite diário por conta
 // e pedimos ao Claude (visão) a posição em JSON estruturado. A pessoa
 // confere e corrige tudo no editor antes de analisar.
@@ -35,7 +35,9 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 
-const LIMITE_DIA = 40;              // fotos por conta por dia
+// Cada leitura é paga (API da Anthropic): limites por conta Pro.
+const LIMITE_DIA = 10;              // fotos por conta por dia
+const LIMITE_MES = 60;              // fotos por conta por mês
 const MAX_BASE64 = 4_500_000;       // ~3,3 MB de imagem
 const TIPOS = ["image/jpeg", "image/png", "image/webp"];
 
@@ -100,10 +102,14 @@ Deno.serve(async (req: Request) => {
 
     // Limite diário por conta (fica nos metadados de app, que o usuário não edita).
     const meta = (user.app_metadata || {}) as Record<string, unknown>;
-    const dia = hojeSP();
+    const dia = hojeSP(), mes = dia.slice(0, 7);
     const usadas = meta.foto_dia === dia ? Number(meta.foto_n || 0) : 0;
+    const usadasMes = meta.foto_mes === mes ? Number(meta.foto_m || 0) : 0;
+    if (usadasMes >= LIMITE_MES) {
+      return json({ error: `Você já leu ${LIMITE_MES} fotos este mês. O limite volta no mês que vem; prints continuam liberados.` }, 429);
+    }
     if (usadas >= LIMITE_DIA) {
-      return json({ error: `Você já leu ${LIMITE_DIA} fotos hoje. O limite volta amanhã.` }, 429);
+      return json({ error: `Você já leu ${LIMITE_DIA} fotos hoje. O limite volta amanhã; prints continuam liberados.` }, 429);
     }
 
     const corpo = await req.json().catch(() => null) as { imagem?: string; tipo?: string } | null;
@@ -116,7 +122,7 @@ Deno.serve(async (req: Request) => {
     if (!TIPOS.includes(tipo)) return json({ error: "Formato de imagem não aceito." }, 400);
 
     await admin.auth.admin.updateUserById(user.id, {
-      app_metadata: { ...meta, foto_dia: dia, foto_n: usadas + 1 },
+      app_metadata: { ...meta, foto_dia: dia, foto_n: usadas + 1, foto_mes: mes, foto_m: usadasMes + 1 },
     });
 
     const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
@@ -125,7 +131,9 @@ Deno.serve(async (req: Request) => {
       max_tokens: 16000,
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
-      output_config: { effort: "high", format: { type: "json_schema", schema: ESQUEMA } },
+      // medium: o padrão do modelo; pensa o suficiente para ler a foto
+      // sem gastar à toa (o raciocínio é cobrado como saída).
+      output_config: { effort: "medium", format: { type: "json_schema", schema: ESQUEMA } },
       system: SISTEMA,
       messages: [{
         role: "user",
@@ -135,6 +143,11 @@ Deno.serve(async (req: Request) => {
         ],
       }],
     });
+
+    // Custo de cada leitura nos logs da função (tokens de entrada e saída).
+    console.log("[reconhecer-tabuleiro] uso", JSON.stringify({
+      entrada: resposta.usage?.input_tokens, saida: resposta.usage?.output_tokens, modelo: resposta.model,
+    }));
 
     if (resposta.stop_reason === "refusal") {
       return json({ error: "Não foi possível ler esta imagem. Tente outra foto." }, 422);
@@ -159,7 +172,7 @@ Deno.serve(async (req: Request) => {
       vez: lido.vez,
       duvidas,
       observacao: String(lido.observacao || "").slice(0, 300),
-      restantes: LIMITE_DIA - usadas - 1,
+      restantes: Math.min(LIMITE_DIA - usadas - 1, LIMITE_MES - usadasMes - 1),
     });
   } catch (err) {
     console.error("[reconhecer-tabuleiro] Erro:", err);

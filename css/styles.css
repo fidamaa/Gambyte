@@ -1384,17 +1384,6 @@ canvas#chart{height:150px}
    ══════════════════════════════════════════════════════════════ */
 .trazer-tabs .tab-foto{display:inline-flex;align-items:center;gap:6px}
 .tab-pro{font-size:9.5px;font-weight:700;letter-spacing:.06em;padding:1px 5px;border-radius:4px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0d0f14}
-.foto-hero{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:10px;border:1px solid rgba(236,189,110,.35);background:linear-gradient(135deg,rgba(236,189,110,.14),rgba(236,189,110,.03));margin-bottom:12px}
-.foto-hero .pro-badge{align-self:flex-start}
-.foto-hero strong{font-size:16px;color:var(--text)}
-.foto-hero span:last-child{font-size:13px;line-height:1.5;color:var(--text2)}
-.foto-opcoes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.foto-opcao{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
-.foto-opcao h3{margin:0;font-size:14px;color:var(--text)}
-.foto-opcao p{margin:0;font-size:12.5px;line-height:1.5;color:var(--text2)}
-.foto-opcao .foto-dica{font-size:11.5px;color:var(--text3)}
-.foto-botoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:4px}
-.foto-botoes .btn-primary,.foto-botoes .btn-secondary{padding:9px 14px;font-size:13px;text-decoration:none;display:inline-flex;align-items:center}
 .foto-lock{margin-top:10px;padding:12px 14px;border-radius:10px;border:1px solid rgba(236,189,110,.45);background:rgba(236,189,110,.08);display:flex;flex-direction:column;gap:6px}
 .foto-lock[hidden]{display:none}
 .foto-lock strong{color:var(--accent);font-size:14px}
@@ -1408,7 +1397,6 @@ canvas#chart{height:150px}
 .se-foto:hover{border-color:var(--accent)}
 .se-foto strong{display:block;color:var(--accent);font-size:14px;margin-bottom:2px}
 .se-foto-ico{flex:none;width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:rgba(236,189,110,.16);color:var(--accent)}
-@media(max-width:760px){.foto-opcoes{grid-template-columns:1fr}}
 
 /* Editor de posição */
 body.pos-ed-aberto{overflow:hidden}
@@ -1458,12 +1446,36 @@ body.pos-ed-aberto{overflow:hidden}
   .pos-ed-corpo{grid-template-columns:1fr}
   .pos-ed-img{max-height:160px}
 }
-.foto-box[data-compacta] .foto-hero{padding:9px 12px;margin-bottom:8px}
-.foto-box[data-compacta] .foto-hero>span:last-child,.foto-box[data-compacta] .foto-dica{display:none}
-.foto-box[data-compacta] .foto-opcao p{font-size:12px}
 .pos-ed-fenrow{display:flex;align-items:center;gap:8px;margin-top:12px}
 .pos-ed-fenrow label{font-size:11.5px;letter-spacing:.04em;font-weight:600;color:var(--text3)}
 .pos-ed-fenrow input{flex:1;min-width:0;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;padding:8px 10px}
 .pos-ed-fenrow input:focus{outline:none;border-color:var(--accent)}
 .pos-ed-fenrow .btn-secondary{padding:7px 10px;font-size:12.5px}
 @media(max-width:760px){.pos-ed-fenrow{flex-wrap:wrap}.pos-ed-fenrow input{flex-basis:100%;order:2}.pos-ed-fenrow label{flex-basis:100%}}
+
+/* Aba Foto: área grande e clara, com câmera */
+.trazer-tabs .tab-foto svg{width:15px;height:15px;flex:none}
+.foto-zona{border:2px dashed rgba(236,189,110,.55);border-radius:12px;padding:16px;background:linear-gradient(135deg,rgba(236,189,110,.13),rgba(236,189,110,.03));display:flex;flex-direction:column;gap:12px;transition:border-color .15s,background .15s}
+.foto-zona.sobre{border-color:var(--accent);background:rgba(236,189,110,.2)}
+.foto-zona-topo{display:flex;gap:12px;align-items:center}
+.foto-zona-ico{flex:none;width:52px;height:52px;border-radius:14px;display:grid;place-items:center;background:rgba(236,189,110,.2);color:var(--accent)}
+.foto-zona-ico svg{width:28px;height:28px}
+.foto-zona-topo strong{display:flex;align-items:center;gap:7px;font-size:16px;color:var(--text);margin-bottom:2px}
+.foto-zona-topo span{font-size:13px;line-height:1.45;color:var(--text2)}
+.foto-acoes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.foto-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 10px;font-size:14px}
+.foto-btn svg{width:18px;height:18px;flex:none}
+.foto-zona .foto-dica{margin:0;font-size:12px;color:var(--text3);text-align:center}
+.foto-nota{margin:8px 0 0;font-size:12px;line-height:1.5;color:var(--text3)}
+.foto-box[data-compacta] .foto-dica,.foto-box[data-compacta] .foto-nota{display:none}
+.foto-box[data-compacta] .foto-zona{padding:12px;gap:10px}
+.foto-box[data-compacta] .foto-zona-ico{width:42px;height:42px}
+
+/* Botão da câmera ao lado do tabuleiro */
+.btn-board.btn-foto{color:var(--accent);border-color:rgba(236,189,110,.45);background:rgba(236,189,110,.1)}
+.btn-board.btn-foto:hover{background:rgba(236,189,110,.18);color:var(--accent);border-color:var(--accent)}
+.btn-board.btn-foto .tab-pro{margin-left:2px}
+.foto-menu{min-width:230px}
+@media(max-width:380px){.foto-acoes{grid-template-columns:1fr}}
+.foto-botoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.foto-botoes .btn-primary,.foto-botoes .btn-secondary{padding:9px 14px;font-size:13px;text-decoration:none;display:inline-flex;align-items:center}
