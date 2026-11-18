@@ -1479,3 +1479,11 @@ body.pos-ed-aberto{overflow:hidden}
 @media(max-width:380px){.foto-acoes{grid-template-columns:1fr}}
 .foto-botoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
 .foto-botoes .btn-primary,.foto-botoes .btn-secondary{padding:9px 14px;font-size:13px;text-decoration:none;display:inline-flex;align-items:center}
+.tab-beta{font-size:9.5px;font-weight:700;letter-spacing:.06em;padding:1px 5px;border-radius:4px;border:1px solid rgba(91,143,224,.6);color:#8fb3ef}
+.pos-ed-beta{margin:6px 0 0;padding:8px 10px;border-radius:8px;background:rgba(91,143,224,.12);border:1px solid rgba(91,143,224,.35);font-size:12.5px;color:var(--text2);line-height:1.45}
+.pos-ed-beta b{color:#8fb3ef;margin-right:6px;text-transform:uppercase;font-size:11px;letter-spacing:.05em}
+.pos-ed-foto{position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--border2);background:#000}
+.pos-ed-foto canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
+.pos-ed-dica{margin:-6px 0 0;font-size:11.5px;color:var(--text3)}
+.pos-ed-treino{display:flex;gap:8px;align-items:flex-start;margin-top:12px;font-size:12.5px;line-height:1.45;color:var(--text2);cursor:pointer}
+.pos-ed-treino input{margin-top:3px;flex:none}

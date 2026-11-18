@@ -32,6 +32,10 @@ class COOPCOEPHandler(SimpleHTTPRequestHandler):
     # o que pode fazer o Chrome reaproveitar conexoes de forma inconsistente
     # e devolver erros 400 esporadicos ao servir os .wasm grandes do Stockfish.
     protocol_version = "HTTP/1.1"
+    # No Windows o Python manda .mjs como text/plain, e o navegador recusa
+    # importar módulo assim (o leitor de fotos usa um .mjs do ONNX Runtime).
+    extensions_map = {**SimpleHTTPRequestHandler.extensions_map,
+                      ".mjs": "text/javascript", ".js": "text/javascript", ".wasm": "application/wasm"}
 
     def end_headers(self):
         self.send_header("Cross-Origin-Opener-Policy", "same-origin")

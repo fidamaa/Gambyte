@@ -6,7 +6,7 @@
 <title>Gambyte — Analise suas partidas de xadrez com Stockfish 18</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=13">
+<link rel="stylesheet" href="css/styles.css?v=15">
 <meta name="google-adsense-account" content="ca-pub-7858747311725137">
 <!-- Veiculação de anúncios desativada durante a preparação para avaliação. -->
 <link rel="stylesheet" href="site-info.css?v=5">
@@ -341,7 +341,7 @@
               <div class="foto-zona-topo">
                 <span class="foto-zona-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
                 <div>
-                  <strong>Foto do tabuleiro <span class="tab-pro">PRO</span></strong>
+                  <strong>Foto do tabuleiro <span class="tab-pro">PRO</span> <span class="tab-beta">BETA</span></strong>
                   <span>Fotografe o tabuleiro ou mande um print: a posição abre aqui, pronta para analisar.</span>
                 </div>
               </div>
@@ -351,7 +351,7 @@
               </div>
               <p class="foto-dica">Ou arraste a imagem para cá. No computador, cole com Ctrl+V.</p>
             </div>
-            <p class="foto-nota">Prints do Chess.com, do Lichess e de livros são lidos no seu aparelho, na hora. Fotos de tabuleiro de verdade são lidas pela IA do Gambyte (até 10 por dia).</p>
+            <p class="foto-nota">Prints do Chess.com, do Lichess e de livros são lidos no seu aparelho, na hora. Fotos de tabuleiro de verdade são lidas pelo leitor próprio do Gambyte, também no aparelho: a imagem não sai do seu celular ou computador.</p>
             <div class="foto-lock" id="foto-lock" hidden>
               <strong>A foto do tabuleiro faz parte do Gambyte Pro.</strong>
               <span>Assine para ler posições por foto e por print, junto com a Análise Profunda, os insights e o histórico.</span>
@@ -546,6 +546,7 @@
 <script src="js/modules/game-history.js"></script>
 <script src="js/modules/game-import.js"></script>
 <script src="js/modules/board-scan.js"></script>
+<script src="js/modules/board-photo.js"></script>
 <script src="js/modules/photo-position.js"></script>
 
 <!-- Controlador de UI (precisa que o DOM acima já exista) -->

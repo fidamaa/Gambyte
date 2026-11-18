@@ -2,21 +2,21 @@
    MODULE: photo-position.js
    Gambyte Pro: posição pela FOTO do tabuleiro ou por um PRINT de tela.
 
-   - Foto (tabuleiro de verdade): a imagem é reduzida no aparelho e lida
-     no servidor (Edge Function reconhecer-tabuleiro), só para o Pro.
+   - Foto (tabuleiro de verdade): lida pelo modelo próprio do Gambyte
+     (board-photo.js), também no aparelho, sem servidor e sem custo.
    - Print (Chess.com, Lichess, diagrama): lido no próprio aparelho por
      BoardScan, sem enviar a imagem para lugar nenhum.
    Nos dois casos a posição abre num editor para conferir e corrigir
    (peças, vez de jogar, roques, lado de baixo) antes de ir ao tabuleiro.
 
-   Depende de: board-scan.js, auth-system.js, supabase-config.js,
+   Depende de: board-scan.js, board-photo.js, auth-system.js,
                pgn-parser.js, board-ui.js (pieceSrc), app.js (loadPosition)
    ============================================================== */
 const PhotoPosition = (() => {
   const $ = id => document.getElementById(id);
   const PECAS = ['K', 'Q', 'R', 'B', 'N', 'P', 'k', 'q', 'r', 'b', 'n', 'p'];
   const NOMES = { K: 'Rei', Q: 'Dama', R: 'Torre', B: 'Bispo', N: 'Cavalo', P: 'Peão' };
-  const MAX_LADO = 1280;   // menos pixels = leitura mais barata, ainda nítida para as peças
+  const MAX_LADO = 1280;   // suficiente para as peças e rápido no celular
 
   let ed = null;   // estado do editor
 
@@ -70,18 +70,10 @@ const PhotoPosition = (() => {
     return cv.toDataURL('image/jpeg', 0.85);
   }
 
-  // ── Leitura pela IA (foto) ──────────────────────────────────
-  async function lerComIA(dataUrl) {
-    const imagem = dataUrl.split(',')[1];
-    const { data, error } = await supabaseClient.functions.invoke('reconhecer-tabuleiro', {
-      body: { imagem, tipo: 'image/jpeg' },
-    });
-    if (error) {
-      let msg = 'Não foi possível ler a foto agora. Tente de novo.';
-      try { const j = await error.context.json(); if (j && j.error) msg = j.error; } catch (e) { /* sem corpo */ }
-      throw new Error(msg);
-    }
-    return data;
+  // ── Leitura de foto pelo modelo próprio ─────────────────────
+  async function lerFotoModelo(dataUrl) {
+    status('Lendo a foto no seu aparelho… (na primeira vez, o leitor é baixado)', 'lendo');
+    return BoardPhoto.lerFoto(dataUrl);
   }
 
   // ── Fluxo principal ─────────────────────────────────────────
@@ -93,9 +85,9 @@ const PhotoPosition = (() => {
     const dataUrl = reduzir(aberto.im);
     URL.revokeObjectURL(aberto.url);
     try {
-      // Imagem escolhida ou colada: primeiro tenta ler como print, no
-      // aparelho (grátis e na hora). Só se não achar um tabuleiro reto é
-      // que vai para a IA, como foto de tabuleiro de verdade.
+      // Imagem escolhida ou colada: primeiro tenta ler como print (mais
+      // rápido). Se não houver um tabuleiro reto, lê como foto de tabuleiro
+      // de verdade, com o modelo próprio.
       if (modo === 'auto') {
         status('Procurando o tabuleiro na imagem…', 'lendo');
         const r = await BoardScan.lerPrint(dataUrl);
@@ -113,14 +105,13 @@ const PhotoPosition = (() => {
         status('');
         abrirEditor(r, dataUrl, 'print');
       } else {
-        status('Lendo a foto com a IA do Gambyte… leva alguns segundos.', 'lendo');
-        const r = await lerComIA(dataUrl);
+        const r = await lerFotoModelo(dataUrl);
         if (!r || !r.ok) {
           status((r && r.motivo) || 'Não encontrei um tabuleiro nesta foto.', 'erro');
           abrirEditor(null, dataUrl, 'foto', true);
           return;
         }
-        status(typeof r.restantes === 'number' ? `Foto lida. Você ainda pode ler ${r.restantes} hoje.` : '');
+        status('');
         abrirEditor(r, dataUrl, 'foto');
       }
     } catch (e) {
@@ -147,6 +138,12 @@ const PhotoPosition = (() => {
       ferramenta: null,
       origem, dataUrl,
       roques: null,
+      // Foto de tabuleiro: os 4 cantos (na imagem) e quantos giros de 90°
+      // levam a grade da foto para a posição — vão junto se a pessoa
+      // autorizar o envio para treinar o leitor.
+      cantos: leitura && leitura.cantos ? leitura.cantos.map(q => [q[0], q[1]]) : [],
+      giro: leitura && Number.isInteger(leitura.giro) ? leitura.giro : 0,
+      lido: leitura && leitura.linhas ? leitura.linhas.join('/') : '',
     };
     ed.roques = roquesPossiveis();
     const el = document.createElement('div');
@@ -158,14 +155,17 @@ const PhotoPosition = (() => {
           <h2 id="pos-ed-titulo">Confira a posição</h2>
           <button type="button" class="pos-ed-x" data-ed="fechar" aria-label="Fechar">×</button>
         </div>
-        <p class="pos-ed-sub">${vazio ? 'Não deu para ler esta imagem. Monte a posição abaixo olhando a imagem ao lado.' : 'Compare com a imagem. Para corrigir uma casa, escolha a peça abaixo e clique na casa.'}${ed.duvidas.size ? ' As casas com contorno amarelo merecem um segundo olhar.' : ''}</p>
+        ${origem === 'foto' && !vazio ? '<p class="pos-ed-beta"><b>Beta</b> A leitura de fotos de tabuleiro ainda está aprendendo e pode errar várias peças. Confira tudo antes de analisar.</p>' : ''}
+        <p class="pos-ed-sub">${vazio ?'Não deu para ler esta imagem. Monte a posição abaixo olhando a imagem ao lado.' : 'Compare com a imagem. Para corrigir uma casa, escolha a peça abaixo e clique na casa.'}${ed.duvidas.size ? ' As casas com contorno amarelo merecem um segundo olhar.' : ''}</p>
         <div class="pos-ed-corpo">
           <div class="pos-ed-esq">
             <div class="pos-ed-board" id="pos-ed-board"></div>
             <div class="pos-ed-paleta" id="pos-ed-paleta"></div>
           </div>
           <div class="pos-ed-dir">
-            <img class="pos-ed-img" alt="Imagem enviada" src="${dataUrl}">
+            ${origem === 'foto'
+              ? '<div class="pos-ed-foto"><canvas id="pos-ed-cv" aria-label="Foto com os cantos do tabuleiro"></canvas></div><p class="pos-ed-dica">Arraste os pontos verdes até os 4 cantos do tabuleiro.</p>'
+              : `<img class="pos-ed-img" alt="Imagem enviada" src="${dataUrl}">`}
             <div class="pos-ed-grupo">
               <span class="pos-ed-rot">Vez de jogar</span>
               <div class="pos-ed-seg" data-grupo="vez">
@@ -185,7 +185,8 @@ const PhotoPosition = (() => {
             <div class="pos-ed-acoes2">
               <button type="button" class="btn-secondary" data-ed="limpar">Limpar</button>
               <button type="button" class="btn-secondary" data-ed="inicial">Posição inicial</button>
-              ${origem === 'print' ? '<button type="button" class="btn-secondary" data-ed="ia" title="Envia a imagem para a leitura com IA">Ler com IA</button>' : ''}
+              ${origem === 'foto' ? '<button type="button" class="btn-secondary" data-ed="girar" title="Gira a posição 90°, para fotos tiradas de lado">Girar 90°</button>' : ''}
+              ${origem === 'print' ? '<button type="button" class="btn-secondary" data-ed="ia" title="Lê a imagem como foto de um tabuleiro de verdade">Ler como foto</button>' : ''}
             </div>
           </div>
         </div>
@@ -195,6 +196,7 @@ const PhotoPosition = (() => {
           <button type="button" class="btn-secondary" data-ed="fen">Aplicar</button>
           <button type="button" class="btn-secondary" data-ed="copiar">Copiar</button>
         </div>
+        ${origem === 'foto' ? `<label class="pos-ed-treino"><input type="checkbox" id="pos-ed-treino" ${treinoAutorizado() ? 'checked' : ''}> Enviar esta foto e a posição corrigida para melhorar o leitor de fotos do Gambyte. A foto é guardada só para isso, sem seu nome.</label>` : ''}
         <p class="pos-ed-aviso" id="pos-ed-aviso" role="alert"></p>
         <div class="pos-ed-foot">
           <button type="button" class="btn-secondary" data-ed="fechar">Cancelar</button>
@@ -205,6 +207,7 @@ const PhotoPosition = (() => {
     document.body.classList.add('pos-ed-aberto');
     el.addEventListener('click', aoClicar);
     document.addEventListener('keydown', aoTeclar);
+    if (origem === 'foto') ligarFoto();
     desenhar();
     el.querySelector('[data-ed="analisar"]').focus({ preventScroll: true });
   }
@@ -270,7 +273,18 @@ const PhotoPosition = (() => {
       if (a === 'fechar') { fecharEditor(); return; }
       if (a === 'limpar') { ed.board = tabuleiroDe(null); ed.duvidas.clear(); }
       if (a === 'inicial') { ed.board = tabuleiroDe(INICIAL); ed.duvidas.clear(); ed.roques = { K: true, Q: true, k: true, q: true }; ed.vez = 'w'; }
-      if (a === 'ia') { relerComIA(); return; }
+      if (a === 'ia') { relerComoFoto(); return; }
+      if (a === 'girar') {
+        // Gira a posição 90° no sentido anti-horário (como np.rot90).
+        const b = ed.board;
+        ed.board = b.map((_, i) => b.map((__, j) => b[j][7 - i]));
+        ed.duvidas = new Set([...ed.duvidas].map(q => {
+          const c = q.charCodeAt(0) - 97, r = 8 - parseInt(q[1], 10);
+          return 'abcdefgh'[r] + (8 - (7 - c));
+        }));
+        ed.giro = (ed.giro + 1) % 4;
+        ed.roques = roquesPossiveis();
+      }
       if (a === 'copiar') {
         navigator.clipboard?.writeText(fen()).then(() => aviso('FEN copiado.', true), () => aviso('Não foi possível copiar.', true));
         return;
@@ -297,6 +311,7 @@ const PhotoPosition = (() => {
         ed.board = ed.board.map(l => l.slice().reverse()).reverse();
         ed.duvidas = new Set([...ed.duvidas].map(s => 'abcdefgh'[7 - (s.charCodeAt(0) - 97)] + (9 - parseInt(s[1], 10))));
         ed.brancasEmbaixo = novo;
+        ed.giro = (ed.giro + 2) % 4;
         ed.roques = roquesPossiveis();
       }
       desenhar();
@@ -405,22 +420,79 @@ const PhotoPosition = (() => {
     return !msg;
   }
 
+  // ── Fotos corrigidas para treinar o leitor ──────────────────
+  const CHAVE_TREINO = 'gambyte_treino_foto';
+  function treinoAutorizado() {
+    try { return localStorage.getItem(CHAVE_TREINO) === '1'; } catch (e) { return false; }
+  }
+  // giro (foto -> posição, anti-horário) -> de que lado da foto ficam as brancas
+  const LADO_DO_GIRO = ['baixo', 'esquerda', 'cima', 'direita'];
+  function enviarTreino(est, fenFinal) {
+    const corpo = {
+      imagem: est.dataUrl.split(',')[1],
+      fen: fenFinal.split(' ')[0],
+      cantos: est.cantos,
+      lado_brancas: LADO_DO_GIRO[est.giro % 4],
+      lido: est.lido || '',
+    };
+    // Não segura a análise: envia em segundo plano e ignora falhas.
+    supabaseClient.functions.invoke('foto-treino', { body: corpo }).catch(() => {});
+  }
+
+  // Foto com os cantos: arrastar os pontos (mouse ou dedo).
+  function ligarFoto() {
+    const cv = $('pos-ed-cv');
+    const img = new Image();
+    let arr = -1;
+    const desenharFoto = () => {
+      if (!img.naturalWidth) return;
+      const cx = cv.getContext('2d');
+      cx.drawImage(img, 0, 0);
+      const k = Math.max(2, img.naturalWidth / 260);
+      if (ed.cantos.length) {
+        cx.lineWidth = k; cx.strokeStyle = '#ecbd6e'; cx.fillStyle = 'rgba(236,189,110,.14)';
+        cx.beginPath(); ed.cantos.forEach((q, i) => (i ? cx.lineTo(q[0], q[1]) : cx.moveTo(q[0], q[1])));
+        if (ed.cantos.length === 4) { cx.closePath(); cx.fill(); }
+        cx.stroke();
+        for (const q of ed.cantos) { cx.beginPath(); cx.arc(q[0], q[1], k * 5, 0, 7); cx.fillStyle = '#5bc97a'; cx.fill(); cx.lineWidth = k; cx.strokeStyle = '#0d0f14'; cx.stroke(); }
+      }
+    };
+    img.onload = () => { cv.width = img.naturalWidth; cv.height = img.naturalHeight; desenharFoto(); };
+    img.src = ed.dataUrl;
+    const ponto = e => { const r = cv.getBoundingClientRect(), k = cv.width / r.width; return [(e.clientX - r.left) * k, (e.clientY - r.top) * k]; };
+    cv.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      const q = ponto(e), raio = 28 * (cv.width / cv.getBoundingClientRect().width);
+      arr = ed.cantos.findIndex(c => Math.hypot(c[0] - q[0], c[1] - q[1]) < raio);
+      if (arr < 0 && ed.cantos.length < 4) { ed.cantos.push(q); arr = ed.cantos.length - 1; }
+      try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ok */ }
+      desenharFoto();
+    });
+    cv.addEventListener('pointermove', e => { if (arr >= 0) { ed.cantos[arr] = ponto(e); desenharFoto(); } });
+    cv.addEventListener('pointerup', () => { arr = -1; });
+    cv.addEventListener('pointercancel', () => { arr = -1; });
+  }
+
   function analisar() {
     if (!validar()) return;
     const f = fen();
     const embaixo = ed.brancasEmbaixo;
+    const caixa = $('pos-ed-treino');
+    if (caixa) {
+      try { localStorage.setItem(CHAVE_TREINO, caixa.checked ? '1' : '0'); } catch (e) { /* sem armazenamento */ }
+      if (caixa.checked && ed.cantos.length === 4) enviarTreino(ed, f);
+    }
     fecharEditor();
     App.loadPosition(f, embaixo);
     status('Posição aberta no tabuleiro. Arraste as peças para continuar a partida.');
     $('board-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  async function relerComIA() {
+  async function relerComoFoto() {
     const dataUrl = ed.dataUrl;
     fecharEditor();
     try {
-      status('Lendo a imagem com a IA do Gambyte… leva alguns segundos.', 'lendo');
-      const r = await lerComIA(dataUrl);
+      const r = await lerFotoModelo(dataUrl);
       if (!r || !r.ok) { status((r && r.motivo) || 'Não encontrei um tabuleiro nesta imagem.', 'erro'); return; }
       status('');
       abrirEditor(r, dataUrl, 'foto');
