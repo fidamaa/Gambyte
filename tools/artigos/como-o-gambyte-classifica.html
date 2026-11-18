@@ -55,7 +55,7 @@
 <h2 id="especiais">As classificações especiais</h2>
 <p>Antes de aplicar a escada, o classificador verifica uma série de casos, nesta ordem de prioridade.</p>
 <h3>Livro</h3>
-<p>O lance leva a uma posição que consta na base de aberturas, com mais de 3.800 linhas catalogadas pelo código ECO. Lances de livro não entram no cálculo de precisão nem de ACPL.</p>
+<p>O lance leva a uma posição que consta na base de aberturas, com mais de 3.800 linhas catalogadas pelo código ECO. Lances de livro contam como lances perfeitos na precisão e ficam fora do ACPL.</p>
 <h3>Xeque-mate e empates</h3>
 <p>Um lance que dá mate é sempre classificado como melhor lance. Um lance que afoga o adversário é tratado conforme a situação anterior: se quem jogou tinha mais de três peões de vantagem, é gafe; com mais de um peão e meio, é erro. Se estava perdendo e conseguiu o empate, o lance é marcado como ótimo.</p>
 <h3>Brilhante</h3>
@@ -74,18 +74,18 @@
 <div class="ap-nota"><strong>Sobre os nomes</strong><p>Os nomes das categorias são parecidos com os de outras plataformas, mas os critérios são do Gambyte e não reproduzem os de nenhuma delas. É normal que a mesma partida tenha contagens diferentes de brilhantes ou gafes em ferramentas diferentes.</p></div>
 
 <h2 id="precisao">Como a precisão é calculada</h2>
-<p>A precisão é uma média das notas individuais dos lances. Cada lance recebe uma nota de 5 a 100 a partir da perda em centipeões em relação ao melhor lance do motor, por uma curva exponencial: perda zero dá 100, e a nota cai suavemente conforme a perda aumenta. Uma perda de meio peão resulta em nota próxima de 67; uma perda de um peão, próxima de 43.</p>
-<p>Quatro ajustes evitam distorções:</p>
+<p>A precisão segue a mesma ideia de chance de vitória das classificações, numa escala ajustada para ficar perto da precisão que os grandes sites mostram. Para calibrar, comparamos 60 precisões publicadas pelo Chess.com, de 30 partidas de bullet, blitz e rápidas, com a análise gratuita do Gambyte. A diferença média ficou em cerca de 4 pontos, e 43 dos 60 resultados ficaram a até 5 pontos do Chess.com.</p>
+<p>A conta tem quatro passos:</p>
 <ul>
-<li><strong>Lances de livro são ignorados.</strong></li>
-<li><strong>Lances únicos têm a perda limitada.</strong> Quando só existe uma jogada boa, com mais de quatro peões de diferença para a segunda opção, a perda considerada é de no máximo 0,30 peão.</li>
-<li><strong>Posições decididas pesam menos.</strong> Quando um dos lados já tem mais de sete peões de vantagem, o lance entra na média com peso de 30%.</li>
-<li><strong>O resultado final fica entre 20% e 100%.</strong></li>
+<li><strong>Perda de cada lance.</strong> A avaliação antes e depois do lance vira chance de vitória, por uma curva própria da precisão: chance = 100 ÷ (1 + e^(−0,3 × peões^1,3)), com avaliações limitadas a ±20 peões. Perto do equilíbrio ela é parecida com a das classificações; com vantagem grande, satura mais rápido. Cair de +8,00 para +6,00 custa só cerca de 3 pontos de chance, enquanto cair de +1,00 para −1,00 custa cerca de 15.</li>
+<li><strong>Folga de 1 ponto.</strong> Perdas de até 1 ponto de chance são tratadas como ruído de profundidade e não contam.</li>
+<li><strong>Nota do lance.</strong> A nota é 100 × e^(−(perda ÷ 7)^1,3), já descontada a folga. Perder 2 pontos de chance dá cerca de 92; perder 5, cerca de 62; perder 10, cerca de 25. O melhor lance, o lance de livro e o xeque-mate valem 100.</li>
+<li><strong>Média da partida.</strong> As notas são combinadas por uma média de raiz quadrada, em que um lance muito ruim pesa mais que vários lances bons. É por isso que uma única gafe derruba a precisão mais do que uma série de pequenas imprecisões.</li>
 </ul>
-<p>A precisão por fase, disponível no Pro, usa a mesma conta em três fatias: os dez primeiros lances de cada jogador são a abertura, do 11º ao 30º é o meio-jogo, e do 31º em diante é o final.</p>
+<p>A precisão por fase, disponível no Pro, usa a mesma conta em três fatias. A abertura vai até o 10º lance de cada jogador, enquanto houver mais de dez peças em jogo (sem contar reis e peões). O final começa quando restam seis peças ou menos. O meio-jogo é o que fica entre as duas.</p>
 
 <h2 id="acpl">Como o ACPL é calculado</h2>
-<p>ACPL é a perda média em centipeões por lance. No Gambyte, a conta usa as mesmas perdas do cálculo de precisão, com três limites:</p>
+<p>ACPL é a perda média em centipeões por lance, em relação ao melhor lance do motor. A conta tem três limites:</p>
 <ul>
 <li>avaliações extremas e mates são tratados como ±9,00, para que um mate em vinte lances não pese mais que um mate em três;</li>
 <li>a perda de um único lance é limitada a três peões, para que uma gafe isolada não domine a média;</li>
@@ -93,8 +93,22 @@
 </ul>
 
 <h2 id="rating">Como o rating estimado é calculado</h2>
-<p>O rating estimado parte do ACPL de cada jogador. Uma curva logarítmica converte o ACPL em um valor base, calibrada para que um ACPL de 10 corresponda a 3000 e um ACPL de 80 corresponda a 700. Sobre essa base são aplicados ajustes moderados pela precisão, pela regularidade das perdas ao longo da partida e pela quantidade de erros e gafes.</p>
-<p>O valor final fica entre 400 e 3200 e é arredondado em passos de 25. Em partidas com menos de oito lances fora do livro, a estimativa é puxada para a faixa intermediária, porque a amostra é pequena demais. O “nível estimado da partida” é a média dos dois jogadores.</p>
+<p>O rating estimado parte da precisão de cada jogador, convertida por uma curva com estes pontos:</p>
+<div class="ap-tabela-wrap"><table class="ap-tabela">
+<thead><tr><th>Precisão</th><th>Rating estimado</th></tr></thead>
+<tbody>
+<tr><td>50%</td><td>550</td></tr>
+<tr><td>70%</td><td>1000</td></tr>
+<tr><td>80%</td><td>1350</td></tr>
+<tr><td>85%</td><td>1550</td></tr>
+<tr><td>90%</td><td>1800</td></tr>
+<tr><td>95%</td><td>2000</td></tr>
+<tr><td>97%</td><td>2200</td></tr>
+<tr><td>98%</td><td>2450</td></tr>
+<tr><td>99%</td><td>2700</td></tr>
+</tbody></table></div>
+<p>Dois ajustes completam a conta. Partidas curtas dizem menos sobre o nível, então o valor é puxado um pouco para 1500 quando há poucos lances fora do livro (com 12 lances, o valor fica 15% mais perto de 1500; a partir de 18 lances, não há ajuste). E cada gafe tira mais 90 pontos e cada erro mais 30, além do que eles já custaram na precisão (contam no máximo três gafes e cinco erros).</p>
+<p>O valor final fica entre 400 e 3000 e é arredondado em passos de 25. O “nível estimado da partida” é a média dos dois jogadores.</p>
 <div class="ap-erro"><strong>O que o rating estimado não é</strong><p>Ele não é o seu rating em nenhum site ou federação e não tem relação com sistemas como o Elo, que dependem de resultados contra adversários. É uma medida da qualidade dos lances de <em>uma</em> partida, que varia bastante de um jogo para outro. E não serve como indício de uso de ajuda externa por ninguém.</p></div>
 
 <h2 id="limites">Limites que vale conhecer</h2>

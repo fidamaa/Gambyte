@@ -1,256 +1,54 @@
 /* ==============================================================
-   MODULE: RatingModel — CPL Contextual v4
-   ─────────────────────────────────────────────────────────────
-   PERSPECTIVA DOS CAMPOS (armazenados pelo AnalysisEngine):
-     evalBefore / bestEval  → perspectiva do jogador que move
-     evalAfter              → negado ao armazenar → perspectiva do jogador
-     multiPVEvals           → perspectiva do jogador (de beforeResult)
-     Mates: M1=29999, -M1=-29999
+   MODULE: RatingModel
+   Nível estimado de cada jogador numa partida.
 
    PIPELINE:
-     computeStats() → acpl canônico (exibido na UI) + accuracy + rawCpls
-     RatingModel.fromACPL(acpl, rawCpls, n, accuracy) → rating final
-       piecewise interpolado + ajuste precisão + ajuste consistência (CV)
+     MoveClassifier.computeStats() → precisão (escala dos grandes sites)
+     RatingModel.fromAccuracy(precisão, lances, gafes, erros) → nível
+     RatingModel.correlateOpponents() → ajuste quando os dois são fortes
    ============================================================== */
 const RatingModel = (() => {
 
   // ──────────────────────────────────────────────────────────
-  // Normaliza um valor de eval: clamp de mates e extremos
-  // ──────────────────────────────────────────────────────────
-  function _norm(v) {
-    if (v == null) return null;
-    if (Math.abs(v) >= 29000) return v > 0 ? 900 : -900;
-    return Math.max(-900, Math.min(900, v));
-  }
-
-  // ──────────────────────────────────────────────────────────
-  // Complexidade da posição [0..1]
-  // Gap pequeno top1↔top2 = muitas opções boas = difícil
-  // ──────────────────────────────────────────────────────────
-  function _complexidade(multiPVEvals) {
-    if (!multiPVEvals || multiPVEvals.length < 2) return 0;
-    const t1 = _norm(multiPVEvals[0]);
-    const t2 = _norm(multiPVEvals[1]);
-    if (t1 == null || t2 == null) return 0;
-    const gap = Math.abs(t1 - t2);
-    return Math.max(0, 1 - gap / 200);
-  }
-
-  // ──────────────────────────────────────────────────────────
-  // Volatilidade local [0..1]
-  // ──────────────────────────────────────────────────────────
-  function _volatilidade(moves, idx) {
-    const janela = moves.slice(Math.max(0, idx - 6), idx);
-    const vals   = janela
-      .map(m => Math.abs(_norm(m.evalBefore) ?? 0))
-      .filter(v => v < 900);
-    if (vals.length < 2) return 0;
-    const media = vals.reduce((a, b) => a + b, 0) / vals.length;
-    const std   = Math.sqrt(vals.reduce((s, v) => s + (v - media) ** 2, 0) / vals.length);
-    return Math.min(std / (media + 1), 1.0);
-  }
-
-  // ──────────────────────────────────────────────────────────
-  // fromACPL — CONVERSÃO FINAL
+  // fromAccuracy — NÍVEL DA PARTIDA A PARTIR DA PRECISÃO
   //
-  // Curva: rating_base = a - b × ln(acpl+1)²
-  // Calibrada exatamente em dois pontos âncora:
-  //   ACPL 10 → 3000   (nível GM+)
-  //   ACPL 80 → 700    (iniciante)
-  // Comportamento verificado:
-  //   ACPL  0 → ~3975  ACPL 20 → ~2400  ACPL 30 → ~1975
-  //   ACPL 50 → ~1350  ACPL 70 → ~890   ACPL 90 → ~525
-  //   ACPL 100+ → 400 (floor)
-  //
-  // Fórmula final:
-  //   rating = base(acpl) + ajuste_precisao + ajuste_consistencia + performance_boost
+  // A precisão (já na escala dos grandes sites) é o que mais diz sobre o
+  // nível de uma partida. Pontos da curva:
+  //   50% → 550    70% → 1000   80% → 1350   85% → 1550   90% → 1800
+  //   95% → 2000   96% → 2075   97% → 2200   98% → 2450   99% → 2700
+  // Ajustes:
+  //   • Partida curta: poucos lances dizem menos, então o resultado fica
+  //     um pouco mais perto de 1500 (com 12 lances fora do livro, 15% mais
+  //     perto; a partir de 18 lances, sem ajuste).
+  //   • Gafes e erros: cada gafe tira 90 pontos e cada erro 30, além do
+  //     que já custaram na precisão (no máximo 3 gafes e 5 erros contam).
   // ──────────────────────────────────────────────────────────
-  function fromACPL(acplUI, rawCpls, n, accuracy, blunders, mistakes) {
-    if (n === 0 || acplUI == null) return 1500;
-
-    // ── 1. Parâmetros calibrados (derivados analiticamente) ───
-    const K_EXP = 2;
-    const B     = 2300 / (Math.log(81) ** K_EXP - Math.log(11) ** K_EXP);
-    const A     = 3000 + B * Math.log(11) ** K_EXP;
-
-    function baseCurve(acpl) {
-      return Math.max(400, A - B * Math.log(acpl + 1) ** K_EXP);
+  const CURVA = [
+    [0, 300], [40, 400], [50, 550], [60, 775], [70, 1000], [75, 1175], [80, 1350],
+    [85, 1550], [88, 1700], [90, 1800], [93, 1925], [95, 2000], [96, 2075], [97, 2200],
+    [98, 2450], [99, 2700], [100, 2850]
+  ];
+  function _curva(acc) {
+    for (let i = 1; i < CURVA.length; i++) {
+      const [a1, r1] = CURVA[i - 1], [a2, r2] = CURVA[i];
+      if (acc <= a2) return r1 + (r2 - r1) * (acc - a1) / (a2 - a1);
     }
-
-    // ── 2. Robustez: partidas curtas puxam para médio ─────────
-    let acpl = acplUI;
-    if (n < 8) {
-      const fator = n / 8;
-      acpl = acpl * fator + 55 * (1 - fator);
-    }
-
-    const base = baseCurve(acpl);
-
-    // ── 3. Ajuste de precisão — leve, não dominante ───────────
-    let ajustePrecisao = 0;
-    if (accuracy != null) {
-      if      (accuracy > 90) ajustePrecisao =  120;
-      else if (accuracy > 85) ajustePrecisao =   60;
-      else if (accuracy > 75) ajustePrecisao =    0;
-      else if (accuracy > 70) ajustePrecisao =  -50;
-      else if (accuracy > 60) ajustePrecisao = -100;
-      else                    ajustePrecisao = -150;
-    }
-
-    // ── 3b. Amortecimento na faixa iniciante/intermediária (ACPL ≥ 40) ──
-    // Nessa faixa o ajuste de precisão (±150) e o consistencyBoost (±150)
-    // vinham somando/subtraindo demais em cima do mesmo jogo, fazendo o
-    // mesmo nível real (ex.: ~800-1000 de rating "verdadeiro") sair ora
-    // muito abaixo (600→450), ora muito acima (1250→1400) do esperado.
-    // Reduzimos a amplitude desses dois ajustes nessa faixa para apertar
-    // o desvio, sem tocar na faixa de elite (ACPL < 40), que já funciona bem.
-    const FATOR_AMORTECIMENTO_FAIXA_BAIXA = 0.6;
-    if (acplUI >= 40) {
-      ajustePrecisao = Math.round(ajustePrecisao * FATOR_AMORTECIMENTO_FAIXA_BAIXA);
-    }
-
-    // ── 4. Ajuste de consistência (CV) — limitado a ±100 ──────
-    // NÃO ALTERAR esta lógica
-    let ajusteConsistencia = 0;
-    if (rawCpls && rawCpls.length >= 5) {
-      const media = rawCpls.reduce((a, b) => a + b, 0) / rawCpls.length;
-      const std   = Math.sqrt(rawCpls.reduce((s, v) => s + (v - media) ** 2, 0) / rawCpls.length);
-      const cv    = std / (media + 1);
-      ajusteConsistencia = -Math.round(Math.min(cv, 1.0) * 100);
-    }
-
-    // ── 5. Performance boost — partidas de alto nível (ACPL < 40) ────────
-    // Mutuamente exclusivo com consistencyBoost: só um dos dois é aplicado.
-    let performanceBoost = 0;
-    if (acplUI < 40) {
-      // Por nível de ACPL
-      if      (acplUI < 10) performanceBoost += 500;
-      else if (acplUI < 15) performanceBoost += 400;
-      else if (acplUI < 20) performanceBoost += 300;
-      else if (acplUI < 25) performanceBoost += 200;
-      else if (acplUI < 30) performanceBoost += 100;
-      // Por precisão
-      if (accuracy != null) {
-        if      (accuracy > 92) performanceBoost += 200;
-        else if (accuracy > 88) performanceBoost += 150;
-        else if (accuracy > 85) performanceBoost += 100;
-      }
-      // Por ausência de erros graves
-      const bd = blunders ?? 99;
-      const mk = mistakes ?? 99;
-      if      (bd === 0 && mk === 0) performanceBoost += 250;
-      else if (bd === 0 && mk === 1) performanceBoost += 150;
-      else if (bd === 0)             performanceBoost +=  50;
-
-      performanceBoost = Math.min(performanceBoost, 1200);
-    }
-
-     // ── 6. Consistency boost — jogadores intermediários (ACPL 40–65) ──────
-    // Ativa APENAS se fora do range elite (ACPL ≥ 40).
-    // Máximo +150 — bônus moderado para não inflar jogadores de nível médio.
-    let consistencyBoost = 0;
-    if (acplUI >= 40 && acplUI < 65) {
-      const bd2 = blunders ?? 99;
-      const mk2 = mistakes ?? 99;
-      const acc2 = accuracy ?? 0;
-
-      // Cancelamento total: acc < 70 ou blunders > 1
-      if (acc2 >= 70 && bd2 <= 1) {
-        if      (bd2 === 0 && mk2 === 0) consistencyBoost = 150;
-        else if (bd2 === 0 && mk2 <= 2)  consistencyBoost = 100;
-        else if (bd2 === 0)              consistencyBoost =  50;
-        else if (bd2 === 1 && mk2 <= 1)  consistencyBoost =  25;
-
-        // Reduz pela metade se precisão apenas razoável (70–74%)
-        if (acc2 < 75) consistencyBoost = Math.round(consistencyBoost * 0.5);
-      }
-
-      // Mesmo amortecimento da faixa baixa/intermediária (ver item 3b) —
-      // este boost já nasce restrito a ACPL 40–65, então recebe o mesmo fator.
-      consistencyBoost = Math.round(consistencyBoost * FATOR_AMORTECIMENTO_FAIXA_BAIXA);
-    }
-
-    // ── 7. Rating final ────────────────────────────────────────
-    const ratingRaw = base + ajustePrecisao + ajusteConsistencia + performanceBoost + consistencyBoost;
-    const rating    = Math.max(400, Math.min(3200, Math.round(ratingRaw / 25) * 25));
-
-    console.log(
-      `[RatingModel] acpl=${acplUI.toFixed(1)}cp` +
-      ` base=${Math.round(base)}` +
-      ` acc_adj=${ajustePrecisao}` +
-      ` cv_adj=${ajusteConsistencia}` +
-      ` perf=${performanceBoost}` +
-      ` cons=${consistencyBoost}` +
-      ` → rating=${rating}`
-    );
-    return rating;
+    return CURVA[CURVA.length - 1][1];
   }
 
-  // ──────────────────────────────────────────────────────────
-  // fromMoves — usado apenas pelo InsightsEngine.estimateRating
-  // Calcula seu próprio ACPL contextual (com complexidade/volatilidade)
-  // independente do ACPL da UI (que não tem complexidade).
-  // ──────────────────────────────────────────────────────────
-  const ALPHA       = 0.55;
-  const DECIDED_EVAL  = 500;
-  const ONLY_MOVE_GAP = 450;
-  const MAX_LOSS_CP   = 300;
-
-  function _cpl(m) {
-    if (m.isCheckmate) return 0;
-    const best   = _norm(m.bestEval);
-    const played = _norm(m.evalAfter);
-    if (best == null || played == null) return null;
-    return Math.max(0, Math.min(MAX_LOSS_CP, best - played));
-  }
-
-  function fromMoves(moves) {
-    if (!moves || moves.length === 0) return 1500;
-
-    const cpls    = [];
-    const pesos   = [];
-    const rawCpls = [];
-
-    for (let idx = 0; idx < moves.length; idx++) {
-      const m   = moves[idx];
-      const cpl = _cpl(m);
-      if (cpl == null) continue;
-      rawCpls.push(cpl);
-
-      const evalNorm  = Math.abs(_norm(m.evalBefore) ?? 0);
-      const isMatePos = evalNorm >= 900;
-      const isDecided = evalNorm >= DECIDED_EVAL && !isMatePos;
-      const pesoBase  = isMatePos ? 0.05 : isDecided ? 0.25 : 1.0;
-
-      const t1 = _norm(m.multiPVEvals?.[0]);
-      const t2 = _norm(m.multiPVEvals?.[1]);
-      const isOnlyMove = t1 != null && t2 != null && Math.abs(t1 - t2) >= ONLY_MOVE_GAP;
-      if (isOnlyMove) {
-        cpls.push(Math.min(cpl, 10) * pesoBase * 0.1);
-        pesos.push(pesoBase * 0.1);
-        continue;
-      }
-
-      const comp = _complexidade(m.multiPVEvals);
-      const vol  = _volatilidade(moves, idx);
-      const ctx  = Math.max(comp, vol * 0.6);
-      const peso = pesoBase / (1 + ALPHA * ctx);
-
-      cpls.push(cpl * peso);
-      pesos.push(peso);
-    }
-
-    const pesoTotal = pesos.reduce((a, b) => a + b, 0);
-    if (pesoTotal < 0.5) return fromACPL(60, rawCpls, rawCpls.length);
-
-    const acplCtx = cpls.reduce((a, b) => a + b, 0) / pesoTotal;
-    return fromACPL(acplCtx, rawCpls, rawCpls.length);
+  function fromAccuracy(accuracy, nMoves, blunders, mistakes) {
+    if (accuracy == null || !nMoves) return 1500;
+    let r = _curva(Math.max(0, Math.min(100, accuracy)));
+    const peso = Math.min(1, 0.55 + nMoves / 40);
+    r = r * peso + 1500 * (1 - peso);
+    r -= 90 * Math.min(blunders || 0, 3) + 30 * Math.min(mistakes || 0, 5);
+    return Math.max(400, Math.min(3000, Math.round(r / 25) * 25));
   }
 
   // ══════════════════════════════════════════════════════════════
   // correlateOpponents — CONTEXTO DE CONFRONTO
   //
-  // Problema que resolve: fromACPL avalia cada jogador isoladamente,
+  // Problema que resolve: fromAccuracy avalia cada jogador isoladamente,
   // olhando só pra qualidade dos próprios lances. Isso funciona bem
   // quando os dois jogadores têm nível parecido, mas falha quando um
   // grande mestre enfrenta outro grande mestre: o VENCEDOR já recebe
@@ -274,7 +72,7 @@ const RatingModel = (() => {
   //     rating cai mesmo — isso é natural e deve ser preservado.
   //
   // selfStats = { accuracy, blunders, mistakes } do PRÓPRIO jogador
-  // (os mesmos valores já calculados por computeStats/fromACPL).
+  // (os mesmos valores já calculados por computeStats/fromAccuracy).
   // Nunca altera o lado com rating mais alto — o vencedor/melhor
   // desempenho sempre fica com o valor que já calculou sozinho.
   // ══════════════════════════════════════════════════════════════
@@ -287,7 +85,7 @@ const RatingModel = (() => {
 
     // Oponente precisa ser efetivamente forte (nível Mestre+) para
     // "carregar" o nível da partida. Contra oponentes medianos, a
-    // avaliação isolada de fromACPL já é confiável — não mexe.
+    // avaliação isolada de fromAccuracy já é confiável — não mexe.
     if (opponentRating < 2200) return selfRating;
 
     // Gap pequeno = já estão em faixas parecidas, não precisa ajustar.
@@ -337,5 +135,5 @@ const RatingModel = (() => {
     return               { label: String(rating), range: 'Iniciante',                        emoji: '♟' };
   }
 
-  return { fromACPL, fromMoves, toRange, correlateOpponents, _norm };
+  return { fromAccuracy, toRange, correlateOpponents };
 })();

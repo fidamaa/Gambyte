@@ -277,9 +277,42 @@ const MoveClassifier = (() => {
     return classifyBlunderOrMistake(evalBefore, immediateCaptureValue, opponentGetsMate);
   }
 
+  // ── Precisão no estilo dos grandes sites ─────────────────────
+  // Calibrada contra 60 precisões publicadas pelo Chess.com (30 partidas
+  // de bullet, blitz e rápidas, analisadas aqui no modo grátis): erro
+  // médio de 4,2 pontos e 43 de 60 a até 5 pontos, contra 5,5 e 36 da
+  // conta antiga, que punia demais pequenas perdas em posições já ganhas.
+  //   1. Cada lance vira uma perda em chance de vitória (0–100). A curva
+  //      é logística sobre (peões)^ACC_EXP: perto do equilíbrio é suave e,
+  //      com vantagem grande, satura mais rápido — perder dois peões num
+  //      +8 quase não conta, como nos grandes sites.
+  //   2. Perdas até ACC_FOLGA pontos são ruído de profundidade e não contam.
+  //   3. Precisão do lance = 100·e^(−(perda/ACC_ESCALA)^ACC_FORMA).
+  //   4. Precisão da partida = média de potência ACC_MEDIA dos lances:
+  //      abaixo de 1, um lance muito ruim pesa mais que vários bons.
+  //   Lances de livro, o melhor lance e o xeque-mate valem 100.
+  const ACC_K = 0.3, ACC_EXP = 1.3, ACC_CAP = 2000, ACC_FOLGA = 1;
+  const ACC_ESCALA = 7, ACC_FORMA = 1.3, ACC_MEDIA = 0.5;
+
+  function chanceDeVitoria(cp) {
+    const v = Math.abs(cp) >= 29000 ? Math.sign(cp) * ACC_CAP : Math.max(-ACC_CAP, Math.min(ACC_CAP, cp));
+    return 100 / (1 + Math.exp(-ACC_K * Math.sign(v) * Math.pow(Math.abs(v) / 100, ACC_EXP)));
+  }
+
+  function moveAccuracy(m) {
+    if (m.classification === 'book' || m.isCheckmate || m.classification === 'best-move') return 100;
+    const perda = Math.max(0, chanceDeVitoria(m.bestEval) - chanceDeVitoria(m.evalAfter) - ACC_FOLGA);
+    return 100 * Math.exp(-Math.pow(perda / ACC_ESCALA, ACC_FORMA));
+  }
+
+  function gameAccuracy(lista) {
+    if (!lista.length) return 100;
+    const soma = lista.reduce((s, m) => s + Math.pow(Math.max(1, moveAccuracy(m)), ACC_MEDIA), 0);
+    return Math.pow(soma / lista.length, 1 / ACC_MEDIA);
+  }
+
   /**
-   * Compute ACPL and rating estimate for a player's moves
-   * (sem alterações — mantido igual ao original)
+   * ACPL, precisão e nível estimado dos lances de um jogador.
    */
   function computeStats(movesData, isWhite) {
     const color = isWhite ? 'white' : 'black';
@@ -301,20 +334,15 @@ const MoveClassifier = (() => {
       return { acpl: 0, rating: 1500, accuracy: 100 };
     }
 
-    let weightedScoreSum = 0;
-    let weightSum        = 0;
-    let acplNumerator    = 0;
-    let acplDenominator  = 0;
-    const rawCplsForCV   = [];
+    // ACPL (perda média em centipawns), mostrado no cartão do jogador.
+    let acplNumerator   = 0;
+    let acplDenominator = 0;
+    let foraDoLivro     = 0;
 
     for (const m of eligibleMoves) {
       if (m.classification === 'book') continue;
-      if (m.isCheckmate) {
-        weightedScoreSum += 100 * 1.0;
-        weightSum        += 1.0;
-        rawCplsForCV.push(0);
-        continue;
-      }
+      foraDoLivro++;
+      if (m.isCheckmate) continue;
 
       const evalPlayed = normEval(m.evalAfter);
       const evalBest   = normEval(m.bestEval);
@@ -322,50 +350,25 @@ const MoveClassifier = (() => {
 
       const pv1 = normEval(m.multiPVEvals?.[0]);
       const pv2 = normEval(m.multiPVEvals?.[1]);
-      const isOnlyMove = (
-        pv1 != null && pv2 != null &&
-        Math.abs(pv1 - pv2) > 400
-      );
+      const isOnlyMove = pv1 != null && pv2 != null && Math.abs(pv1 - pv2) > 400;
 
-      let rawLoss = m.classification === 'best-move'
-        ? 0
-        : Math.max(0, evalBest - evalPlayed);
-
+      let rawLoss = m.classification === 'best-move' ? 0 : Math.max(0, evalBest - evalPlayed);
       rawLoss = Math.min(rawLoss, 300);
       if (isOnlyMove) rawLoss = Math.min(rawLoss, 30);
 
-      rawCplsForCV.push(rawLoss);
-
-      const evalBeforeNorm = normEval(m.evalBefore) ?? 0;
-      const isDecided = Math.abs(evalBeforeNorm) > 700;
-      const weight    = isDecided ? 0.3 : 1.0;
-
-      const t_score  = Math.max(0, Math.min(1, 1 - rawLoss / 80));
-      const divisor  = 118 + t_score * 15;
-      const moveScore = Math.max(5, 100 * Math.exp(-rawLoss / divisor));
-
-      weightedScoreSum += moveScore * weight;
-      weightSum        += weight;
-
-      if (!isDecided) {
+      if (Math.abs(normEval(m.evalBefore) ?? 0) <= 700) {
         acplNumerator   += rawLoss;
         acplDenominator += 1;
       }
     }
 
-    let accuracy = weightSum > 0
-      ? weightedScoreSum / weightSum
-      : 100;
-    accuracy = Math.max(20, Math.min(100, accuracy));
-
-    const acpl = acplDenominator > 0
-      ? acplNumerator / acplDenominator
-      : 0;
+    const accuracy = gameAccuracy(eligibleMoves);
+    const acpl = acplDenominator > 0 ? acplNumerator / acplDenominator : 0;
 
     const blunders = eligibleMoves.filter(m => m.classification === 'blunder').length;
     const mistakes = eligibleMoves.filter(m => m.classification === 'mistake').length;
 
-    const rating = RatingModel.fromACPL(acpl, rawCplsForCV, acplDenominator, accuracy, blunders, mistakes);
+    const rating = RatingModel.fromAccuracy(accuracy, foraDoLivro, blunders, mistakes);
 
     console.log(
       `[computeStats ${color}] n=${eligibleMoves.length}` +

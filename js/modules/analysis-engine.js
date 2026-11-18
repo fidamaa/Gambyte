@@ -300,6 +300,7 @@ const AnalysisEngine = (() => {
       const pieceIsHanging = isSquareHanging(fenAfter, playedMoveUCI, afterResult);
       const sacrificeIsRecapturable = isRecapturable(fenAfter, afterResult.bestMove, movesData[i].color === 'white');
 
+      movesData[i].fenAfter      = fenAfter;   // usado só para separar as fases da partida
       movesData[i].evalBefore    = evalBefore;
       movesData[i].evalAfter     = evalAfter;  // já na perspectiva do jogador
       movesData[i].bestEval      = bestEval;

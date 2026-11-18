@@ -20,7 +20,7 @@
    ============================================================== */
 const GameImport = (() => {
   const KEY = 'gambyte_import_v1';
-  const SCAN_KEY = 'gambyte_scan_v1';
+  const SCAN_KEY = 'gambyte_scan_v2';   // v2: precisão e nível na escala nova
   const SCAN_DEPTH = 10;
   let site = 'chesscom';
   let usuario = '';   // usuário da última busca, para escolher o lado

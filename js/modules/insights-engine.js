@@ -12,10 +12,12 @@ const InsightsEngine = (() => {
   // conta do cartão do jogador (MoveClassifier.computeStats), para que o
   // painel, o relatório e o cartão nunca mostrem números diferentes.
   // Retorna null quando não há lance fora do livro para avaliar.
+  // Lances de livro entram na conta (valem 100, como no cartão), mas uma
+  // fase só com lances de livro não tem precisão própria.
   function _computeAccuracyForSlice(movesSlice) {
     const avaliaveis = movesSlice.filter(m =>
-      m.classification !== 'book' && m.evalBefore != null && m.evalAfter != null && m.bestEval != null);
-    if (!avaliaveis.length) return null;
+      m.evalBefore != null && m.evalAfter != null && m.bestEval != null);
+    if (!avaliaveis.some(m => m.classification !== 'book')) return null;
     return MoveClassifier.computeStats(avaliaveis, avaliaveis[0].color === 'white').accuracy;
   }
 
@@ -26,15 +28,40 @@ const InsightsEngine = (() => {
     return acc ?? 0;
   }
 
-  // ── FIX 2: Fases baseadas no número total de lances da partida, separado por cor
-  // Abertura: lances 1–10 de cada cor | Meio-jogo: 11–30 | Final: 31+
-  // (baseado em índice sequencial do lance, não percentual)
+  // Fases da partida, pelo material no tabuleiro (como nos grandes sites):
+  //   Abertura: até o 10º lance de cada lado, enquanto houver mais de
+  //             10 peças (sem contar reis e peões) em jogo.
+  //   Final:    6 peças ou menos (sem contar reis e peões).
+  //   Meio-jogo: o que fica entre as duas.
+  // Sem a posição (prévia rápida, análises antigas), cai na regra antiga
+  // por número do lance: 1–10 abertura, 11–30 meio-jogo, 31+ final.
+  function _pecas(fen) {
+    if (!fen) return null;
+    const m = fen.split(' ')[0].match(/[nbrqNBRQ]/g);
+    return m ? m.length : 0;
+  }
+  function phaseOf(m, idxCor) {
+    const p = _pecas(m.fenAfter);
+    if (p == null) return idxCor < 10 ? 'opening' : idxCor < 30 ? 'midgame' : 'endgame';
+    if (p <= 6) return 'endgame';
+    if (idxCor < 10 && p > 10) return 'opening';
+    return 'midgame';
+  }
+
   function calcPhaseAccuracy(moves, color) {
     const cm = moves.filter(m => m.color === color);
-    // Atribui índice sequencial por cor (0,1,2,...)
-    const opening = cm.filter((_, i) => i < 10);
-    const midgame = cm.filter((_, i) => i >= 10 && i < 30);
-    const endgame = cm.filter((_, i) => i >= 30);
+    // Uma vez fora da abertura, não volta; uma vez no final, fica no final.
+    const fase = [];
+    let atual = 'opening';
+    cm.forEach((m, i) => {
+      let f = phaseOf(m, i);
+      if (atual === 'endgame' || (atual === 'midgame' && f === 'opening')) f = atual;
+      atual = f;
+      fase.push(f);
+    });
+    const opening = cm.filter((_, i) => fase[i] === 'opening');
+    const midgame = cm.filter((_, i) => fase[i] === 'midgame');
+    const endgame = cm.filter((_, i) => fase[i] === 'endgame');
     return {
       opening: _computeAccuracyForSlice(opening),
       midgame: _computeAccuracyForSlice(midgame),
@@ -73,15 +100,15 @@ const InsightsEngine = (() => {
   }
 
   function estimateRating(moves) {
-    // Usa o RatingModel CPL-contextual para cada cor separadamente,
-    // depois mostra o da partida como o melhor dos dois (quem jogou melhor define o nível)
+    // Mesmo nível do cartão do jogador (MoveClassifier.computeStats), para
+    // o painel e o cartão nunca mostrarem números diferentes.
     const wMoves = moves.filter(m => m.color === 'white' && !m.isBook &&
       m.evalBefore != null && m.evalAfter != null && m.bestEval != null);
     const bMoves = moves.filter(m => m.color === 'black' && !m.isBook &&
       m.evalBefore != null && m.evalAfter != null && m.bestEval != null);
 
-    const wRatingRaw = wMoves.length ? RatingModel.fromMoves(wMoves) : null;
-    const bRatingRaw = bMoves.length ? RatingModel.fromMoves(bMoves) : null;
+    const wRatingRaw = wMoves.length ? MoveClassifier.computeStats(moves, true).rating : null;
+    const bRatingRaw = bMoves.length ? MoveClassifier.computeStats(moves, false).rating : null;
 
     // ── Correlação de nível entre os dois lados (ver rating-model.js) ──
     // Evita que o lado mais fraco caia artificialmente baixo só por
@@ -139,6 +166,17 @@ const InsightsEngine = (() => {
   function _num(cp) { return (cp / 100).toFixed(2).replace('.', ','); }
   /** Percentual em pt-BR (80,9%). */
   function pct(v) { return v == null ? '—' : String(v).replace('.', ',') + '%'; }
+
+  /** Avaliação de uma fase pela precisão dela: classe de cor e rótulo curto. */
+  function phaseVerdict(acc) {
+    if (acc == null) return null;
+    if (acc >= 97) return { cls: 'best-move', label: 'Melhor' };
+    if (acc >= 90) return { cls: 'excellent', label: 'Excelente' };
+    if (acc >= 80) return { cls: 'good', label: 'Boa' };
+    if (acc >= 65) return { cls: 'inaccuracy', label: 'Imprecisa' };
+    if (acc >= 50) return { cls: 'mistake', label: 'Fraca' };
+    return { cls: 'blunder', label: 'Muito fraca' };
+  }
   function _plural(n, um, varios) { return `${n} ${n === 1 ? um : varios}`; }
   function _lista(itens) {
     if (itens.length <= 1) return itens.join('');
@@ -406,7 +444,7 @@ const InsightsEngine = (() => {
     let comment;
 
     if (move.isCheckmate) comment = 'Xeque-mate. Não existe lance melhor.';
-    else if (cls === 'book') comment = 'Lance de livro: faz parte da teoria desta abertura e não entra no cálculo de precisão.';
+    else if (cls === 'book') comment = 'Lance de livro: faz parte da teoria desta abertura e conta como lance perfeito na precisão.';
     else if (cls === 'brilliant') comment = `Brilhante. Um sacrifício que o motor confirma: mesmo entregando material, a avaliação fica em ${depois}.`;
     else if (cls === 'great') {
       if ((move.evalBefore ?? 0) <= -150) comment = `Ótimo. Recupera uma posição difícil: de ${describeEval(move.evalBefore)} para ${depois}.`;
@@ -442,6 +480,6 @@ const InsightsEngine = (() => {
     calcAccuracy, calcPhaseAccuracy, findCriticalMoment,
     findBiggestBlunder, estimateRating, playerProfile,
     chartInsights, suggestions, dna, moveInsight, detectPatterns,
-    keyMoments, distribution, headline, moveLoss, moveLabel, describeEval, pct, NOMES
+    keyMoments, distribution, headline, moveLoss, moveLabel, describeEval, pct, phaseVerdict, NOMES
   };
 })();

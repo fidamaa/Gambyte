@@ -19,7 +19,7 @@ const InsightsUI = (() => {
   const $ = id => document.getElementById(id);
   const esc = s => AuthSystem.escapeHTML(s);
   const LADO = { white: 'Brancas', black: 'Pretas' };
-  const FASES = [['opening', 'Abertura', 'lances 1 a 10'], ['midgame', 'Meio-jogo', 'lances 11 a 30'], ['endgame', 'Final', 'lance 31 em diante']];
+  const FASES = [['opening', 'Abertura', 'até o lance 10'], ['midgame', 'Meio-jogo', 'peças em jogo'], ['endgame', 'Final', '6 peças ou menos']];
   const cores = () => (_pov === 'both' ? ['white', 'black'] : [_pov]);
   const nome = cor => (($(cor + '-name') || {}).textContent || LADO[cor]).trim();
   const num = cp => (cp / 100).toFixed(2).replace('.', ',');
@@ -104,7 +104,8 @@ const InsightsUI = (() => {
         <div class="ins-phase-name">${rotulo}<small>${faixa}</small></div>
         <div class="ins-phase-bars">${cores().map(cor => {
           const v = dados[cor][k];
-          return `<div class="ins-bar-row"><span class="ins-side ins-side-${cor}" title="${LADO[cor]}"></span><div class="ins-bar"><i class="ins-bar-fill ins-fill-${cor}" style="width:${v == null ? 0 : v}%"></i></div><span class="ins-bar-val">${pct(v)}</span></div>`;
+          const ver = InsightsEngine.phaseVerdict(v);
+          return `<div class="ins-bar-row"><span class="ins-side ins-side-${cor}" title="${LADO[cor]}"></span><div class="ins-bar"><i class="ins-bar-fill ins-fill-${cor}" style="width:${v == null ? 0 : v}%"></i></div><span class="ins-bar-val">${pct(v)}</span>${ver ? `<span class="cls-chip cls-${ver.cls} ins-verdict">${ver.label}</span>` : '<span></span>'}</div>`;
         }).join('')}</div></div>`).join('');
     const fracas = cores().map(cor => {
       const f = FASES.filter(x => dados[cor][x[0]] != null).sort((a, b) => dados[cor][a[0]] - dados[cor][b[0]])[0];
