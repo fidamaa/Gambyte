@@ -95,16 +95,26 @@ const BoardPhoto = (() => {
     return o.slice(i0).concat(o.slice(0, i0));
   }
 
-  async function acharCantos(s, img) {
-    const w = img.naturalWidth, h = img.naturalHeight;
+  // A foto é reduzida para 256x256 por amostragem bilinear simples, igual
+  // ao treino (cv2.warpAffine): a redução "suave" do drawImage muda o que a
+  // rede vê e piora os cantos (66% → 60% das casas nas fotos de teste).
+  async function acharCantos(s, fonte, w, h) {
     const esc = T / Math.max(w, h), ox = (T - w * esc) / 2, oy = (T - h * esc) / 2;
-    const cv = document.createElement('canvas'); cv.width = T; cv.height = T;
-    const cx = cv.getContext('2d', { willReadFrequently: true });
-    cx.fillStyle = '#000'; cx.fillRect(0, 0, T, T);
-    cx.imageSmoothingQuality = 'high';
-    cx.drawImage(img, ox, oy, w * esc, h * esc);
+    const px = new Uint8ClampedArray(T * T * 4);
+    const pega = (xx, yy, c) => (xx < 0 || yy < 0 || xx >= w || yy >= h) ? 0 : fonte[(yy * w + xx) * 4 + c];
+    for (let y = 0; y < T; y++) {
+      const sy = (y - oy) / esc, y0 = Math.floor(sy), ay = sy - y0;
+      for (let x = 0; x < T; x++) {
+        const sx = (x - ox) / esc, x0 = Math.floor(sx), ax = sx - x0, o = (y * T + x) * 4;
+        for (let c = 0; c < 3; c++) {
+          px[o + c] = (pega(x0, y0, c) * (1 - ax) + pega(x0 + 1, y0, c) * ax) * (1 - ay) +
+                      (pega(x0, y0 + 1, c) * (1 - ax) + pega(x0 + 1, y0 + 1, c) * ax) * ay;
+        }
+        px[o + 3] = 255;
+      }
+    }
     const x = new Float32Array(3 * T * T);
-    normalizar(cx.getImageData(0, 0, T, T).data, T, T, x, 0);
+    normalizar(px, T, T, x, 0);
     const r = await s.cantos.run({ x: new ort.Tensor('float32', x, [1, 3, T, T]) });
     const z = r.y.data;
     const p = new Float32Array(T * T);
@@ -267,15 +277,16 @@ const BoardPhoto = (() => {
   async function lerFoto(src) {
     const s = await iniciar();
     const img = await carregarImg(src);
-    const { cantos, confianca } = await acharCantos(s, img);
-    if (confianca < 0.25) {
-      return { ok: false, motivo: 'Não encontrei o tabuleiro inteiro nesta foto. Tire de novo mostrando as 4 bordas do tabuleiro.' };
-    }
     const fw = img.naturalWidth, fh = img.naturalHeight;
     const cv = document.createElement('canvas'); cv.width = fw; cv.height = fh;
     const cx = cv.getContext('2d', { willReadFrequently: true });
     cx.drawImage(img, 0, 0);
-    const cima = vistaDeCima(cx.getImageData(0, 0, fw, fh).data, fw, fh, cantos);
+    const pixels = cx.getImageData(0, 0, fw, fh).data;
+    const { cantos, confianca } = await acharCantos(s, pixels, fw, fh);
+    if (confianca < 0.25) {
+      return { ok: false, motivo: 'Não encontrei o tabuleiro inteiro nesta foto. Tire de novo mostrando as 4 bordas do tabuleiro.' };
+    }
+    const cima = vistaDeCima(pixels, fw, fh, cantos);
     const casas = await lerCasas(s, cima);
     const grade = [];
     for (let r = 0; r < 8; r++) grade.push(casas.slice(r * 8, r * 8 + 8));
