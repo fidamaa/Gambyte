@@ -1580,3 +1580,16 @@ body.pos-ed-aberto{overflow:hidden}
 /* Os selos do título da foto não herdam o texto cinza da descrição */
 .foto-zona-topo strong .tab-pro{font-size:10px;line-height:1.5;color:#0d0f14}
 .foto-zona-topo strong .tab-beta{font-size:10px;line-height:1.5;color:#8fb3ef}
+@media(max-width:760px){
+  /* Classificações em duas colunas, em ordem de cima para baixo:
+     Livro…Excelente à esquerda, Boa…Gafe à direita; tudo dentro da caixa. */
+  .classification-legend .legend-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(5,auto);grid-auto-flow:column;column-gap:12px}
+  .classification-legend .legend-grid .legend-row{gap:6px;min-width:0}
+  .classification-legend .legend-grid .legend-label{font-size:12px}
+  .classification-legend .legend-grid .legend-counts{gap:3px}
+  .classification-legend .legend-grid .legend-count{min-width:20px;padding:1px 4px;font-size:11.5px}
+}
+@media(max-width:760px){
+  .analysis-layout>.game-strip{order:3;margin:0}
+}
+@media(max-width:760px){#results-section>.players-row{margin-bottom:0}}

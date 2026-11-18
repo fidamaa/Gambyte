@@ -236,6 +236,22 @@ const App = (() => {
     // como se o Modo Livre estivesse sempre ativo por padrão.
     UIController.showEmptyBoard();
 
+    // Celular: a faixa da abertura (e do progresso) fica logo acima do
+    // tabuleiro, abaixo dos jogadores. No computador volta para o lugar.
+    const faixa = document.querySelector('.game-strip');
+    const painel = document.querySelector('.analysis-layout > .board-panel');
+    if (faixa && painel && window.matchMedia) {
+      const origem = document.createComment('lugar da faixa da partida');
+      faixa.parentNode.insertBefore(origem, faixa);
+      const mq = matchMedia('(max-width:760px)');
+      const posicionar = () => {
+        if (mq.matches) painel.parentNode.insertBefore(faixa, painel);
+        else origem.parentNode.insertBefore(faixa, origem.nextSibling);
+      };
+      posicionar();
+      mq.addEventListener ? mq.addEventListener('change', posicionar) : mq.addListener(posicionar);
+    }
+
     // Vitrine do Pro (só aparece no celular): some para quem já é Pro.
     const vitrine = document.getElementById('pro-vitrine');
     if (vitrine && typeof AuthSystem !== 'undefined') {
