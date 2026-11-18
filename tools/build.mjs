@@ -230,9 +230,10 @@ const head = ({ titulo, descricao, url, tipo, ld }) => `<!doctype html>
 <link rel="icon" href="/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/site-info.css?v=5">
+<link rel="stylesheet" href="/site-info.css?v=6">
 <link rel="stylesheet" href="/aprender.css?v=4">
 <script type="application/ld+json">${JSON.stringify(ld)}</script>
+<script src="/menu.js" defer></script>
 </head>
 <!-- Página gerada por tools/build.mjs — edite o fragmento em tools/artigos/ e rode o build. -->`;
 

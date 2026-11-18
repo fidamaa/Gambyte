@@ -1539,3 +1539,44 @@ body.pos-ed-aberto{overflow:hidden}
   /* Toques mais fáceis: botões de navegação maiores */
   .nav-controls button{min-height:44px;min-width:48px}
 }
+/* Pedido de um toque para enviar a foto corrigida ao treino */
+.foto-pedido{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:900;width:min(460px,calc(100% - 24px));padding:14px 16px;border-radius:14px;background:var(--bg2);border:1px solid rgba(236,189,110,.55);box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.foto-pedido p{margin:0;font-size:13.5px;line-height:1.5;color:var(--text2)}
+.foto-pedido strong{color:var(--accent)}
+.foto-pedido a{color:#8fb3ef}
+.foto-pedido-sempre{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:12.5px;color:var(--text2);cursor:pointer}
+.foto-pedido-sempre input{width:16px;height:16px;accent-color:var(--accent)}
+.foto-pedido-acoes{display:flex;gap:8px;margin-top:12px}
+.foto-pedido-acoes button{flex:1;padding:10px 12px}
+/* Rating estimado em destaque, como a precisão */
+.pc-stats>.pc-stat:first-child{padding:7px 12px 6px;border-radius:10px;background:linear-gradient(180deg,rgba(143,179,239,.16),rgba(91,143,224,.06));border:1px solid rgba(143,179,239,.45);min-width:64px}
+.pc-stats>.pc-stat:first-child .player-rating-display{font-size:20px;color:#dfe8fb}
+.pc-stats>.pc-stat:first-child .pc-lbl{color:#8fb3ef;font-weight:600}
+.pc-stats{align-items:center}
+/* Foto: título com os selos quebra a linha em vez de sair da caixa */
+.foto-zona-topo>div{min-width:0}
+.foto-zona-topo strong{flex-wrap:wrap;row-gap:4px}
+@media(max-width:760px){
+  /* Selo "Você" na linha de baixo, sem invadir a caixa da precisão */
+  .player-card.is-you .player-color-badge::after{display:block;width:fit-content;margin:3px 0 1px}
+  .player-card .player-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pc-stats>.pc-stat:first-child{padding:5px 8px 4px;min-width:52px}
+  .pc-stats>.pc-stat:first-child .player-rating-display{font-size:17px}
+  .pc-acc-val{font-size:20px}
+}
+@media(max-width:480px){.pc-stats>.pc-stat:nth-child(2){display:none}}
+/* Abas "Buscar por usuário / Colar PGN / Foto": cada uma é um botão
+   visível; a escolhida fica em dourado. */
+.trazer-tabs{gap:4px}
+.trazer-tabs button{border-color:var(--border2);background:rgba(255,255,255,.02)}
+.trazer-tabs button:hover{border-color:rgba(236,189,110,.5)}
+.trazer-tabs button.active{background:rgba(236,189,110,.14);border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 1px rgba(236,189,110,.25) inset}
+@media(max-width:760px){
+  /* Histórico e anúncios ficam depois da análise, não antes da caixa da partida */
+  #results-section>*{order:7}
+  #results-section>.analysis-layout{order:0}
+  #results-section>.players-row{order:2}
+}
+/* Os selos do título da foto não herdam o texto cinza da descrição */
+.foto-zona-topo strong .tab-pro{font-size:10px;line-height:1.5;color:#0d0f14}
+.foto-zona-topo strong .tab-beta{font-size:10px;line-height:1.5;color:#8fb3ef}

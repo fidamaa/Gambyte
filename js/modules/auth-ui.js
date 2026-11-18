@@ -20,7 +20,7 @@ const AuthUI = (() => {
     if (sess) {
       const initials = (sess.name || sess.email).charAt(0).toUpperCase();
       area.innerHTML = `
-        ${!sess.premium ? `<button class="btn-premium-header" data-auth-action="premium">Assinar Gambyte Pro</button>` : ''}
+        ${!sess.premium ? `<button class="btn-premium-header" data-auth-action="premium"><span class="so-pc">Assinar Gambyte </span>Pro</button>` : ''}
         <a class="user-avatar-btn" href="gambyte-login.html" title="Perfil">
           <div class="user-avatar">${AuthSystem.escapeHTML(initials)}</div>
           <span class="user-name-display">${AuthSystem.escapeHTML(sess.name || sess.email.split('@')[0])}</span>

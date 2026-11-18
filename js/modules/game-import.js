@@ -367,11 +367,9 @@ const GameImport = (() => {
   function initAbas() {
     const caixa = $('trazer');
     if (!caixa) return;
-    // No celular, colar o PGN é o caminho mais rápido: abre nessa aba
-    // (a não ser que a pessoa já tenha escolhido outra).
-    const celular = window.matchMedia && matchMedia('(max-width:760px)').matches;
-    let aba = celular ? 'pgn' : 'importar';
-    try { const a = localStorage.getItem(KEY_ABA); if (a === 'pgn' || a === 'foto' || (celular && a === 'importar')) aba = a; } catch (e) { /* sem armazenamento */ }
+    // Padrão: Buscar por usuário. Se a pessoa já escolheu outra aba, abre nela.
+    let aba = 'importar';
+    try { const a = localStorage.getItem(KEY_ABA); if (a === 'pgn' || a === 'foto') aba = a; } catch (e) { /* sem armazenamento */ }
     mostrarAba(aba);
     caixa.querySelector('.trazer-tabs')?.addEventListener('click', e => {
       const b = e.target.closest('[data-trazer]');

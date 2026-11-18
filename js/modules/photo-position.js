@@ -538,10 +538,51 @@ const PhotoPosition = (() => {
       guardarAutorizacao(caixa.checked);
       if (caixa.checked && logado() && fotoServeParaTreino(ed, f)) enviarTreino(ed, f);
     }
+    // Sem a autorização marcada, mas a pessoa corrigiu peças: pergunta uma
+    // vez, com um toque, se quer enviar esta foto para o leitor aprender.
+    const pedir = caixa && !caixa.checked && logado() && corrigiuPecas(ed) && fotoServeParaTreino(ed, f) ? { ...ed } : null;
     fecharEditor();
     App.loadPosition(f, embaixo);
     status('Posição aberta no tabuleiro. Arraste as peças para continuar a partida.');
     $('board-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (pedir) pedirEnvio(pedir, f);
+  }
+
+  // A posição final é diferente da que o leitor achou?
+  function corrigiuPecas(est) {
+    if (!est.lido) return false;
+    const agora = est.board.map(l => l.map(p => p || '.').join('')).join('/');
+    return agora !== est.lido;
+  }
+
+  function pedirEnvio(est, fenFinal) {
+    document.getElementById('foto-pedido')?.remove();
+    const el = document.createElement('div');
+    el.id = 'foto-pedido';
+    el.className = 'foto-pedido';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-label', 'Ajudar a melhorar o leitor de fotos');
+    el.innerHTML = `
+      <p><strong>A leitura errou algumas peças?</strong> Envie esta foto com a posição que você corrigiu e ajude o leitor do Gambyte a aprender. Ela fica guardada em privado, sem seu nome ou e-mail. <a href="privacidade.html#fotos-treino" target="_blank" rel="noopener">Saiba mais</a></p>
+      <label class="foto-pedido-sempre"><input type="checkbox" id="foto-pedido-sempre"> Enviar sempre que eu corrigir</label>
+      <div class="foto-pedido-acoes">
+        <button type="button" class="btn-primary" data-pedido="enviar">Enviar esta foto</button>
+        <button type="button" class="btn-secondary" data-pedido="nao">Agora não</button>
+      </div>`;
+    document.body.appendChild(el);
+    const fechar = () => el.remove();
+    const tempo = setTimeout(fechar, 30000);
+    el.addEventListener('click', e => {
+      const b = e.target.closest('[data-pedido]');
+      if (!b) return;
+      clearTimeout(tempo);
+      if (b.dataset.pedido === 'enviar') {
+        if ($('foto-pedido-sempre')?.checked) guardarAutorizacao(true);
+        enviarTreino(est, fenFinal);
+        el.innerHTML = '<p><strong>Obrigado!</strong> A foto vai ajudar o leitor a acertar mais.</p>';
+        setTimeout(fechar, 2500);
+      } else fechar();
+    });
   }
 
   async function relerComoFoto() {
