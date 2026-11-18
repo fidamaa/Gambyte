@@ -47,11 +47,12 @@ const AuthSystem = (() => {
 
   async function _loadProfile(uid) {
     const { data, error } = await supabaseClient
-      .from('profiles').select('name, premium, proximo_vencimento').eq('id', uid).single();
+      .from('profiles').select('*').eq('id', uid).single();
     if (error) { console.error('[AuthSystem] Erro ao carregar perfil:', error); return; }
     if (_session && _session.uid === uid && data) {
       _session.premium = activePremium(data);
       _session.expiresAt = data.proximo_vencimento;
+      _session.assinaturaCartao = data.stripe_status || null;   // assinatura no Stripe (cartão)
       if (data.name) _session.name = data.name;
       _notify();
     }
@@ -67,6 +68,7 @@ const AuthSystem = (() => {
           if (_session && _session.uid === uid) {
             _session.premium = activePremium(payload.new);
             _session.expiresAt = payload.new.proximo_vencimento;
+            _session.assinaturaCartao = payload.new.stripe_status || null;
             if (payload.new.name) _session.name = payload.new.name;
             _notify();
           }
@@ -171,6 +173,19 @@ const AuthSystem = (() => {
     return data;
   }
 
+  // Assinatura por cartão (Stripe): abre o pagamento ou o portal de gestão.
+  async function abrirStripe(qual) {
+    const { data, error } = await supabaseClient.functions.invoke(qual === 'portal' ? 'stripe-portal' : 'stripe-checkout', { body: {} });
+    if (error || !data || !data.url) {
+      let msg = 'Não consegui abrir o pagamento agora. Tente de novo em instantes.';
+      try { const j = error && error.context && await error.context.json(); if (j && j.error) msg = j.error; } catch (e) { /* sem corpo */ }
+      if (data && data.error) msg = data.error;
+      return { ok: false, msg };
+    }
+    window.location.href = data.url;
+    return { ok: true };
+  }
+
   async function cancelSubscription() {
     const { data, error } = await supabaseClient.functions.invoke('cancelar-assinatura');
     if (error) throw new Error(error.message);
@@ -179,6 +194,6 @@ const AuthSystem = (() => {
 
   return {
     register, login, logout, currentSession, isPremium, setLinkedAccounts,
-    onChange, isReady, refreshPremiumStatus, cancelSubscription, escapeHTML,
+    onChange, isReady, refreshPremiumStatus, cancelSubscription, escapeHTML, abrirStripe,
   };
 })();
