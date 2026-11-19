@@ -91,7 +91,8 @@ const OpeningDetector = (() => {
   }
 
   // Build immediately in background
-  setTimeout(() => { if (!root) build(); }, 100);
+  // (só se o leitor de PGN já carregou; senão monta na primeira consulta)
+  setTimeout(() => { if (!root && typeof PGNParser !== 'undefined') build(); }, 100);
 
   function getRootNode() { if (!root) build(); return root; }
   return { detect, build, getRootNode, isBookPosition };
