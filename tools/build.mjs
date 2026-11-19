@@ -210,7 +210,7 @@ const NAV = atual => `<nav class="info-nav" aria-label="Navegação do Gambyte">
     .map(([h, t]) => `<a href="${h}"${h === atual ? ' aria-current="page"' : ''}>${t}</a>`).join('')
   + `<a class="nav-loja" href="/gambyte-premium">Gambyte Pro</a>`
   + `</div><div class="info-nav-side"><a class="nav-pro" href="/gambyte-premium">Gambyte Pro</a></div></nav>`;
-const FOOTER = `<footer class="info-footer"><div><strong>Gambyte</strong><p>Projeto independente de Rampini. Aprender com a prática.</p></div><nav aria-label="Informações institucionais"><a href="/sobre">Sobre</a><a href="/aprender/">Aprender xadrez</a><a href="/como-usar">Como usar</a><a href="/guia">Guia de análise</a><a href="/gambyte-premium">Gambyte Pro</a><a href="/contato">Contato</a><a href="/privacidade">Privacidade</a><a href="/termos">Termos de Uso</a><a href="/licencas">Créditos e licença</a></nav><small>© 2026 Rampini · <a href="mailto:ebezerrarampini1@gmail.com">ebezerrarampini1@gmail.com</a></small></footer>`;
+const FOOTER = `<footer class="info-footer"><div><strong>Gambyte</strong><p>Projeto independente de Rampini. Aprender com a prática.</p></div><nav aria-label="Informações institucionais"><a href="/sobre">Sobre</a><a href="/aprender/">Aprender xadrez</a><a href="/como-usar">Como usar</a><a href="/guia">Guia de análise</a><a href="/gambyte-premium">Gambyte Pro</a><a href="/contato">Contato</a><a href="/privacidade">Privacidade</a><a href="/termos">Termos de Uso</a><a href="/licencas">Créditos e licença</a></nav><small>© 2026 Rampini · <a href="mailto:mrz0001474@gmail.com">mrz0001474@gmail.com</a></small></footer>`;
 const head = ({ titulo, descricao, url, tipo, ld }) => `<!doctype html>
 <html lang="pt-BR">
 <head>

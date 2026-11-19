@@ -128,22 +128,26 @@
 </ul>
 
 <h2 id="rating">Como o rating estimado é calculado</h2>
-<p>O rating estimado parte da precisão de cada jogador, convertida por uma curva com estes pontos:</p>
+<p>O rating estimado olha para três coisas: a precisão de cada jogador, por quanto tempo a partida ficou equilibrada e o nível do adversário. A conta foi ajustada comparando o resultado com o rating real de 30 partidas do Chess.com, de jogadores perto de 400 até grandes mestres.</p>
+<p><strong>1. Precisão.</strong> A precisão de cada lado vira um primeiro valor por uma curva com estes pontos:</p>
 <div class="ap-tabela-wrap"><table class="ap-tabela">
-<thead><tr><th>Precisão</th><th>Rating estimado</th></tr></thead>
+<thead><tr><th>Precisão</th><th>Valor pela precisão</th></tr></thead>
 <tbody>
 <tr><td>50%</td><td>550</td></tr>
 <tr><td>70%</td><td>1000</td></tr>
 <tr><td>80%</td><td>1350</td></tr>
-<tr><td>85%</td><td>1550</td></tr>
-<tr><td>90%</td><td>1800</td></tr>
-<tr><td>95%</td><td>2000</td></tr>
-<tr><td>97%</td><td>2200</td></tr>
-<tr><td>98%</td><td>2450</td></tr>
-<tr><td>99%</td><td>2700</td></tr>
+<tr><td>85%</td><td>1600</td></tr>
+<tr><td>90%</td><td>1850</td></tr>
+<tr><td>95%</td><td>2300</td></tr>
+<tr><td>97%</td><td>2500</td></tr>
+<tr><td>98%</td><td>2600</td></tr>
+<tr><td>99%</td><td>2750</td></tr>
 </tbody></table></div>
-<p>Dois ajustes completam a conta. Partidas curtas dizem menos sobre o nível, então o valor é puxado um pouco para 1500 quando há poucos lances fora do livro (com 12 lances, o valor fica 15% mais perto de 1500; a partir de 18 lances, não há ajuste). E cada gafe tira mais 90 pontos e cada erro mais 30, além do que eles já custaram na precisão (contam no máximo três gafes e cinco erros).</p>
-<p>O valor final fica entre 400 e 3000 e é arredondado em passos de 25. O “nível estimado da partida” é a média dos dois jogadores.</p>
+<p>Sozinha, a precisão separa mal os níveis: um iniciante pode fazer 93% contra alguém que entrega peças, e um grande mestre pode fazer 88% numa partida dura contra outro grande mestre.</p>
+<p><strong>2. Equilíbrio.</strong> O Gambyte conta por quantos meios-lances a partida seguiu sem que ninguém chegasse a +3,00 de vantagem. Entre jogadores fortes, a partida fica parelha por muito tempo; entre jogadores fracos, alguém costuma entregar material cedo. Por isso, quanto mais longa a fase equilibrada, mais alto o valor. Isso também leva em conta o tamanho da partida: acertar tudo em oito lances diz pouco, e segurar setenta lances diz muito. O valor nunca fica mais de 100 pontos abaixo do que a curva da precisão daria.</p>
+<p><strong>3. Adversário.</strong> O nível de cada um é puxado um pouco para o do outro, somado à diferença de precisão entre os dois: jogar melhor que alguém de 2000 deixa você acima dele. Quem jogou pior nunca fica acima de quem jogou melhor.</p>
+<p><strong>4. Rating do PGN.</strong> Quando o PGN traz o rating dos jogadores, como nas partidas buscadas no Chess.com ou no Lichess, ele vale metade do resultado.</p>
+<p>O valor final fica entre 400 e 3200 e é arredondado em passos de 25. Em partidas curtas, o número varia bastante, porque há poucos lances para medir.</p>
 <div class="ap-erro"><strong>O que o rating estimado não é</strong><p>Ele não é o seu rating em nenhum site ou federação e não tem relação com sistemas como o Elo, que dependem de resultados contra adversários. É uma medida da qualidade dos lances de <em>uma</em> partida, que varia bastante de um jogo para outro. E não serve como indício de uso de ajuda externa por ninguém.</p></div>
 
 <h2 id="limites">Limites que vale conhecer</h2>
@@ -158,6 +162,6 @@
 </article>
 <section class="ap-rel" aria-labelledby="rel-t"><h2 id="rel-t">Continue estudando</h2><div class="ap-grid"><a class="ap-card" href="/aprender/como-estudar-suas-partidas"><span class="ap-card-cat">Estratégia e estudo</span><strong>Como estudar as próprias partidas: um método em cinco etapas</strong><span class="ap-card-desc">O que anotar logo depois do jogo, como revisar sem motor, como usar a análise sem virar refém dela e como montar um caderno de erros que realmente muda o seu jogo.</span><span class="ap-card-min">6 min de leitura</span></a><a class="ap-card" href="/aprender/valor-das-pecas"><span class="ap-card-cat">Fundamentos</span><strong>Valor das peças: a tabela de pontos e quando ela engana</strong><span class="ap-card-desc">Os valores de referência de cada peça, como contar atacantes e defensores, quando trocar, o que é a qualidade e por que a avaliação do motor não é só material.</span><span class="ap-card-min">6 min de leitura</span></a><a class="ap-card" href="/aprender/notacao-algebrica"><span class="ap-card-cat">Fundamentos</span><strong>Notação algébrica e PGN: como ler e escrever uma partida</strong><span class="ap-card-desc">As casas, as letras das peças em português e em inglês, os símbolos de captura, xeque e roque, e a estrutura de um arquivo PGN.</span><span class="ap-card-min">6 min de leitura</span></a></div></section>
 </main>
-<footer class="info-footer"><div><strong>Gambyte</strong><p>Projeto independente de Rampini. Aprender com a prática.</p></div><nav aria-label="Informações institucionais"><a href="/sobre">Sobre</a><a href="/aprender/">Aprender xadrez</a><a href="/como-usar">Como usar</a><a href="/guia">Guia de análise</a><a href="/gambyte-premium">Gambyte Pro</a><a href="/contato">Contato</a><a href="/privacidade">Privacidade</a><a href="/termos">Termos de Uso</a><a href="/licencas">Créditos e licença</a></nav><small>© 2026 Rampini · <a href="mailto:ebezerrarampini1@gmail.com">ebezerrarampini1@gmail.com</a></small></footer>
+<footer class="info-footer"><div><strong>Gambyte</strong><p>Projeto independente de Rampini. Aprender com a prática.</p></div><nav aria-label="Informações institucionais"><a href="/sobre">Sobre</a><a href="/aprender/">Aprender xadrez</a><a href="/como-usar">Como usar</a><a href="/guia">Guia de análise</a><a href="/gambyte-premium">Gambyte Pro</a><a href="/contato">Contato</a><a href="/privacidade">Privacidade</a><a href="/termos">Termos de Uso</a><a href="/licencas">Créditos e licença</a></nav><small>© 2026 Rampini · <a href="mailto:mrz0001474@gmail.com">mrz0001474@gmail.com</a></small></footer>
 </body>
 </html>
