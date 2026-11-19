@@ -10,9 +10,29 @@ const App = (() => {
   let analyzing      = false;
   let currentMovesData = [];
 
+  // Aviso embaixo do botão Analisar: Lite (rápido, 7 MB) e completo
+  // (108 MB, carrega sozinho em segundo plano e entra quando termina).
+  function mostrarMotores(info) {
+    const box = document.getElementById('motor-status');
+    if (!box) return;
+    const lite = box.querySelector('[data-motor="lite"]'), full = box.querySelector('[data-motor="full"]');
+    const por = (el, estado, txt) => { el.dataset.estado = estado; el.querySelector('.motor-txt').textContent = txt; };
+    const k = info && info.kind;
+    if (!k) por(lite, 'carregando', 'Carregando o motor rápido (7 MB)…');
+    else if (k === 'lite') por(lite, 'ativo', 'Motor rápido pronto: já dá para analisar');
+    else por(lite, 'pronto', 'Motor rápido carregado');
+    if (k === 'full') por(full, 'ativo', 'Motor completo em uso: avaliações ainda melhores');
+    else if (info && info.carregandoCompleto) por(full, 'carregando', 'Motor completo carregando (108 MB). Entra sozinho quando terminar');
+    else if (info && info.falhou) por(full, 'off', 'Motor completo não carregou. A análise segue com o rápido');
+    else por(full, 'off', 'Motor completo: aguardando');
+  }
+  window.addEventListener('stockfish-motor', e => mostrarMotores(e.detail));
+
   async function initStockfish() {
+    mostrarMotores(null);
     try {
       await StockfishManager.init();
+      mostrarMotores(StockfishManager.getEngineInfo());
       stockfishReady = true;
       console.log('[App] Stockfish pronto');
     } catch (err) {

@@ -1609,3 +1609,14 @@ body.pos-ed-aberto{overflow:hidden}
 #board-mate strong{font:400 clamp(20px,4.2vw,28px)/1.1 'DM Serif Display',Georgia,serif;color:#ecbd6e}
 #board-mate span{font:600 13px/1.3 'Outfit',sans-serif;color:#e8eaf0}
 @keyframes mate-pop{0%{opacity:0;transform:translate(-50%,-50%) scale(.8)}100%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+
+/* Estado dos motores (embaixo do botão Analisar) */
+.motor-status { display:flex; flex-direction:column; gap:2px; flex-basis:100%; font-size:12px; color:var(--text2); }
+.motor-linha { display:flex; align-items:center; gap:6px; }
+.motor-ponto { width:7px; height:7px; border-radius:50%; background:var(--text3); flex:none; }
+.motor-linha[data-estado="carregando"] .motor-ponto { background:var(--accent); animation:motor-pisca 1s ease-in-out infinite; }
+.motor-linha[data-estado="pronto"] .motor-ponto { background:var(--green); }
+.motor-linha[data-estado="ativo"] .motor-ponto { background:var(--green); box-shadow:0 0 0 3px rgba(91,201,122,.22); }
+.motor-linha[data-estado="off"] { opacity:.65; }
+@keyframes motor-pisca { 50% { opacity:.35; } }
+@media (prefers-reduced-motion: reduce) { .motor-linha[data-estado="carregando"] .motor-ponto { animation:none; } }

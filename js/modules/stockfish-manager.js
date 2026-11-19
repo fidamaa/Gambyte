@@ -1,7 +1,8 @@
 /* ==============================================================
    MODULE: stockfish-manager.js
    Handles communication with Stockfish via Web Worker
-   Requer: stockfish-18-single.js/.wasm na mesma pasta do index.html.
+   Requer: stockfish-18-lite-single.js/.wasm e stockfish-18-single.js
+   na mesma pasta do index.html (o .wasm completo vem do bucket R2).
 
    NOTA — multi-thread tentado e revertido: existe também
    stockfish-18-multi.js/.wasm (build com pthreads via
@@ -50,70 +51,96 @@ const StockfishManager = (() => {
     return file + '#' + encodeURIComponent(wasmUrl);
   }
 
-  function init() {
+  // ── Dois motores: Lite primeiro, completo depois ─────────────
+  // O Lite (rede neural menor, .wasm de ~7 MB servido pelo próprio site)
+  // carrega em segundos, então o site já analisa logo ao abrir. Em
+  // seguida o completo (~108 MB, do bucket R2) baixa em segundo plano e,
+  // quando fica pronto, assume o lugar do Lite ENTRE uma busca e outra
+  // (nunca no meio de uma) — uma análise em andamento continua com ele.
+  // Se o completo não carregar (internet lenta, aparelho fraco), o Lite
+  // segue sozinho.
+  const LITE_FILE = 'stockfish-18-lite-single.js';
+  const FULL_FILE = 'stockfish-18-single.js';
+  let engineKind = null;       // 'lite' | 'full'
+  let pendingFull = null;      // worker completo pronto, esperando a vez
+  let fullLoading = false;
+  let fullFailed = false;
+
+  // Avisa a página do estado dos motores (aviso embaixo do botão Analisar).
+  function _avisar() {
+    try {
+      window.dispatchEvent(new CustomEvent('stockfish-motor', {
+        detail: { kind: engineKind, carregandoCompleto: fullLoading || !!pendingFull, falhou: fullFailed }
+      }));
+    } catch (e) {}
+  }
+
+  // Cria um worker e faz o aperto de mão UCI; resolve com o worker pronto.
+  function _startWorker(url, timeoutMs) {
     return new Promise((resolve, reject) => {
-      try {
-        const file = 'stockfish-18-single.js';
-        console.log(`[Stockfish] Criando Web Worker: ${file}` + (WASM_CDN_BASE_URL ? ` (wasm via CDN: ${WASM_CDN_BASE_URL})` : ''));
-        worker = new Worker(_workerUrl(file));
-
-        let settled = false;
-
-        const timeout = setTimeout(() => {
-          if (!settled) {
-            settled = true;
-            console.error('[Stockfish] Timeout: nenhuma resposta em 20s');
-            reject(new Error('Timeout aguardando Stockfish inicializar'));
-          }
-        }, 20000);
-
-        worker.onmessage = (e) => {
-          const msg = typeof e.data === 'string' ? e.data : String(e.data);
-          console.log('[Stockfish ←]', msg.slice(0, 120));
-
-          if (msg === 'uciok') {
-            console.log(`[Stockfish] uciok recebido → configurando Threads=${threadCount}, Hash e enviando isready`);
-            ready = true;
-            // Build single: Threads max=1 no próprio motor, então o "1" é
-            // só formalidade. Build multi: usa pthreads de verdade — isso
-            // é o que efetivamente "força mais uso de CPU" pedido, não só
-            // profundidade. Hash maior com mais threads evita que elas
-            // fiquem competindo por poucas entradas de transposição.
-            worker.postMessage(`setoption name Threads value ${threadCount}`);
-            worker.postMessage(`setoption name Hash value ${usingMulti ? 256 : 128}`);
-            worker.postMessage('isready');
-
-          } else if (msg === 'readyok') {
-            if (!settled) {
-              settled = true;
-              fullyReady = true;
-              clearTimeout(timeout);
-              console.log('[Stockfish] readyok recebido → pronto para análise!');
-              worker.onmessage = (ev) => handleMessage(
-                typeof ev.data === 'string' ? ev.data : String(ev.data)
-              );
-              resolve();
-            }
-          }
-        };
-
-        worker.onerror = (e) => {
-          console.error('[Stockfish] Erro no worker:', e.message, e);
-          if (!settled) {
-            settled = true;
-            clearTimeout(timeout);
-            reject(new Error('Stockfish worker error: ' + e.message));
-          }
-        };
-
-        console.log('[Stockfish] Enviando comando: uci');
-        worker.postMessage('uci');
-
-      } catch (err) {
-        console.error('[Stockfish] Exceção ao criar worker:', err);
-        reject(err);
-      }
+      let w, settled = false;
+      try { w = new Worker(url); } catch (err) { reject(err); return; }
+      const fail = (err) => { if (settled) return; settled = true; clearTimeout(t); try { w.terminate(); } catch (e) {} reject(err); };
+      const t = setTimeout(() => fail(new Error('Timeout aguardando Stockfish inicializar')), timeoutMs);
+      w.onmessage = (e) => {
+        const msg = typeof e.data === 'string' ? e.data : String(e.data);
+        if (msg === 'uciok') {
+          w.postMessage(`setoption name Threads value ${threadCount}`);
+          w.postMessage('setoption name Hash value 128');
+          w.postMessage('isready');
+        } else if (msg === 'readyok' && !settled) {
+          settled = true; clearTimeout(t); resolve(w);
+        }
+      };
+      w.onerror = (e) => fail(new Error('Stockfish worker error: ' + (e && e.message)));
+      w.postMessage('uci');
     });
+  }
+
+  function _usar(w, kind) {
+    const antigo = worker;
+    worker = w;
+    engineKind = kind;
+    ready = fullyReady = true;
+    worker.onmessage = (ev) => handleMessage(typeof ev.data === 'string' ? ev.data : String(ev.data));
+    worker.onerror = (e) => console.error('[Stockfish] Erro no worker:', e && e.message);
+    if (antigo && antigo !== w) { try { antigo.terminate(); } catch (e) {} }
+    console.log(`[Stockfish] motor em uso: ${kind}`);
+    _avisar();
+  }
+
+  // Troca para o completo se ele já carregou e o motor está parado.
+  function _trySwap() {
+    if (!pendingFull || analysisRunning) return;
+    const w = pendingFull; pendingFull = null;
+    _usar(w, 'full');
+  }
+
+  function _carregarCompleto() {
+    if (fullLoading || engineKind === 'full') return;
+    // Quem pediu para economizar dados fica só com o Lite.
+    if (navigator.connection && navigator.connection.saveData) { fullFailed = true; _avisar(); return; }
+    fullLoading = true;
+    _avisar();
+    _startWorker(_workerUrl(FULL_FILE), 300000)
+      .then(w => { pendingFull = w; fullLoading = false; _trySwap(); })
+      .catch(err => { fullFailed = true; console.warn('[Stockfish] completo não carregou, seguindo com o Lite:', err.message); })
+      .finally(() => { fullLoading = false; _avisar(); });
+  }
+
+  async function init() {
+    // Diagnóstico: ?motor=lite ou ?motor=full força um dos dois.
+    const forcado = (location.search.match(/[?&]motor=(lite|full)/) || [])[1];
+    if (forcado === 'full') { _usar(await _startWorker(_workerUrl(FULL_FILE), 60000), 'full'); return; }
+    if (forcado === 'lite') { _usar(await _startWorker(LITE_FILE, 20000), 'lite'); return; }
+    try {
+      _usar(await _startWorker(LITE_FILE, 20000), 'lite');
+    } catch (err) {
+      console.warn('[Stockfish] Lite falhou, carregando o completo:', err.message);
+      _usar(await _startWorker(_workerUrl(FULL_FILE), 60000), 'full');
+      return;
+    }
+    _carregarCompleto();
   }
 
   // Chamado pelo worker.onmessage durante análise
@@ -172,7 +199,9 @@ const StockfishManager = (() => {
 
   // Executa o próximo item da fila, se houver
   function _runNext() {
-    if (analysisRunning || analysisQueue.length === 0) return;
+    if (analysisRunning) return;
+    _trySwap();
+    if (analysisQueue.length === 0) return;
     analysisRunning = true;
 
     const item = analysisQueue.shift();
@@ -373,7 +402,7 @@ const StockfishManager = (() => {
     if (worker) { worker.terminate(); worker = null; ready = false; }
   }
 
-  function getEngineInfo() { return { usingMulti, threadCount }; }
+  function getEngineInfo() { return { usingMulti, threadCount, kind: engineKind, carregandoCompleto: fullLoading || !!pendingFull, falhou: fullFailed }; }
 
   function isReady() { return fullyReady && !!worker; }
 

@@ -26,6 +26,12 @@ const AnalysisEngine = (() => {
   // análise inteira; a profundidade realmente alcançada fica registrada.
   const DEEP_MULTIPV  = 1;
   const DEEP_MOVETIME = 40000;
+  // Trava de tempo das passadas comuns de profundidade alta. Medido no
+  // navegador: a maioria das posições chega à profundidade 16 em poucos
+  // décimos de segundo, mas algumas posições táticas levam 3–9 s sozinhas
+  // e seguravam a análise inteira. Com a trava, elas param um pouco antes
+  // (a profundidade alcançada fica registrada) e a análise termina antes.
+  const MOVETIME_POR_PROF = { 16: 450, 18: 1800 };
 
   let onProgress = null;
   let onMoveUpdate = null;
@@ -197,7 +203,8 @@ const AnalysisEngine = (() => {
     async function getAnalysis(fen, depth) {
       const key = `${fen}@${depth}`;
       if (cache.has(key)) return cache.get(key);
-      const result = await StockfishManager.analyzePosition(fen, depth, MULTIPV);
+      const mt = MOVETIME_POR_PROF[depth] || 0;
+      const result = await StockfishManager.analyzePosition(fen, depth, MULTIPV, [], null, mt ? { movetime: mt } : {});
       cache.set(key, result);
       return result;
     }
