@@ -186,6 +186,17 @@ const AuthSystem = (() => {
     return { ok: true };
   }
 
+  // Ao voltar do pagamento: confere a assinatura direto no Stripe (segunda
+  // via do webhook) e recarrega o perfil.
+  async function sincronizarStripe() {
+    if (!_session) return null;
+    try {
+      const { data } = await supabaseClient.functions.invoke('stripe-sincronizar', { body: {} });
+      await _loadProfile(_session.uid);
+      return data || null;
+    } catch (e) { return null; }
+  }
+
   async function cancelSubscription() {
     const { data, error } = await supabaseClient.functions.invoke('cancelar-assinatura');
     if (error) throw new Error(error.message);
@@ -194,6 +205,6 @@ const AuthSystem = (() => {
 
   return {
     register, login, logout, currentSession, isPremium, setLinkedAccounts,
-    onChange, isReady, refreshPremiumStatus, cancelSubscription, escapeHTML, abrirStripe,
+    onChange, isReady, refreshPremiumStatus, cancelSubscription, escapeHTML, abrirStripe, sincronizarStripe,
   };
 })();

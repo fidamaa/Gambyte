@@ -139,7 +139,18 @@ function checkRedirect(sess) {
 document.addEventListener('DOMContentLoaded', () => {
   // Voltou do Checkout do Stripe.
   const volta = new URLSearchParams(location.search).get('stripe');
-  if (volta === 'ok') showToast('Pagamento recebido. O Pro é ativado em alguns segundos.', 'success');
+  if (volta === 'ok') {
+    showToast('Pagamento recebido. Ativando o seu Pro…', 'success');
+    // Confere no Stripe algumas vezes até a assinatura aparecer.
+    let tentativas = 0;
+    const conferir = async () => {
+      if (!AuthSystem.isReady() || !AuthSystem.currentSession()) { if (++tentativas < 20) setTimeout(conferir, 1000); return; }
+      const r = await AuthSystem.sincronizarStripe();
+      if (r && r.premium) { showToast('Gambyte Pro ativado.', 'success'); return; }
+      if (++tentativas < 8) setTimeout(conferir, 3000);
+    };
+    conferir();
+  }
   else if (volta === 'cancelado') showToast('Pagamento cancelado. Nada foi cobrado.', 'info');
   if (volta) history.replaceState(null, '', location.pathname);
   let redirectChecked = false;
