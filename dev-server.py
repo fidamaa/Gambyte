@@ -23,6 +23,7 @@ Cache-Control no servidor/CDN de verdade (ex.: Netlify/Vercel via
 arquivo de config, Apache via .htaccess, Nginx via add_header) --
 esse script python e so para teste local.
 """
+import os
 import sys
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 
@@ -36,6 +37,13 @@ class COOPCOEPHandler(SimpleHTTPRequestHandler):
     # importar módulo assim (o leitor de fotos usa um .mjs do ONNX Runtime).
     extensions_map = {**SimpleHTTPRequestHandler.extensions_map,
                       ".mjs": "text/javascript", ".js": "text/javascript", ".wasm": "application/wasm"}
+
+    # Endereços limpos, como no Cloudflare: /como-usar abre como-usar.html.
+    def translate_path(self, path):
+        caminho = super().translate_path(path)
+        if not os.path.exists(caminho) and os.path.exists(caminho + ".html"):
+            return caminho + ".html"
+        return caminho
 
     def end_headers(self):
         self.send_header("Cross-Origin-Opener-Policy", "same-origin")

@@ -201,16 +201,16 @@ const artigos = fs.readdirSync(SRC).filter(f => f.endsWith('.html')).sort().map(
 
 artigos.sort((a, b) => a.meta.ordem - b.meta.ordem);
 const porSlug = Object.fromEntries(artigos.map(a => [a.meta.slug, a]));
-for (const a of artigos) for (const s of [...a.corpo.matchAll(/href="\/aprender\/([a-z0-9-]+)\.html"/g)].map(x => x[1]))
+for (const a of artigos) for (const s of [...a.corpo.matchAll(/href="\/aprender\/([a-z0-9-]+)["#]/g)].map(x => x[1]))
   if (!porSlug[s]) falha(a.meta.slug, `link para artigo inexistente: ${s}`);
 
 /* ── Molde das páginas ─────────────────────────────────────────── */
 const NAV = atual => `<nav class="info-nav" aria-label="Navegação do Gambyte"><a class="info-brand" href="/" aria-label="Gambyte: página inicial"><img src="/logo.png" alt="" width="32" height="32"><span>Gambyte</span></a><div class="info-links">`
-  + [['/', 'Analisar partida'], ['/aprender/', 'Aprender xadrez'], ['/como-usar.html', 'Como usar'], ['/guia.html', 'Guia de análise'], ['/sobre.html', 'Sobre'], ['/contato.html', 'Contato']]
+  + [['/', 'Analisar partida'], ['/aprender/', 'Aprender xadrez'], ['/como-usar', 'Como usar'], ['/guia', 'Guia de análise'], ['/sobre', 'Sobre'], ['/contato', 'Contato']]
     .map(([h, t]) => `<a href="${h}"${h === atual ? ' aria-current="page"' : ''}>${t}</a>`).join('')
-  + `<a class="nav-loja" href="/gambyte-premium.html">Gambyte Pro</a>`
-  + `</div><div class="info-nav-side"><a class="nav-pro" href="/gambyte-premium.html">Gambyte Pro</a></div></nav>`;
-const FOOTER = `<footer class="info-footer"><div><strong>Gambyte</strong><p>Projeto independente de Rampini. Aprender com a prática.</p></div><nav aria-label="Informações institucionais"><a href="/sobre.html">Sobre</a><a href="/aprender/">Aprender xadrez</a><a href="/como-usar.html">Como usar</a><a href="/guia.html">Guia de análise</a><a href="/gambyte-premium.html">Gambyte Pro</a><a href="/contato.html">Contato</a><a href="/privacidade.html">Privacidade</a><a href="/termos.html">Termos de Uso</a><a href="/licencas.html">Créditos e licença</a></nav><small>© 2026 Rampini · <a href="mailto:ebezerrarampini1@gmail.com">ebezerrarampini1@gmail.com</a></small></footer>`;
+  + `<a class="nav-loja" href="/gambyte-premium">Gambyte Pro</a>`
+  + `</div><div class="info-nav-side"><a class="nav-pro" href="/gambyte-premium">Gambyte Pro</a></div></nav>`;
+const FOOTER = `<footer class="info-footer"><div><strong>Gambyte</strong><p>Projeto independente de Rampini. Aprender com a prática.</p></div><nav aria-label="Informações institucionais"><a href="/sobre">Sobre</a><a href="/aprender/">Aprender xadrez</a><a href="/como-usar">Como usar</a><a href="/guia">Guia de análise</a><a href="/gambyte-premium">Gambyte Pro</a><a href="/contato">Contato</a><a href="/privacidade">Privacidade</a><a href="/termos">Termos de Uso</a><a href="/licencas">Créditos e licença</a></nav><small>© 2026 Rampini · <a href="mailto:ebezerrarampini1@gmail.com">ebezerrarampini1@gmail.com</a></small></footer>`;
 const head = ({ titulo, descricao, url, tipo, ld }) => `<!doctype html>
 <html lang="pt-BR">
 <head>
@@ -239,7 +239,7 @@ const head = ({ titulo, descricao, url, tipo, ld }) => `<!doctype html>
 <!-- Página gerada por tools/build.mjs — edite o fragmento em tools/artigos/ e rode o build. -->`;
 
 const nomeCat = id => CATEGORIAS.find(c => c[0] === id)[1];
-const cartao = a => `<a class="ap-card" href="/aprender/${a.meta.slug}.html"><span class="ap-card-cat">${nomeCat(a.meta.categoria)}</span><strong>${esc(a.meta.titulo)}</strong><span class="ap-card-desc">${esc(a.meta.descricao)}</span><span class="ap-card-min">${a.meta.minutos} min de leitura</span></a>`;
+const cartao = a => `<a class="ap-card" href="/aprender/${a.meta.slug}"><span class="ap-card-cat">${nomeCat(a.meta.categoria)}</span><strong>${esc(a.meta.titulo)}</strong><span class="ap-card-desc">${esc(a.meta.descricao)}</span><span class="ap-card-min">${a.meta.minutos} min de leitura</span></a>`;
 
 fs.mkdirSync(OUT, { recursive: true });
 for (const f of fs.readdirSync(OUT)) if (f.endsWith('.html')) fs.unlinkSync(path.join(OUT, f));
@@ -273,7 +273,7 @@ ${NAV('/aprender/')}
 <h1>${esc(meta.titulo)}</h1>
 <p class="info-summary">${esc(meta.descricao)}</p>
 <p class="ap-meta">Por Rampini · Atualizado em ${dataExtenso(HOJE)} · ${meta.minutos} min de leitura</p>
-${['gambyte'].includes(meta.categoria) || ['notacao-algebrica', 'glossario', 'exportar-pgn', 'como-estudar-suas-partidas', 'gestao-do-tempo'].includes(meta.slug) ? '' : '<p class="ap-notacao">Os lances usam a notação do PGN: K é rei, Q dama, R torre, B bispo e N cavalo. <a href="/aprender/notacao-algebrica.html">Como ler a notação</a></p>'}
+${['gambyte'].includes(meta.categoria) || ['notacao-algebrica', 'glossario', 'exportar-pgn', 'como-estudar-suas-partidas', 'gestao-do-tempo'].includes(meta.slug) ? '' : '<p class="ap-notacao">Os lances usam a notação do PGN: K é rei, Q dama, R torre, B bispo e N cavalo. <a href="/aprender/notacao-algebrica">Como ler a notação</a></p>'}
 ${sumario}
 ${corpo.trim()}
 <aside class="ap-cta"><div><strong>Veja isso acontecer nas suas partidas</strong><p>Cole o PGN de um jogo seu e o Gambyte mostra, lance a lance, onde a avaliação mudou. É gratuito e roda no seu navegador.</p></div><a class="btn-ap btn-ap-solid" href="/">Analisar uma partida</a></aside>
