@@ -559,7 +559,7 @@ const UIController = (() => {
   }
 
   // ── Error / progress / analyze ─────────────────────────────
-  function showError(msg) { els.errorMsg.textContent = msg; els.errorMsg.classList.add('visible'); }
+  function showError(msg) { els.errorMsg.textContent = msg; els.errorMsg.classList.remove('aviso'); els.errorMsg.classList.add('visible'); }
   function hideError()    { els.errorMsg.classList.remove('visible'); }
 
   function setAnalyzing(active) {

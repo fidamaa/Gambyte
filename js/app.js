@@ -35,7 +35,55 @@ const App = (() => {
   }
   window.addEventListener('stockfish-motor', e => mostrarMotores(e.detail));
 
+  // ── Motor ainda carregando: espera e começa sozinho ─────────
+  // Em vez de "não está pronto", diz quanto falta (estimado pela
+  // velocidade da internet da pessoa) e inicia a análise assim que o
+  // motor fica pronto — para ninguém achar que o site não funciona.
+  let inicioMotor = performance.now();
+  let motorFalhou = false;
+  let esperaTimer = null;
+  // Velocidade real da internet, medida pelos arquivos que a própria
+  // página já baixou (bytes por segundo). null = tudo veio do cache.
+  function _velocidade() {
+    let bytes = 0, tempo = 0;
+    for (const e of performance.getEntriesByType('resource')) {
+      if (e.transferSize > 30000 && e.duration > 0) { bytes += e.transferSize; tempo += e.duration / 1000; }
+    }
+    return bytes > 100000 && tempo > 0 ? bytes / tempo : null;
+  }
+  function _faltaMotor() {
+    const passou = (performance.now() - inicioMotor) / 1000;
+    const bps = _velocidade();
+    // 7,3 MB do motor rápido + ~1 s para ele iniciar.
+    const total = bps ? 7300000 / bps + 1 : 2;
+    return Math.min(40, Math.ceil(total - passou));
+  }
+  function aguardarMotor() {
+    if (esperaTimer) return;
+    const caixa = document.getElementById('error-msg');
+    const mostrar = () => {
+      const f = _faltaMotor();
+      UIController.showError(f > 1
+        ? `O motor ainda está carregando. Aguarde cerca de ${f} segundos: a análise começa sozinha.`
+        : 'O motor ainda está carregando. Só mais alguns segundos: a análise começa sozinha.');
+      caixa && caixa.classList.add('aviso');
+    };
+    mostrar();
+    esperaTimer = setInterval(() => {
+      if (motorFalhou) { clearInterval(esperaTimer); esperaTimer = null; caixa && caixa.classList.remove('aviso'); return; }
+      if (stockfishReady) {
+        clearInterval(esperaTimer); esperaTimer = null;
+        caixa && caixa.classList.remove('aviso');
+        UIController.hideError();
+        runAnalysis();
+        return;
+      }
+      mostrar();
+    }, 250);
+  }
+
   async function initStockfish() {
+    inicioMotor = performance.now();
     mostrarMotores(null);
     try {
       await StockfishManager.init();
@@ -44,6 +92,8 @@ const App = (() => {
       console.log('[App] Stockfish pronto');
     } catch (err) {
       console.error('[App] Stockfish falhou:', err);
+      motorFalhou = true;
+      document.getElementById('error-msg')?.classList.remove('aviso');
       UIController.showError(
         'Não foi possível carregar o motor Stockfish. Verifique sua conexão e recarregue a página. ' +
         'Se o problema continuar, avise pela página de Contato.'
@@ -81,7 +131,7 @@ const App = (() => {
       if (!parsedGame.moves.length) { UIController.showError('Nenhum lance encontrado no PGN.'); return; }
     } catch (err) { UIController.showError('Erro ao parsear PGN: ' + err.message); return; }
 
-    if (!stockfishReady) { UIController.showError('Stockfish ainda não está pronto.'); return; }
+    if (!stockfishReady) { aguardarMotor(); return; }
 
     UIController.hideError();
     // No celular a caixa da partida fica no topo: ao analisar, desce até

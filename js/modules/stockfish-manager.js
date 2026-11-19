@@ -209,6 +209,9 @@ const StockfishManager = (() => {
       for (let i = 0; i < ALVO; i++) _novoSlot(await _startWorker(url, 60000), forcado);
       return;
     }
+    // Diagnóstico: ?atrasoLite=ms simula o motor rápido demorando.
+    const atrasoLite = +(param('atrasoLite') || 0);
+    if (atrasoLite) await new Promise(r => setTimeout(r, atrasoLite));
     try {
       _novoSlot(await _startWorker(LITE_FILE, 20000), 'lite');
     } catch (err) {
