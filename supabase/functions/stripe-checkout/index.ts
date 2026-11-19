@@ -35,6 +35,7 @@ Deno.serve(async (req: Request) => {
       subscription_data: { metadata: { uid: user.id } },
       metadata: { uid: user.id },
       locale: "pt-BR",
+      allow_promotion_codes: true,   // campo de cupom no pagamento (testes e promoções)
       success_url: `${SITE}/gambyte-premium.html?stripe=ok`,
       cancel_url: `${SITE}/gambyte-premium.html?stripe=cancelado`,
     });
