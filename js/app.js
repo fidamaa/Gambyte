@@ -22,6 +22,7 @@ const App = (() => {
     else if (k === 'lite') por(lite, 'ativo', 'Motor rápido pronto: já dá para analisar');
     else por(lite, 'pronto', 'Motor rápido carregado');
     if (k === 'full') por(full, 'ativo', 'Motor completo em uso: avaliações ainda melhores');
+    else if (info && info.esperando) por(full, 'pronto', 'Motor completo pronto: entra na próxima análise');
     else if (info && info.carregandoCompleto) por(full, 'carregando', 'Motor completo carregando (108 MB). Entra sozinho quando terminar');
     else if (info && info.falhou) por(full, 'off', 'Motor completo não carregou. A análise segue com o rápido');
     else por(full, 'off', 'Motor completo: aguardando');

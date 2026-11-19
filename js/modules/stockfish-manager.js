@@ -70,7 +70,7 @@ const StockfishManager = (() => {
   function _avisar() {
     try {
       window.dispatchEvent(new CustomEvent('stockfish-motor', {
-        detail: { kind: engineKind, carregandoCompleto: fullLoading || !!pendingFull, falhou: fullFailed }
+        detail: { kind: engineKind, carregandoCompleto: fullLoading, esperando: !!pendingFull, falhou: fullFailed }
       }));
     } catch (e) {}
   }
@@ -110,8 +110,14 @@ const StockfishManager = (() => {
   }
 
   // Troca para o completo se ele já carregou e o motor está parado.
+  // Na reta final de uma análise feita com o Lite, a troca espera a análise
+  // acabar: trocar ali faria a pessoa esperar mais (o completo é ~2x mais
+  // lento por posição) para quase nenhuma diferença no resultado.
+  let segurar = false;
+  function segurarTroca(v) { segurar = !!v; if (!segurar) _trySwap(); else _avisar(); }
+
   function _trySwap() {
-    if (!pendingFull || analysisRunning) return;
+    if (!pendingFull || analysisRunning || segurar) return;
     const w = pendingFull; pendingFull = null;
     _usar(w, 'full');
   }
@@ -123,6 +129,8 @@ const StockfishManager = (() => {
     fullLoading = true;
     _avisar();
     _startWorker(_workerUrl(FULL_FILE), 300000)
+      // Diagnóstico: ?atrasoCompleto=ms simula uma internet lenta.
+      .then(w => new Promise(r => setTimeout(() => r(w), +((location.search.match(/[?&]atrasoCompleto=(\d+)/) || [])[1] || 0))))
       .then(w => { pendingFull = w; fullLoading = false; _trySwap(); })
       .catch(err => { fullFailed = true; console.warn('[Stockfish] completo não carregou, seguindo com o Lite:', err.message); })
       .finally(() => { fullLoading = false; _avisar(); });
@@ -402,9 +410,9 @@ const StockfishManager = (() => {
     if (worker) { worker.terminate(); worker = null; ready = false; }
   }
 
-  function getEngineInfo() { return { usingMulti, threadCount, kind: engineKind, carregandoCompleto: fullLoading || !!pendingFull, falhou: fullFailed }; }
+  function getEngineInfo() { return { usingMulti, threadCount, kind: engineKind, carregandoCompleto: fullLoading, esperando: !!pendingFull, falhou: fullFailed }; }
 
   function isReady() { return fullyReady && !!worker; }
 
-  return { init, analyzePosition, analyzeLive, verifySacrificeTrap, parsePV, abort, terminate, getEngineInfo, isReady };
+  return { init, segurarTroca, analyzePosition, analyzeLive, verifySacrificeTrap, parsePV, abort, terminate, getEngineInfo, isReady };
 })();

@@ -165,6 +165,7 @@ const AnalysisEngine = (() => {
 
   function abort() {
     aborted = true;
+    StockfishManager.segurarTroca(false);
     // Interrompe o motor de verdade — sem isso o "go depth" em andamento
     // continuava rodando em segundo plano até terminar sozinho.
     StockfishManager.abort();
@@ -175,6 +176,7 @@ const AnalysisEngine = (() => {
    */
   async function analyze(parsedGame) {
     aborted = false;
+    StockfishManager.segurarTroca(false);
     const run = ++runSeq;
     const dead = () => aborted || run !== runSeq;
 
@@ -393,6 +395,9 @@ const AnalysisEngine = (() => {
       const depth = PHASE2_DEPTHS[pass];
       if (dead()) return;
       const deep = isProMode && pass === PHASE2_DEPTHS.length - 1;
+      // Passada final começando com o motor rápido: termina com ele (o
+      // completo, se ficar pronto agora, entra na próxima análise).
+      if (pass === PHASE2_DEPTHS.length - 1 && StockfishManager.getEngineInfo().kind === 'lite') StockfishManager.segurarTroca(true);
       const prevDepth = pass > 0 ? PHASE2_DEPTHS[pass - 1] : PHASE1_DEPTH;
       // Só entram na conta os lances que serão de fato recalculados nesta
       // profundidade (os estáveis são pulados) — assim a barra e o tempo
@@ -534,6 +539,7 @@ const AnalysisEngine = (() => {
       });
     }
 
+    StockfishManager.segurarTroca(false);
     if (dead()) return;
     if (onComplete) onComplete([...movesData]);
   }
