@@ -22,12 +22,15 @@ const LiveEngine = (() => {
   const cache = new Map();    // fen → { cp, pv, depth }  (cp do ponto de vista de quem joga)
   const CACHE_MAX = 400;
 
-  // Posição inicial já calculada (Stockfish 18, profundidade 22), para o
-  // site abrir com a avaliação e a seta na hora, sem esperar o motor.
-  cache.set('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', {
-    cp: 37, depth: 22,
-    pv: 'd2d4 g8f6 c2c4 e7e6 g2g3 d7d5 f1g2 d5c4 g1f3 c7c5 e1g1 b8c6 d1a4 c5d4 f3d4 d8d4 g2c6 c8d7 f1d1 d7c6 a4c6 b7c6 d1d4'.split(' '),
-  });
+  // Posição inicial já calculada (Stockfish 18, motor recém-aberto), para o
+  // site abrir com a avaliação e a seta na hora, sem esperar o motor. Uma
+  // por plano, porque o melhor lance muda com a profundidade: até a 21 o
+  // motor prefere 1. e4; da 22 em diante, 1. d4.
+  const INICIAL = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+  const INICIAL_PRONTA = {
+    [DEPTH_FREE]: { cp: 49, depth: DEPTH_FREE, pv: 'e2e4 c7c6 d2d4 d7d5 e4d5 c6d5 c2c4 g7g6 b1c3 g8f6 g1f3'.split(' ') },
+    [DEPTH_PRO]:  { cp: 27, depth: DEPTH_PRO,  pv: 'd2d4 g8f6 c2c4 e7e6 g1f3 d7d5 g2g3 d5c4 d1a4 b8c6 a2a3 f8e7 f1g2'.split(' ') },
+  };
 
   let token = 0;
   let timer = null;
@@ -116,6 +119,7 @@ const LiveEngine = (() => {
 
     // 1) Resposta imediata
     let r = cache.get(fen) || null, previa = false;
+    if (fen === INICIAL && (!r || r.depth < alvo())) r = INICIAL_PRONTA[alvo()] || r;
     if (!r && opts.played && opts.fenBefore) {
       const ant = cache.get(opts.fenBefore);
       if (ant && ant.pv && ant.pv[0] === opts.played && ant.pv.length > 1) {
