@@ -61,7 +61,9 @@ function openCheckout() {
     document.getElementById('already-premium-text').textContent = dias == null
       ? 'Sua conta tem acesso a todos os recursos do Pro.'
       : cartao
-        ? `Assinatura no cartão ativa. Próxima renovação em ${dataVencimento(sess)}.`
+        ? sess.cancelada
+          ? `Assinatura cancelada: o Pro continua até ${dataVencimento(sess)} e não haverá novas cobranças.`
+          : `Assinatura no cartão ativa. Próxima renovação em ${dataVencimento(sess)}.`
         : `Acesso liberado até ${dataVencimento(sess)} (${dias === 0 ? 'último dia' : dias === 1 ? 'falta 1 dia' : 'faltam ' + dias + ' dias'}). Não há cobrança automática.`;
     document.getElementById('already-portal').hidden = !(sess.assinaturaCartao);
     showStep('step-already-premium');
@@ -102,9 +104,10 @@ function showPayErr(msg) {
 function renderUserBar(sess) {
   const bar = document.getElementById('user-status-bar');
   if (bar) {
-    bar.innerHTML = sess ? `
-      <span class="ubar-name">${AuthSystem.escapeHTML(sess.name || sess.email.split('@')[0])}</span>
-      ${sess.premium ? '<span class="ubar-badge">PRO</span>' : ''}` : '<a class="nav-pro" href="gambyte-login.html">Entrar</a>';
+    const nome = sess ? (sess.name || sess.email.split('@')[0]) : '';
+    bar.innerHTML = sess
+      ? `<a class="perfil-chip" href="gambyte-login.html" title="Minha conta"><span class="perfil-ini">${AuthSystem.escapeHTML(nome.charAt(0).toUpperCase())}</span><span class="perfil-nome">${AuthSystem.escapeHTML(nome)}</span>${sess.premium ? '<span class="perfil-pro">PRO</span>' : ''}</a>`
+      : '<a class="nav-entrar" href="gambyte-login.html">Entrar</a>';
   }
 
   const status = document.getElementById('pro-status');
@@ -118,9 +121,11 @@ function renderUserBar(sess) {
     status.textContent = dias == null
       ? 'Seu Gambyte Pro está ativo.'
       : acabando
-        ? comCartao(sess) ? `Seu Gambyte Pro renova em ${dataVencimento(sess)}.` : `Seu Gambyte Pro termina em ${dataVencimento(sess)} (${dias === 0 ? 'hoje' : dias === 1 ? 'falta 1 dia' : 'faltam ' + dias + ' dias'}). Para continuar depois dessa data, assine com cartão.`
+        ? comCartao(sess) && !sess.cancelada ? `Seu Gambyte Pro renova em ${dataVencimento(sess)}.` : `Seu Gambyte Pro termina em ${dataVencimento(sess)} (${dias === 0 ? 'hoje' : dias === 1 ? 'falta 1 dia' : 'faltam ' + dias + ' dias'}). Para continuar depois dessa data, assine com cartão.`
         : comCartao(sess)
-          ? `Seu Gambyte Pro está ativo no cartão. Próxima renovação em ${dataVencimento(sess)}.`
+          ? sess.cancelada
+            ? `Assinatura cancelada: seu Gambyte Pro continua até ${dataVencimento(sess)}, sem novas cobranças.`
+            : `Seu Gambyte Pro está ativo no cartão. Próxima renovação em ${dataVencimento(sess)}.`
           : `Seu Gambyte Pro está ativo até ${dataVencimento(sess)}. Não há cobrança automática.`;
     cta.textContent = 'Ver minha assinatura';
   } else {

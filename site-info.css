@@ -98,3 +98,29 @@ body[data-site="gambyte"]>.info-nav>.info-nav-side{display:flex;align-items:cent
   .info-nav-side .user-premium-badge{display:none}
 }
 @media(max-width:760px){.info-nav-side .so-pc{display:none}}
+/* Perfil no canto do cabeçalho (todas as páginas) */
+.nav-entrar{display:inline-flex;align-items:center;min-height:40px;padding:8px 14px;border-radius:10px;border:1px solid #394459;color:#cbd2df!important;font-weight:500;font-size:13.5px;text-decoration:none!important;white-space:nowrap}
+.nav-entrar:hover{border-color:#ecbd6e;color:#ecbd6e!important}
+.perfil-chip{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:4px 12px 4px 4px;border-radius:99px;border:1px solid #394459;background:#1a2030;text-decoration:none!important;min-width:0;transition:border-color .18s}
+.perfil-chip:hover{border-color:#ecbd6e}
+.perfil-ini{width:30px;height:30px;flex:none;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#f4cc80,#d39a45);color:#0d0f14;font-weight:700;font-size:13px}
+.perfil-nome{font-size:13.5px;color:#e8eaf0;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}
+.perfil-pro{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(236,189,110,.15);color:#ecbd6e;border:1px solid rgba(236,189,110,.4);letter-spacing:.5px}
+/* Aba "Gambyte Pro" no menu: a loja, sempre visível */
+.info-links a.nav-loja{color:#ecbd6e}
+.info-links a.nav-loja[aria-current="page"]{color:#202023}
+@media(max-width:760px){
+  .perfil-chip{min-height:36px;padding:3px 10px 3px 3px;gap:6px}
+  .perfil-ini{width:28px;height:28px}
+  .perfil-nome{max-width:84px;font-size:12.5px}
+  .nav-entrar{min-height:36px;padding:7px 11px;font-size:12.5px}
+  body[data-site="gambyte"]>.info-nav>.info-nav-side .nav-pro{min-height:36px;padding:7px 11px;font-size:12.5px}
+}
+@media(max-width:400px){.perfil-nome{max-width:58px}}
+/* Cabe numa linha só no computador, mesmo com a aba do Pro e o perfil */
+@media(min-width:761px) and (max-width:1500px){
+  .info-links a{padding:10px 11px;font-size:14px}
+  body[data-site="gambyte"]>.info-nav>.info-links{gap:2px}
+  .info-nav-side .nav-pro,.nav-entrar{padding:8px 12px}
+  .perfil-nome{max-width:110px}
+}

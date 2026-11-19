@@ -31,7 +31,21 @@ const AuthSystem = (() => {
   }
 
   function _notify() {
+    _lembrarPerfil();
     for (const cb of _listeners) { try { cb(_session); } catch (e) { console.error(e); } }
+  }
+
+  // Guarda nome e Pro da sessão para o cabeçalho das outras páginas
+  // (menu.js mostra o perfil sem precisar carregar o login inteiro).
+  function _lembrarPerfil() {
+    if (!_ready) return;
+    try {
+      if (_session) localStorage.setItem('gambyte_perfil', JSON.stringify({
+        nome: _session.name || (_session.email || '').split('@')[0],
+        pro: isPremium(),
+      }));
+      else localStorage.removeItem('gambyte_perfil');
+    } catch (e) { /* sem armazenamento */ }
   }
 
   // Chama cb toda vez que login/logout ou o status premium mudar. Chama
@@ -53,6 +67,7 @@ const AuthSystem = (() => {
       _session.premium = activePremium(data);
       _session.expiresAt = data.proximo_vencimento;
       _session.assinaturaCartao = data.stripe_status || null;   // assinatura no Stripe (cartão)
+      _session.cancelada = !!data.cancelado_em;
       if (data.name) _session.name = data.name;
       _notify();
     }
@@ -69,6 +84,7 @@ const AuthSystem = (() => {
             _session.premium = activePremium(payload.new);
             _session.expiresAt = payload.new.proximo_vencimento;
             _session.assinaturaCartao = payload.new.stripe_status || null;
+            _session.cancelada = !!payload.new.cancelado_em;
             if (payload.new.name) _session.name = payload.new.name;
             _notify();
           }
