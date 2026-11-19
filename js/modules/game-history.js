@@ -64,7 +64,7 @@ const GameHistory = (() => {
     const linhas = lista.map(x => {
       const d = new Date(x.quando);
       const data = isNaN(d) ? '' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-      return `<li><button type="button" class="hist-item" data-hist="abrir" data-id="${x.id}" title="Carregar esta partida no campo de PGN">
+      return `<li><button type="button" class="hist-item" data-hist="abrir" data-id="${x.id}" title="Analisar esta partida de novo">
         <span class="hist-data">${data}</span>
         <span class="hist-nomes">${esc(x.brancas)} <i>x</i> ${esc(x.pretas)}<small>${esc(x.abertura || '')}</small></span>
         <span class="hist-acc" title="Precisão das brancas e das pretas">${InsightsEngine.pct(x.accB)} · ${InsightsEngine.pct(x.accP)}</span>
@@ -76,6 +76,24 @@ const GameHistory = (() => {
       <ul class="hist-lista">${linhas}</ul>
       <div class="hist-rodape"><span>Guardado só neste navegador. Não é enviado ao servidor.</span><button type="button" class="hist-limpar" data-hist="limpar">Apagar histórico</button></div>
     </details>`;
+  }
+
+  // Reabre uma partida do histórico: ela sobe para o topo da lista (sem
+  // repetir) e a análise começa na hora, como na busca por usuário.
+  function abrir(id) {
+    const lista = ler();
+    const item = lista.find(x => String(x.id) === String(id));
+    const campo = document.getElementById('pgn-input');
+    if (!item || !campo) return;
+    gravar([item, ...lista.filter(x => x !== item && x.chave !== item.chave)]);
+    render();
+    campo.value = item.pgn;
+    if (typeof GameImport !== 'undefined' && GameImport.mostrarAba) GameImport.mostrarAba('pgn');
+    AuthUI.showToast(`Analisando ${item.brancas} x ${item.pretas}.`, 'success');
+    // App.run interrompe uma análise em andamento; o botão ficaria desativado.
+    if (typeof App !== 'undefined' && App.run) App.run();
+    else document.getElementById('btn-analyze')?.click();
+    document.getElementById('board-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   function init() {
@@ -92,14 +110,7 @@ const GameHistory = (() => {
         render();
         return;
       }
-      if (b.dataset.hist === 'abrir') {
-        const item = ler().find(x => String(x.id) === b.dataset.id);
-        const campo = document.getElementById('pgn-input');
-        if (!item || !campo) return;
-        campo.value = item.pgn;
-        campo.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        AuthUI.showToast('Partida carregada. Clique em Analisar Partida.', 'success');
-      }
+      if (b.dataset.hist === 'abrir') abrir(b.dataset.id);
     });
     AuthSystem.onChange(render);
     render();
