@@ -63,6 +63,10 @@ const StockfishManager = (() => {
   let pendingFull = [];        // workers completos prontos, esperando a vez
   let fullLoading = false;
   let fullFailed = false;
+  let lenta = false;           // internet lenta demais para o completo
+  // Se o resto do download do completo for levar mais que isto, desiste e
+  // fica só com o Lite. Diagnóstico: ?limiteCompleto=segundos.
+  const LIMITE_DOWNLOAD_S = (m => m ? +m[1] : 40)(location.search.match(/[?&]limiteCompleto=(\d+)/));
   let progresso = null;        // 0–100 do download do completo
   let doAparelho = false;      // completo veio do cache do navegador
   const nps = { lite: 0, full: 0 };   // velocidade média de cada tipo (por motor)
@@ -159,10 +163,25 @@ const StockfishManager = (() => {
         const total = parseInt(r.headers.get('Content-Length'), 10) || 113000000;
         const leitor = r.body.getReader();
         const partes = []; let recebido = 0, ultimo = -1;
+        const t0 = performance.now();
         for (;;) {
           const { done, value } = await leitor.read();
           if (done) break;
           partes.push(value); recebido += value.length;
+          // Diagnóstico: ?velocidadeTeste=bytes/s simula uma internet lenta.
+          const vt = +(param('velocidadeTeste') || 0);
+          if (vt) await new Promise(r => setTimeout(r, value.length / vt * 1000));
+          // Depois de 3 s, mede a velocidade real: se o que falta for levar
+          // mais que o limite, a internet não comporta o completo agora.
+          const passou = (performance.now() - t0) / 1000;
+          if (passou > 3) {
+            const falta = (total - recebido) / (recebido / passou);
+            if (falta > LIMITE_DOWNLOAD_S && slots.length) {
+              try { leitor.cancel(); } catch (e) {}
+              lenta = true;
+              throw new Error(`internet lenta (faltariam ~${Math.round(falta)} s)`);
+            }
+          }
           const pct = Math.min(99, Math.floor(recebido / total * 100));
           if (pct !== ultimo) { ultimo = pct; progresso = pct; _avisar(); }
         }
@@ -173,8 +192,9 @@ const StockfishManager = (() => {
       if (blob.size < 50000000) throw new Error('arquivo incompleto');
       return URL.createObjectURL(blob);
     } catch (err) {
-      console.warn('[Stockfish] cache do motor indisponível, baixando direto:', err.message);
       progresso = null;
+      if (lenta) throw err;
+      console.warn('[Stockfish] cache do motor indisponível, baixando direto:', err.message);
       return origem;
     }
   }
@@ -473,7 +493,7 @@ const StockfishManager = (() => {
     return {
       usingMulti, threadCount, kind: engineKind(), motores: slots.length, alvo: ALVO,
       tipos: slots.map(s => s.kind),
-      carregandoCompleto: fullLoading, esperando: pendingFull.length > 0, falhou: fullFailed,
+      carregandoCompleto: fullLoading, esperando: pendingFull.length > 0, falhou: fullFailed, lenta,
       progresso, doAparelho, nps: { ...nps }
     };
   }

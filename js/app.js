@@ -30,6 +30,7 @@ const App = (() => {
         : p != null && p < 100 ? `Motor completo baixando: ${p}% de 108 MB. Entra sozinho quando terminar`
         : 'Motor completo carregando (108 MB). Entra sozinho quando terminar');
     }
+    else if (info && info.lenta) por(full, 'off', 'Internet lenta agora: seguindo só com o motor rápido, sem gastar seus dados');
     else if (info && info.falhou) por(full, 'off', 'Motor completo não carregou. A análise segue com o rápido');
     else por(full, 'off', 'Motor completo: aguardando');
   }
