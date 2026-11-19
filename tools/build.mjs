@@ -228,7 +228,7 @@ const head = ({ titulo, descricao, url, tipo, ld }) => `<!doctype html>
 <meta property="og:locale" content="pt_BR">
 <meta property="og:site_name" content="Gambyte">
 <meta name="google-adsense-account" content="ca-pub-7858747311725137">
-<link rel="icon" href="/logo.png">
+<link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/logo.png" type="image/png" sizes="192x192">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/site-info.css?v=7">
