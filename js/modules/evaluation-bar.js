@@ -32,7 +32,8 @@ const EvalBar = (() => {
     let labelTop, labelBot, labelClass;
 
     if (isMate) {
-      pct = mateN > 0 ? 97 : 3;
+      // Mate forçado: a partida já está ganha para quem dá o mate.
+      pct = mateN > 0 ? 100 : 0;
       const absN = Math.abs(mateN);
       if (mateN > 0) {
         labelTop = ''; labelBot = `M${absN}`; labelClass = 'positive';
@@ -89,5 +90,17 @@ const EvalBar = (() => {
     }
   }
 
-  return { init, update, updateFromMoveData, setFlipped };
+  // Xeque-mate no tabuleiro: barra inteira para quem venceu, com o placar.
+  function fim(vencedor) {
+    update(0, true, vencedor === 'white' ? 1 : -1);
+    if (!_whiteEl) return;
+    const placar = vencedor === 'white' ? '1-0' : '0-1';
+    const brancas = vencedor === 'white';
+    // O placar fica no lado de quem venceu (embaixo = brancas, sem inverter).
+    const embaixo = brancas !== _flipped;
+    _topLabel.textContent = embaixo ? '' : placar;
+    _botLabel.textContent = embaixo ? placar : '';
+  }
+
+  return { init, update, updateFromMoveData, setFlipped, fim };
 })();

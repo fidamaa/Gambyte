@@ -399,6 +399,11 @@ const UIController = (() => {
     } else if (idx < 0) {
       EvalBar.update(0, false, 0);
     }
+    // Lance que deu xeque-mate: aviso no tabuleiro e barra inteira para quem venceu.
+    const sanAqui = parsedGameRef.moves && parsedGameRef.moves[idx];
+    const mdAqui  = parsedGameRef.movesData && parsedGameRef.movesData[idx];
+    _fenMate = idx >= 0 && ((mdAqui && mdAqui.isCheckmate) || (sanAqui && String(sanAqui).includes('#'))) ? fen : null;
+    if (_fenMate) LiveEngine.fimDeJogo(fen);
 
     els.navStart.disabled = idx < 0;
     els.navPrev.disabled  = idx < 0;
@@ -459,7 +464,9 @@ const UIController = (() => {
   // posição mostrada. A seta continua sendo a da análise da partida (o
   // melhor lance no lugar do que foi jogado). Enquanto a partida ainda está
   // sendo analisada, não disputa o motor com ela.
+  let _fenMate = null;   // posição de xeque-mate mostrada na revisão
   function _barraRevisao(fen) {
+    if (fen && fen === _fenMate) { LiveEngine.fimDeJogo(fen); return; }
     if (els.progressContainer.classList.contains('visible')) {
       LiveEngine.parar('Análise da partida em andamento…');
       return;
@@ -665,6 +672,7 @@ const UIController = (() => {
     if (!_branchBaseCtx) return;
     const { idx: baseIdx } = _branchBaseCtx;
     const { path } = FreePlay.getBranchView();
+    _seloLivre(path);
 
     document.querySelectorAll('.move-pair[data-branch="1"]').forEach(p => p.remove());
     document.querySelectorAll('.move-item[data-branch-in-base="1"]').forEach(el => el.remove());
@@ -904,9 +912,24 @@ const UIController = (() => {
   }
 
   // ── Overlay de classificação no tabuleiro ─────────────────────
+  // Modo Livre: selo do lance que acabou de ser jogado (ou do lance em que
+  // a navegação parou), em cima da peça. Aparece quando a classificação
+  // chega e troca se a passada refinada mudar a etiqueta.
+  function _seloLivre(path) {
+    const atual = path && path.length ? path[path.length - 1] : null;
+    const cls = atual && atual.moveData ? atual.moveData.classification : null;
+    const toSq = atual && atual.uci ? atual.uci.slice(2, 4) : null;
+    const overlay = document.getElementById('move-class-overlay');
+    const chave = cls && toSq ? `${atual.index}:${cls}:${toSq}` : '';
+    if (overlay && overlay.dataset.livre === chave && chave) return;
+    _showClassOverlay(cls && toSq ? cls : null, toSq);
+    if (overlay) overlay.dataset.livre = chave;
+  }
+
   function _showClassOverlay(cls, toSq) {
     const overlay = document.getElementById('move-class-overlay');
     if (!overlay) return;
+    overlay.dataset.livre = '';   // _seloLivre marca de novo quando é dele
 
     if (!cls) {
       overlay.dataset.vez = String((+overlay.dataset.vez || 0) + 1);
@@ -935,7 +958,7 @@ const UIController = (() => {
 
     // Só o selo do último lance pedido aparece (navegar rápido pedia vários).
     const vez = overlay.dataset.vez = String((+overlay.dataset.vez || 0) + 1);
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       if (overlay.dataset.vez !== vez) return;
       overlay.innerHTML = '';
       const labelEl = document.createElement('span');
@@ -944,7 +967,7 @@ const UIController = (() => {
 
       overlay.appendChild(labelEl);
       overlay.style.opacity = '1';
-    });
+    }, 16);
   }
 
   function updateChart(movesData, activeIdx) {

@@ -133,7 +133,7 @@ const FreePlay = (() => {
   function getBranchView() {
     const path = [];
     for (let i = 0; i <= idx; i++) {
-      path.push({ index: i, san: sans[i], isCurrent: i === idx, moveData: movesData[i] });
+      path.push({ index: i, san: sans[i], uci: ucis[i], isCurrent: i === idx, moveData: movesData[i] });
     }
     return { baseIdx: _baseCtx.idx, path };
   }
@@ -652,6 +652,10 @@ const FreePlay = (() => {
   // Análise ao vivo da posição atual (ver live-engine.js). played/fenBefore
   // permitem reaproveitar a linha prevista quando o lance era o esperado.
   function _requestEval(played, fenBefore) {
+    if (_gameStatus && _gameStatus.type === 'checkmate') {
+      LiveEngine.fimDeJogo(currentFEN);
+      return;
+    }
     if (_gameStatus) {
       LiveEngine.parar(GAME_STATUS_LABELS[_gameStatus.type](_gameStatus.winner));
       EngineSuggestion.updateArrow(null);

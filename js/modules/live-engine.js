@@ -113,6 +113,7 @@ const LiveEngine = (() => {
    *   (na revisão da partida, a seta continua sendo a da análise completa).
    */
   function analyze(fen, opts = {}) {
+    aviso(null);
     const tok = ++token;
     modo = { arrow: opts.arrow !== false, evalBar: opts.evalBar !== false };
     if (timer) clearTimeout(timer);
@@ -143,8 +144,41 @@ const LiveEngine = (() => {
     }, 30);
   }
 
+  // Aviso de xeque-mate no centro do tabuleiro (some na próxima posição).
+  function aviso(vencedor) {
+    const ref = $('move-class-overlay');
+    const pai = ref && ref.parentElement;
+    let el = $('board-mate');
+    if (!vencedor) { if (el) el.hidden = true; return; }
+    if (!pai) return;
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'board-mate';
+      el.setAttribute('role', 'status');
+      pai.appendChild(el);
+    }
+    el.innerHTML = `<strong>Xeque-mate!</strong><span>${vencedor === 'white' ? 'Brancas vencem' : 'Pretas vencem'} · ${vencedor === 'white' ? '1-0' : '0-1'}</span>`;
+    el.hidden = false;
+  }
+
+  // Xeque-mate na posição mostrada: quem está para jogar levou mate. Para a
+  // busca, mostra o aviso e põe a barra inteira para quem venceu.
+  function fimDeJogo(fen) {
+    const vencedor = fen.split(' ')[1] === 'w' ? 'black' : 'white';
+    parar(`Xeque-mate — ${vencedor === 'white' ? 'brancas vencem' : 'pretas vencem'}`);
+    const evalEl = $('free-play-eval');
+    if (evalEl) {
+      evalEl.textContent = vencedor === 'white' ? '1-0' : '0-1';
+      evalEl.classList.toggle('neg', vencedor === 'black');
+    }
+    EngineSuggestion.updateArrow(null);
+    EvalBar.fim(vencedor);
+    aviso(vencedor);
+  }
+
   // Fim de jogo ou nada para analisar: limpa a linha e mostra o motivo.
   function parar(texto) {
+    aviso(null);
     token++;
     if (timer) clearTimeout(timer);
     const linhaEl = $('live-line'), profEl = $('live-depth'), evalEl = $('free-play-eval');
@@ -153,5 +187,5 @@ const LiveEngine = (() => {
     if (evalEl && texto) evalEl.textContent = '—';
   }
 
-  return { analyze, parar, linhaSAN };
+  return { analyze, parar, fimDeJogo, linhaSAN };
 })();
