@@ -558,38 +558,39 @@ canvas#chart { width:100%; height:150px; display:block; border-radius:8px; }
 /* ── Overlay de classificação no tabuleiro ──────────────────── */
 #move-class-overlay {
   position: absolute;
-  top: 6px; right: 6px;   /* fallback — sobrescrito pelo JS */
+  top: 6px; left: 50%;   /* fallback — o JS põe o selo em cima da peça */
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
+  justify-content: center;
   pointer-events: none;
   z-index: 20;
   transition: opacity .25s;
-  transform: translateX(-50%);  /* centraliza horizontalmente sobre a peça */
+  transform: translate(-50%, -50%);  /* centro do selo no ponto calculado */
 }
 #move-class-overlay .cls-label {
-  font-size: 10px;
+  font-size: inherit;
   font-weight: 700;
   font-family: 'Outfit', sans-serif;
-  letter-spacing: .3px;
-  padding: 2px 7px;
+  line-height: 1.25;
+  letter-spacing: .2px;
+  padding: .22em .7em;
   border-radius: 99px;
-  backdrop-filter: blur(8px);
-  animation: cls-pop .35s cubic-bezier(.17,.89,.32,1.28) both;
+  border: 1.5px solid rgba(0,0,0,.35);
+  box-shadow: 0 1px 3px rgba(0,0,0,.45);
+  color: #fff;
+  animation: cls-pop .3s ease-out both;
   white-space: nowrap;
 }
-/* Cores por classificação */
-.cls-label.book       { background:rgba(136,144,168,.45); color:#8890a8; border:1px solid rgba(136,144,168,.5); }
-.cls-label.brilliant  { background:rgba(91,201,184,.45);  color:#5bc9b8; border:1px solid rgba(91,201,184,.6); }
-.cls-label.great      { background:rgba(155,125,224,.45); color:#9b7de0; border:1px solid rgba(155,125,224,.6); }
-.cls-label.excellent  { background:rgba(91,201,122,.45);  color:#5bc97a; border:1px solid rgba(91,201,122,.6); }
-.cls-label.best-move  { background:rgba(89,184,224,.45);  color:#59b8e0; border:1px solid rgba(89,184,224,.6); }
-.cls-label.good       { background:rgba(201,196,91,.45);  color:#c9c45b; border:1px solid rgba(201,196,91,.6); }
-.cls-label.inaccuracy { background:rgba(224,155,91,.45);  color:#e09b5b; border:1px solid rgba(224,155,91,.6); }
-.cls-label.mistake    { background:rgba(224,92,92,.45);   color:#e05c5c; border:1px solid rgba(224,92,92,.6); }
-.cls-label.miss       { background:rgba(224,120,91,.45);  color:#e0785b; border:1px solid rgba(224,120,91,.6); }
-.cls-label.blunder    { background:rgba(201,48,48,.50);   color:#e03030; border:1px solid rgba(201,48,48,.7); }
+/* Cores por classificação: fundo sólido, texto com contraste */
+.cls-label.book       { background:#6b7389; }
+.cls-label.brilliant  { background:#16917e; }
+.cls-label.great      { background:#7350d0; }
+.cls-label.excellent  { background:#2b8a4f; }
+.cls-label.best-move  { background:#2a7fb0; }
+.cls-label.good       { background:#d8c840; color:#2a2504; }
+.cls-label.inaccuracy { background:#e8912f; color:#2b1505; }
+.cls-label.mistake    { background:#d23f3f; }
+.cls-label.miss       { background:#d5582f; }
+.cls-label.blunder    { background:#a81616; }
 @keyframes cls-pop {
   0%   { opacity:0; transform:scale(.55) translateY(-6px); }
   100% { opacity:1; transform:scale(1)   translateY(0); }

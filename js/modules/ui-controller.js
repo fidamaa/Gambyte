@@ -909,6 +909,7 @@ const UIController = (() => {
     if (!overlay) return;
 
     if (!cls) {
+      overlay.dataset.vez = String((+overlay.dataset.vez || 0) + 1);
       overlay.style.opacity = '0';
       setTimeout(() => { if (overlay.style.opacity === '0') overlay.innerHTML = ''; }, 300);
       return;
@@ -916,21 +917,27 @@ const UIController = (() => {
 
     const label = MoveClassifier.LABELS[cls] || cls;
 
-    // Posicionar sobre a peça de destino
+    // Em cima da peça de destino: centralizado na casa, no alto dela (o CSS
+    // centraliza o selo nesse ponto com translate(-50%, -50%)).
     if (toSq) {
       const { x, y } = BoardUI.sqToXY(toSq);
       const sq = BoardUI.sqSize();
-      overlay.style.left   = (x + sq * 0.55) + 'px';
-      overlay.style.top    = (y + sq * 0.15) + 'px';
+      const fonte = Math.max(10, Math.min(13, sq * 0.2));
+      overlay.style.fontSize = fonte + 'px';
+      overlay.style.left   = (x + sq / 2) + 'px';
+      overlay.style.top    = Math.max(y + sq * 0.12, fonte) + 'px';
       overlay.style.right  = 'auto';
-      overlay.style.gap    = '8px';
     }
 
     // Força reanimação recriando o conteúdo
     overlay.innerHTML = '';
     overlay.style.opacity = '0';
 
+    // Só o selo do último lance pedido aparece (navegar rápido pedia vários).
+    const vez = overlay.dataset.vez = String((+overlay.dataset.vez || 0) + 1);
     requestAnimationFrame(() => {
+      if (overlay.dataset.vez !== vez) return;
+      overlay.innerHTML = '';
       const labelEl = document.createElement('span');
       labelEl.className = `cls-label ${cls}`;
       labelEl.textContent = label;
