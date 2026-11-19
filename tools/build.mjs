@@ -221,7 +221,7 @@ const head = ({ titulo, descricao, url, tipo, ld }) => `<!doctype html>
 <meta name="author" content="Rampini">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="${url}">
-<meta property="og:type" content="${tipo}">
+<meta property="og:type" content="${tipo}"><meta property="og:image" content="https://gambyte.com.br/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Gambyte: análise de partidas de xadrez grátis, em português"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://gambyte.com.br/og-image.png">
 <meta property="og:title" content="${esc(titulo)} | Gambyte">
 <meta property="og:description" content="${esc(descricao)}">
 <meta property="og:url" content="${url}">
