@@ -73,7 +73,9 @@ export async function sincronizar(customerId: string) {
   const mudanca: Record<string, unknown> = {
     stripe_subscription_id: sub.id,
     stripe_status: sub.status,
-    cancelado_em: sub.cancel_at_period_end || sub.status === "canceled"
+    // Cancelada: na hora (status canceled) ou marcada para terminar no fim
+    // do período (cancel_at_period_end, ou cancel_at nas versões novas da API).
+    cancelado_em: sub.cancel_at_period_end || sub.cancel_at || sub.status === "canceled"
       ? new Date(((sub.canceled_at ?? Math.floor(agora / 1000)) as number) * 1000).toISOString()
       : null,
   };
