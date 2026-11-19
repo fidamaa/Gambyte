@@ -176,6 +176,7 @@ const AnalysisEngine = (() => {
    */
   async function analyze(parsedGame) {
     aborted = false;
+    StockfishManager.descartarFundo();
     StockfishManager.segurarTroca(false);
     const run = ++runSeq;
     const dead = () => aborted || run !== runSeq;
@@ -202,24 +203,32 @@ const AnalysisEngine = (() => {
     // Positional cache: fen -> analysis result
     const cache = new Map();
 
-    async function getAnalysis(fen, depth) {
+    // O cache guarda a PROMESSA da busca: assim as posições de uma passada
+    // podem ser adiantadas para a fila de uma vez (vários motores trabalham
+    // em paralelo) e o laço só espera cada uma na sua vez.
+    function getAnalysis(fen, depth, fundo = false) {
       const key = `${fen}@${depth}`;
       if (cache.has(key)) return cache.get(key);
       const mt = MOVETIME_POR_PROF[depth] || 0;
-      const result = await StockfishManager.analyzePosition(fen, depth, MULTIPV, [], null, mt ? { movetime: mt } : {});
-      cache.set(key, result);
-      return result;
+      const p = StockfishManager.analyzePosition(fen, depth, MULTIPV, [], null,
+        mt ? { movetime: mt, travaAuto: true, fundo } : { fundo });
+      cache.set(key, p);
+      return p;
+    }
+    // Adianta para a fila todas as posições dos lances indicados.
+    function adiantar(indices, depth) {
+      for (const i of indices) { getAnalysis(fensBefore[i], depth, true); getAnalysis(fensAfter[i], depth, true); }
     }
 
     // Busca da passada final da Análise Profunda: 1 linha, trava de tempo
     // e atualização ao vivo da profundidade alcançada.
-    async function getDeepAnalysis(fen, depth, onLive) {
+    function getDeepAnalysis(fen, depth, onLive) {
       const key = `${fen}@${depth}#deep`;
       if (cache.has(key)) return cache.get(key);
-      const result = await StockfishManager.analyzePosition(fen, depth, DEEP_MULTIPV, [],
+      const p = StockfishManager.analyzePosition(fen, depth, DEEP_MULTIPV, [],
         onLive ? (u => onLive(u.depth)) : null, { movetime: DEEP_MOVETIME });
-      cache.set(key, result);
-      return result;
+      cache.set(key, p);
+      return p;
     }
 
     // Set up book tracker usando o índice de POSIÇÕES do OpeningDetector
@@ -241,6 +250,7 @@ const AnalysisEngine = (() => {
     if (onProgress) onProgress({ phase: 1, done: 0, total, depth: PHASE1_DEPTH });
 
     let brilliantsUsed = 0;
+    adiantar([...Array(total).keys()], PHASE1_DEPTH);
 
     for (let i = 0; i < total; i++) {
       if (dead()) return;
@@ -262,7 +272,7 @@ const AnalysisEngine = (() => {
         ));
       movesData[i].isCheckmate = isCheckmateMove;
 
-      // Analyze before and after positions — sequencial (worker single-threaded)
+      // Posições antes e depois (já adiantadas para a fila acima)
       const beforeResult = await getAnalysis(fenBefore, PHASE1_DEPTH);
       const afterResult  = await getAnalysis(fenAfter,  PHASE1_DEPTH);
       if (dead()) return;
@@ -409,6 +419,7 @@ const AnalysisEngine = (() => {
       const passInfo = { pass, passCount: PHASE2_DEPTHS.length, passStart: Date.now(), deep };
 
       if (onProgress) onProgress({ phase: 2, done: 0, total: toRefine.length, depth, ...passInfo });
+      if (!deep) adiantar(toRefine.map(c => c.index), depth);
 
       for (let ci = 0; ci < toRefine.length; ci++) {
         if (dead()) return;
@@ -439,7 +450,7 @@ const AnalysisEngine = (() => {
         if (dead()) return;
         // Na passada profunda, as 3 linhas (lance único, peça pendurada)
         // vêm da passada anterior, que ainda usou MultiPV 3.
-        const aResLines = deep ? (cache.get(`${fenAfter}@${prevDepth}`) || aRes) : aRes;
+        const aResLines = deep ? ((await cache.get(`${fenAfter}@${prevDepth}`)) || aRes) : aRes;
         m.depthReached = Math.min(bRes.reachedDepth ?? depth, aRes.reachedDepth ?? depth);
         if (deep) m._deepRefined = true;
 

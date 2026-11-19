@@ -18,12 +18,18 @@ const App = (() => {
     const lite = box.querySelector('[data-motor="lite"]'), full = box.querySelector('[data-motor="full"]');
     const por = (el, estado, txt) => { el.dataset.estado = estado; el.querySelector('.motor-txt').textContent = txt; };
     const k = info && info.kind;
+    const juntos = info && info.motores > 1 ? ` (${info.motores} ao mesmo tempo)` : '';
     if (!k) por(lite, 'carregando', 'Carregando o motor rápido (7 MB)…');
-    else if (k === 'lite') por(lite, 'ativo', 'Motor rápido pronto: já dá para analisar');
+    else if (k === 'lite') por(lite, 'ativo', 'Motor rápido pronto: já dá para analisar' + juntos);
     else por(lite, 'pronto', 'Motor rápido carregado');
-    if (k === 'full') por(full, 'ativo', 'Motor completo em uso: avaliações ainda melhores');
+    if (k === 'full') por(full, 'ativo', 'Motor completo em uso: avaliações ainda melhores' + juntos);
     else if (info && info.esperando) por(full, 'pronto', 'Motor completo pronto: entra na próxima análise');
-    else if (info && info.carregandoCompleto) por(full, 'carregando', 'Motor completo carregando (108 MB). Entra sozinho quando terminar');
+    else if (info && info.carregandoCompleto) {
+      const p = info.progresso;
+      por(full, 'carregando', info.doAparelho ? 'Motor completo: abrindo o que já está salvo no aparelho…'
+        : p != null && p < 100 ? `Motor completo baixando: ${p}% de 108 MB. Entra sozinho quando terminar`
+        : 'Motor completo carregando (108 MB). Entra sozinho quando terminar');
+    }
     else if (info && info.falhou) por(full, 'off', 'Motor completo não carregou. A análise segue com o rápido');
     else por(full, 'off', 'Motor completo: aguardando');
   }
