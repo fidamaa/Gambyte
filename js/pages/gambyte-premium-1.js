@@ -5,11 +5,7 @@
    Esta página nunca ativa o Pro: ela só abre a cobrança e reage quando o
    perfil é atualizado no servidor. */
 
-const NUBANK_URL = 'https://nubank.com.br/cobrar/54sp2d/6ad303d5-0da2-4794-b326-64203c26e6c9';
-const WHATS_URL  = 'https://wa.me/5521986996374?text=';
-// Assinatura por cartão (Stripe). Fica escondida até o Stripe estar
-// configurado no Supabase (chaves, preço e webhook): aí basta trocar para true.
-const CARTAO_LIGADO = true;
+// Pagamento: só assinatura no cartão, pelo Stripe.
 const comCartao = sess => !!(sess && ['active', 'trialing', 'past_due'].includes(sess.assinaturaCartao));
 
 /* ── UI ── */
@@ -48,15 +44,6 @@ function showPaymentStep(sess, titulo) {
   showStep('step-payment');
   document.getElementById('modal-title-text').textContent = titulo || 'Assinar o Gambyte Pro';
   showPayErr('');
-  // Mostra o e-mail da conta e já deixa a mensagem do WhatsApp preenchida com ele.
-  const email = (sess && sess.email) || '';
-  document.getElementById('pay-email').textContent = email || '—';
-  const cartao = document.getElementById('pay-cartao');
-  if (cartao) cartao.hidden = !CARTAO_LIGADO;
-  const periodo = document.getElementById('pay-periodo');
-  if (periodo) periodo.textContent = CARTAO_LIGADO ? 'Cartão: todo mês · Pix: um mês' : 'Um mês, sem renovação automática';
-  document.getElementById('whats-link').href = WHATS_URL +
-    encodeURIComponent(`Olá! Fiz o Pix do Gambyte Pro. O e-mail da minha conta é: ${email}`);
 }
 
 function openCheckout() {
@@ -76,7 +63,6 @@ function openCheckout() {
       : cartao
         ? `Assinatura no cartão ativa. Próxima renovação em ${dataVencimento(sess)}.`
         : `Acesso liberado até ${dataVencimento(sess)} (${dias === 0 ? 'último dia' : dias === 1 ? 'falta 1 dia' : 'faltam ' + dias + ' dias'}). Não há cobrança automática.`;
-    document.getElementById('already-acoes').hidden = cartao;
     document.getElementById('already-portal').hidden = !(sess.assinaturaCartao);
     showStep('step-already-premium');
   } else {
@@ -104,14 +90,6 @@ async function abrirCartao(qual) {
   if (!r.ok) { showPayErr(r.msg); showToast(r.msg, 'error'); }
 }
 
-// Abre somente a cobrança oficial fornecida pelo titular; não confirma pagamento.
-function doPayment() {
-  const session = AuthSystem.currentSession();
-  if (!session) { showStep('step-auth-check'); return; }
-  window.open(NUBANK_URL, '_blank', 'noopener,noreferrer');
-  showPayErr('');
-  showToast('Cobrança aberta em outra aba. Depois de pagar, avise pelo WhatsApp.', 'success');
-}
 
 function showPayErr(msg) {
   const el = document.getElementById('payment-error');
@@ -140,11 +118,11 @@ function renderUserBar(sess) {
     status.textContent = dias == null
       ? 'Seu Gambyte Pro está ativo.'
       : acabando
-        ? comCartao(sess) ? `Seu Gambyte Pro renova em ${dataVencimento(sess)}.` : `Seu Gambyte Pro termina em ${dataVencimento(sess)} (${dias === 0 ? 'hoje' : dias === 1 ? 'falta 1 dia' : 'faltam ' + dias + ' dias'}). Para continuar depois dessa data, faça um novo Pix e avise pelo WhatsApp.`
+        ? comCartao(sess) ? `Seu Gambyte Pro renova em ${dataVencimento(sess)}.` : `Seu Gambyte Pro termina em ${dataVencimento(sess)} (${dias === 0 ? 'hoje' : dias === 1 ? 'falta 1 dia' : 'faltam ' + dias + ' dias'}). Para continuar depois dessa data, assine com cartão.`
         : comCartao(sess)
           ? `Seu Gambyte Pro está ativo no cartão. Próxima renovação em ${dataVencimento(sess)}.`
           : `Seu Gambyte Pro está ativo até ${dataVencimento(sess)}. Não há cobrança automática.`;
-    cta.textContent = acabando && !comCartao(sess) ? 'Pagar mais um mês' : 'Ver minha assinatura';
+    cta.textContent = 'Ver minha assinatura';
   } else {
     status.hidden = true;
     cta.textContent = 'Assinar por R$ 9,90';

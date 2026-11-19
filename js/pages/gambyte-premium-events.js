@@ -12,9 +12,7 @@ document.addEventListener('click', event => {
     case 'assinar': openCheckout(); break;
     case 'fechar':  closeCheckout(); break;
     case 'login':   goToLogin(); break;
-    case 'pagar':   doPayment(); break;
     case 'cartao':  abrirCartao('checkout'); break;
     case 'portal':  abrirCartao('portal'); break;
-    case 'renovar': showPaymentStep(AuthSystem.currentSession(), 'Pagar mais um mês'); break;
   }
 });

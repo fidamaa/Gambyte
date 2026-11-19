@@ -41,6 +41,11 @@ Deno.serve(async (req: Request) => {
     return json({ url: sessao.url });
   } catch (err) {
     console.error("[stripe-checkout] Erro:", err);
-    return json({ error: "Não consegui abrir o pagamento agora. Tente de novo em instantes." }, 500);
+    // Erros do Stripe trazem um código que ajuda a achar o problema
+    // (a chave aparece mascarada pelo próprio Stripe).
+    // deno-lint-ignore no-explicit-any
+    const e = err as any;
+    const detalhe = e?.type?.startsWith?.("Stripe") ? ` (Stripe: ${e.code || e.type}${e.message ? " — " + String(e.message).slice(0, 220) : ""})` : "";
+    return json({ error: "Não consegui abrir o pagamento agora." + detalhe }, 500);
   }
 });
