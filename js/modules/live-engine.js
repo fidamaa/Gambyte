@@ -22,6 +22,13 @@ const LiveEngine = (() => {
   const cache = new Map();    // fen → { cp, pv, depth }  (cp do ponto de vista de quem joga)
   const CACHE_MAX = 400;
 
+  // Posição inicial já calculada (Stockfish 18, profundidade 22), para o
+  // site abrir com a avaliação e a seta na hora, sem esperar o motor.
+  cache.set('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', {
+    cp: 37, depth: 22,
+    pv: 'd2d4 g8f6 c2c4 e7e6 g2g3 d7d5 f1g2 d5c4 g1f3 c7c5 e1g1 b8c6 d1a4 c5d4 f3d4 d8d4 g2c6 c8d7 f1d1 d7c6 a4c6 b7c6 d1d4'.split(' '),
+  });
+
   let token = 0;
   let timer = null;
   let modo = { arrow: true, evalBar: true };
