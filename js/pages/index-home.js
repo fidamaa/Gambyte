@@ -45,7 +45,23 @@
     ProTools.init();
     GameHistory.init();
     GameImport.init();
-    const pedido = new URLSearchParams(location.search).get('exemplo');
+    // Partida que veio do "Jogar contra o bot": abre e já analisa.
+    const params = new URLSearchParams(location.search);
+    if (params.get('analisar') === 'bot') {
+      let pgn = null;
+      try { pgn = sessionStorage.getItem('gambyte_pgn_analisar'); sessionStorage.removeItem('gambyte_pgn_analisar'); } catch (e) { /* sem armazenamento */ }
+      try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* ok */ }
+      if (pgn && campo) {
+        campo.value = pgn;
+        GameImport.mostrarAba('pgn');
+        AuthUI.showToast('Analisando a sua partida contra o bot. Acompanhe no tabuleiro.', 'success');
+        if (typeof App !== 'undefined' && App.run) App.run();
+        else document.getElementById('btn-analyze')?.click();
+        document.getElementById('board-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+    }
+    const pedido = params.get('exemplo');
     if (pedido && ids.includes(pedido)) {
       proximo = ids.indexOf(pedido) + 1;
       if (carregar(pedido, true)) { GameImport.mostrarAba('pgn'); campo.scrollIntoView({ block: 'center' }); }

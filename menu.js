@@ -6,6 +6,7 @@
 (function () {
   const IC = {
     analisar: '<path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/>',
+    jogar: '<circle cx="12" cy="5.5" r="2.5"/><path d="M10 8.5c-.4 2.8-1.4 5.3-3 7.5h10c-1.6-2.2-2.6-4.7-3-7.5"/><path d="M5 20h14"/><path d="M7 16.5 6 20M17 16.5l1 3.5"/>',
     aprender: '<path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/>',
     'como-usar': '<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
     guia: '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14"/><path d="M15 6v14"/>',
@@ -22,6 +23,7 @@
   const svg = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]}</svg>`;
   const PAGINAS = [
     { id: 'analisar', href: '/', nome: 'Analisar partida', aba: 'Analisar' },
+    { id: 'jogar', href: '/jogar', nome: 'Jogar contra o bot', aba: 'Jogar' },
     { id: 'aprender', href: '/aprender/', nome: 'Aprender xadrez', aba: 'Aprender' },
     { id: 'como-usar', href: '/como-usar', nome: 'Como usar', aba: 'Como usar', mais: true },
     { id: 'guia', href: '/guia', nome: 'Guia de análise', aba: 'Guia' },
@@ -343,6 +345,14 @@
     // Páginas de artigo: "Aprender" fica marcado como atual.
     if (!links.querySelector('[aria-current]') && atual) {
       for (const a of links.querySelectorAll(':scope > a')) if (idDe(new URL(a.href, location.href).pathname) === atual) { a.setAttribute('aria-current', 'page'); break; }
+    }
+    // "Jogar contra o bot" logo depois de "Analisar partida", em todas as páginas.
+    if (!links.querySelector('a[href="/jogar"],a[href="jogar"],a[href="../jogar"]')) {
+      const primeiro = links.querySelector(':scope > a');
+      const a = document.createElement('a');
+      a.href = '/jogar'; a.innerHTML = 'Jogar<span class="nav-longo"> contra o bot</span>';
+      if (atual === 'jogar') a.setAttribute('aria-current', 'page');
+      if (primeiro) primeiro.after(a); else links.prepend(a);
     }
     links.addEventListener('click', noTopoSeForAqui);
     montarMais(links);

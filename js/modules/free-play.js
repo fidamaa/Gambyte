@@ -617,7 +617,9 @@ const FreePlay = (() => {
   // Livre (por padrão, currentFEN — a ponta atual). Aceita outro FEN para
   // reclassificar um lance específico de forma correta mesmo que o
   // ponteiro já tenha avançado (ver _classifyMove).
-  function _computeGameStatus(fen) {
+  // lista (opcional): as posições da partida até a analisada, para contar
+  // as repetições fora do Modo Livre (Jogar contra o bot).
+  function _computeGameStatus(fen, lista) {
     const targetFEN = fen || currentFEN;
     const state = PGNParser.fenToBoard(targetFEN);
     if (!state) return null;
@@ -635,7 +637,7 @@ const FreePlay = (() => {
     const sig = _posSignature(targetFEN);
     let count = 0;
     // Só as posições até a mostrada (as de depois, numa linha revista, não contam).
-    for (const f of (fen ? fens : fens.slice(0, idx + 2))) if (_posSignature(f) === sig) count++;
+    for (const f of (lista || (fen ? fens : fens.slice(0, idx + 2)))) if (_posSignature(f) === sig) count++;
     if (count >= 3) return { type: 'repetition' };
 
     return null;
@@ -761,7 +763,23 @@ const FreePlay = (() => {
     _redraw(null, null, false);
   }
 
+  // Regras puras, sem o estado do Modo Livre (usadas no Jogar contra o bot):
+  // lances legais, casas de destino de uma peça e fim de jogo de um FEN.
+  const regras = {
+    lancesLegais(fen) { const st = PGNParser.fenToBoard(fen); return st ? _lancesLegais(st) : []; },
+    alvos(fen, sq) {
+      const st = PGNParser.fenToBoard(fen);
+      if (!st || !_ehDaVez(_pieceAt(st.board, sq), st.turn)) return [];
+      return _filterKingTargets(_getLegalTargets(sq, st, st.turn === 'w'), sq, st);
+    },
+    // historico: FENs da partida até esta posição (inclusive), para a repetição.
+    status(fen, historico) { return _computeGameStatus(fen, historico || [fen]); },
+    assinatura: _posSignature,
+    rotulo(st) { return st ? GAME_STATUS_LABELS[st.type](st.winner) : ''; }
+  };
+
   return {
+    regras,
     start, stop, pause, resume, hasTree, isActive,
     isMovable, select, deselect, getSelection, pieceAt, tryMove, resolveTarget, lineLength: () => sans.length,
     handleClick, undoMove, exportPGN, copyPGN,

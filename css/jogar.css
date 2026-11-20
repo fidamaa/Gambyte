@@ -1,0 +1,111 @@
+/* Jogar contra o bot (jogar.html) */
+.jg{width:min(1180px,calc(100% - 40px));margin:0 auto;font-family:'Outfit',system-ui,sans-serif;color:var(--text)}
+.jg *,.jg *::before,.jg *::after{box-sizing:border-box}
+.jg-intro{padding:26px 0 18px;max-width:760px}
+.jg-intro h1{font-family:'DM Serif Display',Georgia,serif;font-weight:400;font-size:clamp(30px,4vw,42px);line-height:1.1;letter-spacing:-.5px;margin:0 0 10px}
+.jg-intro p{margin:0;font-size:16.5px;line-height:1.6;color:var(--text2)}
+body.jg-jogando .jg-intro{display:none}
+
+.jg-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,380px);gap:28px;align-items:start;padding-top:10px}
+.jg-mesa{display:flex;flex-direction:column;gap:10px;min-width:0}
+.jg-tab{display:flex;justify-content:center;padding-left:18px}
+.jg-tab .board-wrapper{box-shadow:0 18px 50px #0007;border-radius:4px}
+
+/* Faixas dos jogadores (bot em cima, você embaixo) */
+.jg-jogador{display:flex;align-items:center;gap:11px;min-height:46px;padding:0 4px 0 18px}
+.jg-av{width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2)}
+.jg-av svg{width:22px;height:22px}
+.jg-av-bot{color:var(--accent);border-color:#7a6233;background:#ecbd6e14}
+.jg-quem{display:flex;flex-direction:column;line-height:1.25;min-width:0}
+.jg-quem strong{font-weight:600;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jg-quem small{font-size:12.5px;color:var(--text2)}
+.jg-pensa{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:12.5px;color:var(--accent);padding:5px 10px;border-radius:999px;background:#ecbd6e14}
+.jg-pensa[hidden]{display:none}
+.jg-pensa span{margin-left:4px}
+.jg-pensa i{width:5px;height:5px;border-radius:50%;background:currentColor;animation:jg-pulso 1.1s infinite ease-in-out}
+.jg-pensa i:nth-child(2){animation-delay:.15s}.jg-pensa i:nth-child(3){animation-delay:.3s}
+@keyframes jg-pulso{0%,80%,100%{opacity:.25;transform:scale(.8)}40%{opacity:1;transform:none}}
+
+/* Painel */
+.jg-painel{min-width:0;position:sticky;top:16px}
+.jg-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:18px}
+.jg-card[hidden]{display:none}
+.jg-card h2{margin:0;font-family:'DM Serif Display',Georgia,serif;font-weight:400;font-size:24px}
+.jg-campo{display:flex;flex-direction:column;gap:9px}
+.jg-rot{font-size:12.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--text2);font-weight:600}
+.jg-niveis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.jg-niveis button,.jg-cores button{font:inherit;color:var(--text);background:var(--bg3);border:1px solid var(--border2);border-radius:11px;cursor:pointer;transition:border-color .15s,background .15s}
+.jg-niveis button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:9px 4px;min-height:54px}
+.jg-niveis b{font-family:'JetBrains Mono',monospace;font-size:15.5px;font-weight:600}
+.jg-niveis span{font-size:10.5px;color:var(--text2);line-height:1.2;text-align:center}
+.jg-niveis button:hover,.jg-cores button:hover{border-color:var(--text3)}
+.jg-niveis button[aria-checked="true"],.jg-cores button[aria-checked="true"]{border-color:var(--accent);background:#ecbd6e1c;box-shadow:inset 0 0 0 1px var(--accent)}
+.jg-niveis button[aria-checked="true"] b{color:var(--accent)}
+.jg-niveis button:focus-visible,.jg-cores button:focus-visible,.jg-acoes button:focus-visible,.jg-fim button:focus-visible{outline:2px solid #f6d391;outline-offset:2px}
+.jg-desc{margin:2px 0 0;font-size:14px;line-height:1.5;color:var(--text2);min-height:42px}
+.jg-cores{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.jg-cores button{display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 6px;min-height:46px;font-size:14.5px}
+.jg-peca{width:16px;height:16px;border-radius:50%;flex:none;border:1px solid #0006}
+.jg-peca-w{background:#f2efe6}
+.jg-peca-b{background:#20242e;border-color:#8890a8}
+.jg-peca-x{background:linear-gradient(90deg,#f2efe6 50%,#20242e 50%);border-color:#8890a8}
+.jg-comecar{min-height:50px;font-size:16.5px;border-radius:12px;cursor:pointer;font-family:inherit}
+.jg-motor{margin:-6px 0 0;font-size:12.5px;color:var(--text3);text-align:center}
+
+.jg-status{margin:0;font-size:17px;font-weight:600;display:flex;align-items:center;gap:9px}
+.jg-status::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--green);flex:none}
+.jg-status[data-estado="bot"]::before{background:var(--accent)}
+.jg-status[data-estado="fim"]::before{background:var(--text3)}
+.jg-lances-caixa{display:flex;flex-direction:column;gap:8px}
+.jg-lances{list-style:none;margin:0;padding:6px;max-height:300px;min-height:120px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:14px}
+.jg-lances li{display:grid;grid-template-columns:38px 1fr 1fr;gap:4px;padding:4px 6px;border-radius:6px}
+.jg-lances li:nth-child(odd){background:#ffffff05}
+.jg-lances li:last-child span:last-child:not(:empty),.jg-lances li:last-child:has(span:last-child:empty) span:nth-child(2){color:var(--accent)}
+.jg-n{color:var(--text3)}
+.jg-lances .jg-vazio{display:block;font-family:'Outfit',sans-serif;color:var(--text3);padding:10px}
+.jg-acoes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.jg-acoes[hidden]{display:none}
+.jg-acoes .btn-board{flex-direction:column;justify-content:center;gap:4px;min-height:60px;padding:8px 4px;font-size:13px;line-height:1.2;text-align:center;border-color:var(--border2);background:var(--bg3)}
+.jg-acoes .btn-board-icon{width:19px;height:19px}
+.jg-desistir.confirmar{background:#e05c5c22;border-color:var(--red);color:#ffb3b3}
+
+/* Fim da partida */
+.jg-fim{display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:13px;border:1px solid #7a6233;background:linear-gradient(135deg,#231d13,#161b26)}
+.jg-fim[hidden]{display:none}
+.jg-fim>strong{font-family:'DM Serif Display',Georgia,serif;font-weight:400;font-size:27px;line-height:1.1;color:var(--gold-1,#f4cc80)}
+.jg-fim[data-resultado="derrota"]>strong{color:var(--text)}
+.jg-fim>span{color:var(--text2);font-size:14.5px;margin-top:-4px}
+.jg-fim .btn-primary{min-height:48px;font-size:16px;border-radius:12px;cursor:pointer;font-family:inherit;margin-top:4px}
+.jg-fim-mais{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.jg-fim-mais .btn-secondary{min-height:42px;font-size:13.5px;border-radius:10px;cursor:pointer;font-family:inherit;padding:8px 6px}
+
+.jg-sobre{margin-top:48px}
+.jg-sobre h2{margin-top:30px}
+.jg-sobre h2:first-child{margin-top:0}
+
+@media(max-width:900px){
+  .jg-layout{grid-template-columns:minmax(0,1fr);gap:18px}
+  .jg-painel{position:static;max-width:620px;width:100%;margin:0 auto}
+  /* Antes da partida, a escolha do nível vem primeiro; durante, o tabuleiro. */
+  body:not(.jg-jogando) .jg-painel{order:-1}
+  /* Durante a partida, os botões logo abaixo do status (a lista vem depois). */
+  .jg-acoes{order:2}
+  .jg-lances-caixa{order:3}
+}
+@media(max-width:760px){
+  .jg{width:calc(100% - 24px)}
+  .jg-intro{padding:16px 0 8px}
+  .jg-intro p{font-size:15px}
+  .jg-tab{padding-left:14px}
+  .jg-jogador{padding-left:14px;min-height:40px}
+  .jg-av{width:32px;height:32px}
+  .jg-card{padding:16px;gap:15px}
+  .jg-niveis{gap:6px}
+  .jg-niveis button{min-height:50px}
+  .jg-lances{max-height:170px;min-height:64px}
+  .board-coords-ranks{left:-13px}
+}
+@media(max-width:380px){
+  .jg-niveis span{font-size:9.5px}
+}
+@media(prefers-reduced-motion:reduce){.jg-pensa i{animation:none;opacity:.8}}

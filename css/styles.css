@@ -1621,3 +1621,16 @@ body.pos-ed-aberto{overflow:hidden}
 .motor-linha[data-estado="off"] { opacity:.65; }
 @keyframes motor-pisca { 50% { opacity:.35; } }
 @media (prefers-reduced-motion: reduce) { .motor-linha[data-estado="carregando"] .motor-ponto { animation:none; } }
+/* Entrada do "Jogar contra o bot" na página inicial */
+.btn-bot{text-decoration:none;padding-left:10px}
+.btn-bot-ico{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:#ecbd6e26;color:var(--accent);flex:none}
+.btn-bot-ico svg{width:15px;height:15px}
+.trazer-bot{display:flex;align-items:center;gap:12px;margin-top:12px;padding:12px 14px;border-radius:12px;border:1px solid #7a6233;background:linear-gradient(135deg,#ecbd6e12,#ecbd6e05);color:var(--text);text-decoration:none;transition:border-color .18s,background .18s}
+.trazer-bot:hover{border-color:var(--accent);background:#ecbd6e1a}
+.trazer-bot:focus-visible{outline:2px solid #f6d391;outline-offset:2px}
+.trazer-bot-ico{width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:10px;background:#ecbd6e1f;color:var(--accent)}
+.trazer-bot-ico svg{width:22px;height:22px}
+.trazer-bot-txt{flex:1;min-width:0;font-size:13px;line-height:1.45;color:var(--text2)}
+.trazer-bot-txt strong{display:block;font-size:14.5px;font-weight:600;color:var(--text)}
+.trazer-bot-ir{flex:none;padding:8px 14px;border-radius:9px;background:linear-gradient(135deg,var(--gold-1,#f4cc80),var(--gold-2,#d39a45));color:#1b1a14;font-weight:700;font-size:13.5px}
+@media(max-width:420px){.trazer-bot-ir{display:none}}

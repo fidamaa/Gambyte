@@ -123,6 +123,7 @@ const StockfishManager = (() => {
       const antigo = s.w;
       s.w = pendingFull.shift();
       s.kind = 'full';
+      s.elo = 0;               // motor novo começa com a força total
       _ligar(s);
       try { antigo.terminate(); } catch (e) {}
       console.log('[Stockfish] motor trocado para o completo');
@@ -214,12 +215,20 @@ const StockfishManager = (() => {
     _avisar();
   }
 
-  async function init() {
+  // opts.soRapido: só o Lite, sem baixar o completo (Jogar contra o bot: o
+  // Lite já passa do nível mais alto do bot, e jogar não gasta 108 MB).
+  async function init(opts = {}) {
     // Diagnóstico: ?motor=lite ou ?motor=full força um dos dois.
-    const forcado = param('motor');
+    const forcado = param('motor') || (opts.soRapido ? 'lite' : null);
     if (forcado === 'lite' || forcado === 'full') {
       const url = forcado === 'lite' ? LITE_FILE : FULL_FILE + '#' + encodeURIComponent(await _urlWasmCompleto());
-      for (let i = 0; i < ALVO; i++) _novoSlot(await _startWorker(url, 60000), forcado);
+      try {
+        for (let i = 0; i < ALVO; i++) _novoSlot(await _startWorker(url, 60000), forcado);
+      } catch (err) {
+        if (!opts.soRapido || slots.length) throw err;
+        console.warn('[Stockfish] Lite falhou, carregando o completo:', err.message);
+        _novoSlot(await _startWorker(FULL_FILE + '#' + encodeURIComponent(await _urlWasmCompleto()), 120000), 'full');
+      }
       return;
     }
     // Diagnóstico: ?atrasoLite=ms simula o motor rápido demorando.
@@ -361,6 +370,16 @@ const StockfishManager = (() => {
       resolve({ evals, mateNs, pvLines, bestMove, reachedDepth, cancelled: !!item.cancelled, motor: slot.kind });
     };
 
+    // Força limitada (Jogar contra o bot): vale só para a busca que pediu.
+    // A próxima busca sem elo (análise, Modo Livre) volta à força total.
+    const elo = item.elo ? Math.max(1320, Math.min(3190, Math.round(item.elo))) : 0;
+    if (elo !== (slot.elo || 0)) {
+      if (elo) {
+        slot.w.postMessage('setoption name UCI_LimitStrength value true');
+        slot.w.postMessage(`setoption name UCI_Elo value ${elo}`);
+      } else slot.w.postMessage('setoption name UCI_LimitStrength value false');
+      slot.elo = elo;
+    }
     slot.w.postMessage(`setoption name MultiPV value ${multiPV}`);
     slot.w.postMessage(`position fen ${fen}${movesSuffix}`);
     // movetime é só uma trava de segurança: o motor para na profundidade
@@ -383,7 +402,9 @@ const StockfishManager = (() => {
    *                            {bestMove, eval, mateN, depth}.
    * @param {object} opts       { movetime, travaAuto (trava pelo aparelho,
    *                            com movetime como padrão), fundo (vai para o
-   *                            fim da fila: posições adiantadas) }
+   *                            fim da fila: posições adiantadas), elo (força
+   *                            limitada só nesta busca, UCI_Elo), searchMoves
+   *                            (só estes lances são buscados) }
    */
   function analyzePosition(fen, depth, multiPV = 3, movesUCI = [], onUpdate = null, opts = {}) {
     return new Promise((resolve) => {
@@ -392,7 +413,8 @@ const StockfishManager = (() => {
         resolve({ evals: [0], mateNs: [null], pvLines: [null], bestMove: null });
         return;
       }
-      const item = { fen, depth, multiPV, movesUCI, resolve, onUpdate, movetime: opts.movetime || 0, travaAuto: !!opts.travaAuto, fundo: !!opts.fundo };
+      const item = { fen, depth, multiPV, movesUCI, resolve, onUpdate, movetime: opts.movetime || 0, travaAuto: !!opts.travaAuto, fundo: !!opts.fundo,
+                     elo: opts.elo || 0, searchMoves: opts.searchMoves || null };
       if (item.fundo) analysisQueue.push(item);
       else {
         let pos = analysisQueue.findIndex(it => it.fundo);
