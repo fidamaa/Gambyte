@@ -69,6 +69,50 @@ const BotEngine = (() => {
 
   const sortear = lista => lista[Math.floor(Math.random() * lista.length)];
 
+  // ── O mínimo de qualquer jogador ──────────────────────────────
+  // Até um 400 não leva uma peça para onde ela é capturada de graça (ou por
+  // uma peça mais barata) e não passeia com o rei. Os erros do bot são os de
+  // gente: deixar uma peça que já estava atacada, não ver o garfo ou o mate.
+  const VALOR = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 100 };
+  const pecaEm = (board, sq) => board[8 - +sq[1]][sq.charCodeAt(0) - 97];
+  const valor = pc => (pc ? VALOR[pc.toLowerCase()] : 0);
+  function ingenuo(fen, u) {
+    const st = PGNParser.fenToBoard(fen);
+    const eu = fen.split(' ')[1];
+    const de = u.slice(0, 2), para = u.slice(2, 4);
+    const peca = pecaEm(st.board, de);
+    if (!peca) return false;
+    // Rei andando à toa no meio-jogo (o roque e a captura com o rei valem;
+    // no final, com poucas peças, o rei pode e deve andar).
+    if (peca.toLowerCase() === 'k') {
+      const pecas = st.board.flat().filter(x => x && !'pPkK'.includes(x)).length;
+      return pecas > 6 && Math.abs(de.charCodeAt(0) - para.charCodeAt(0)) < 2 && !pecaEm(st.board, para);
+    }
+    const depois = PGNParser.applyMoveUCI(st, u);
+    if (!depois) return false;
+    const fenDepois = PGNParser.boardToFen(depois);
+    const movida = u.length > 4 ? (eu === 'w' ? u[4].toUpperCase() : u[4]) : peca;
+    const ganho = valor(pecaEm(st.board, para));
+    // Capturas que ganham ou trocam material ficam de fora.
+    if (ganho >= valor(movida)) return false;
+    const capturas = FreePlay.regras.lancesLegais(fenDepois).filter(m => m.slice(2, 4) === para);
+    if (!capturas.length) return false;
+    const menor = Math.min(...capturas.map(m => valor(pecaEm(depois.board, m.slice(0, 2)))));
+    if (menor < valor(movida) - ganho) return true;
+    // Atacada por peça igual ou maior: só é ruim se ninguém defende a casa.
+    const teste = PGNParser.fenToBoard(fenDepois);
+    teste.board[8 - +para[1]][para.charCodeAt(0) - 97] = eu === 'w' ? 'q' : 'Q';
+    const f = PGNParser.boardToFen(teste).split(' ');
+    f[1] = eu; f[3] = '-';
+    const defesa = FreePlay.regras.lancesLegais(f.join(' ')).some(m => m.slice(2, 4) === para);
+    return !defesa;
+  }
+  // Tira os lances ingênuos da lista (se sobrar algum).
+  function semIngenuos(fen, lista, uci = c => c.uci) {
+    const bons = lista.filter(c => !ingenuo(fen, uci(c)));
+    return bons.length ? bons : lista;
+  }
+
   // Posições da partida, lances legais e os que repetiriam posição.
   function contexto(inicio, lances) {
     const R = FreePlay.regras;
@@ -136,16 +180,18 @@ const BotEngine = (() => {
     // "Melhor" é o melhor lance do motor mesmo: com vantagem enorme todo lance
     // perde ~0 de chance de vitória, e sortear entre eles deixava o bot
     // passeando sem dar mate.
+    const fen = PGNParser.boardToFen(lances.reduce((st, u) => PGNParser.applyMoveUCI(st, u), PGNParser.fenToBoard(inicio)));
+    const limpos = l => l.filter(c => !ingenuo(fen, c.uci));
     if (tipo === 'melhor') escolha = cands[0];
-    else if (naFaixa(cands).length) escolha = sortear(naFaixa(cands));
+    else if (limpos(naFaixa(cands)).length) escolha = sortear(limpos(naFaixa(cands)));
     else if (tipo === 'gafe' || tipo === 'erro') {
       // Nenhuma das linhas é ruim o bastante: avalia todos os outros lances
       // (busca rasa, uma linha por lance) e escolhe um da faixa sorteada.
-      const outros = permitidos.filter(u => !cands.some(c => c.uci === u));
+      const outros = permitidos.filter(u => !cands.some(c => c.uci === u) && !ingenuo(fen, u));
       if (outros.length) {
         const res2 = await StockfishManager.analyzePosition(inicio, p.depthErro || 4, Math.min(60, outros.length), lances, null,
           { movetime: 1500, searchMoves: outros });
-        const todos = linhas(res2, outros).map(perda).concat(cands);
+        const todos = limpos(linhas(res2, outros).map(perda).concat(cands));
         const bons = naFaixa(todos);
         if (bons.length) escolha = sortear(bons);
         else {
@@ -160,7 +206,7 @@ const BotEngine = (() => {
     if (!escolha) {
       // A faixa sorteada não existe nesta posição: fica com a linha mais
       // próxima dela por baixo (a pior das que perdem menos que o limite).
-      const abaixo = cands.filter(c => c.perda < hi);
+      const abaixo = limpos(cands).filter(c => c.perda < hi);
       escolha = abaixo.reduce((a, b) => (b.perda > a.perda ? b : a), abaixo[0] || cands[0]);
     }
     return { uci: escolha.uci, melhor, tipo, perda: escolha.perda };
@@ -176,7 +222,7 @@ const BotEngine = (() => {
     const st = PGNParser.fenToBoard(ctx.fen);
     const eu = ctx.fen.split(' ')[1];
     const notas = [];
-    for (const u of permitidos) {
+    for (const u of semIngenuos(ctx.fen, permitidos, u => u)) {
       const depois = PGNParser.applyMoveUCI(st, u);
       if (!depois) continue;
       const fen = PGNParser.boardToFen(depois).split(' ');
@@ -239,5 +285,5 @@ const BotEngine = (() => {
     return vez === cor ? cp : -cp;
   }
 
-  return { NIVEIS, escolher, avaliar, contexto, ajustar, perfil };
+  return { NIVEIS, escolher, avaliar, contexto, ajustar, perfil, ingenuo };
 })();
