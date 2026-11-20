@@ -1,6 +1,6 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Jogar xadrez contra o bot, do 400 ao 2500 | Gambyte</title><meta name="description" content="Jogue xadrez contra o bot do Gambyte, de graça e sem cadastro: escolha o nível (400 a 2500+) e a cor, e no fim analise a partida com o Stockfish 18."><meta name="author" content="Rampini"><meta name="robots" content="index,follow"><link rel="canonical" href="https://gambyte.com.br/jogar"><meta property="og:type" content="website"><meta property="og:image" content="https://gambyte.com.br/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Gambyte: jogue contra o bot e analise a partida"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://gambyte.com.br/og-image.png"><meta property="og:title" content="Jogar xadrez contra o bot, do 400 ao 2500 | Gambyte"><meta property="og:description" content="Escolha o nível e a cor, jogue no tabuleiro e depois analise a partida com o Stockfish 18."><meta property="og:url" content="https://gambyte.com.br/jogar"><meta property="og:locale" content="pt_BR">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=25"><link rel="stylesheet" href="site-info.css?v=9"><link rel="stylesheet" href="css/jogar.css?v=1">
+<link rel="stylesheet" href="css/styles.css?v=25"><link rel="stylesheet" href="site-info.css?v=9"><link rel="stylesheet" href="css/jogar.css?v=2">
 <link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0d0f14"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="Gambyte"><link rel="icon" href="favicon.ico" sizes="48x48"><link rel="icon" href="logo.png" type="image/png" sizes="192x192"><script src="/menu.js" defer></script>
 <meta name="google-adsense-account" content="ca-pub-7858747311725137"><script src="/js/anuncios.js"></script><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7858747311725137" crossorigin="anonymous"></script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "Jogar contra o bot do Gambyte", "url": "https://gambyte.com.br/jogar", "applicationCategory": "GameApplication", "operatingSystem": "Web", "inLanguage": "pt-BR", "description": "Xadrez contra o computador no navegador, em sete níveis (400 a 2500+), com análise da partida pelo Stockfish 18 no final.", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "BRL"}}</script>
@@ -17,7 +17,7 @@
   <div class="jg-layout">
     <section class="jg-mesa" aria-label="Tabuleiro">
       <div class="jg-jogador" id="jg-topo">
-        <span class="jg-av jg-av-bot" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 4v4"/><circle cx="12" cy="3.5" r="1"/><circle cx="9" cy="13" r="1.3"/><circle cx="15" cy="13" r="1.3"/><path d="M2 12v3M22 12v3"/></svg></span>
+        <span class="jg-av jg-av-bot" aria-hidden="true"><img src="logo.png" alt="" width="26" height="26"></span>
         <span class="jg-quem"><strong id="jg-nome-bot">Bot do Gambyte</strong><small id="jg-nivel-bot">Escolha o nível e a cor</small></span>
         <span class="jg-pensa" id="jg-pensa" hidden><i></i><i></i><i></i><span>pensando</span></span>
       </div>
@@ -71,13 +71,22 @@
           <span id="jg-fim-motivo"></span>
           <button type="button" class="btn-primary" id="jg-analisar">Analisar esta partida</button>
           <div class="jg-fim-mais">
+            <button type="button" class="btn-secondary" id="jg-fim-voltar" title="Desfaz o último lance e a partida continua">Voltar lance</button>
             <button type="button" class="btn-secondary" id="jg-revanche">Jogar de novo</button>
             <button type="button" class="btn-secondary" id="jg-mudar">Mudar nível ou cor</button>
           </div>
         </div>
         <p class="jg-status" id="jg-status" role="status" aria-live="polite">Sua vez</p>
         <div class="jg-lances-caixa">
-          <span class="jg-rot">Lances</span>
+          <div class="jg-lances-topo">
+            <span class="jg-rot">Lances</span>
+            <div class="jg-nav" role="group" aria-label="Rever a partida">
+              <button type="button" id="jg-ini" aria-label="Início da partida" title="Início"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 18-6-6 6-6"/><path d="M7 6v12"/></svg></button>
+              <button type="button" id="jg-ant" aria-label="Lance anterior" title="Lance anterior (seta para a esquerda)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+              <button type="button" id="jg-prox" aria-label="Próximo lance" title="Próximo lance (seta para a direita)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+              <button type="button" id="jg-ult" aria-label="Posição atual" title="Posição atual"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 18 6-6-6-6"/><path d="M17 6v12"/></svg></button>
+            </div>
+          </div>
           <ol class="jg-lances" id="jg-lances"></ol>
         </div>
         <div class="jg-acoes" id="jg-acoes">
@@ -93,14 +102,15 @@
     <h2 id="jg-como">Como o bot joga em cada nível</h2>
     <p>O bot usa o mesmo motor da análise, o Stockfish 18, rodando no seu aparelho. O que muda de um nível para outro é quanto ele erra, e o jeito de errar foi pensado para parecer o de uma pessoa daquele nível, não o de um computador que sorteia lances.</p>
     <div class="info-grid">
-      <div><h3>400 a 1200</h3><p>Como os bots dos grandes sites, o bot joga bem a maior parte dos lances e, de vez em quando, erra: uma imprecisão aqui, um peão perdido ali, às vezes uma peça entregue, até quando está ganhando. Quanto mais baixo o nível, mais erros por partida, mas nunca em todo lance. Bom para treinar a punir peças soltas e terminar a partida.</p></div><div><h3>1500 a 2200</h3><p>Aqui o próprio Stockfish joga com a força limitada pelo nível escolhido. Os erros ficam mais raros e mais sutis: posições que pioram aos poucos, em vez de peças entregues. Para ganhar, é preciso plano e cálculo.</p></div>
+      <div><h3>400 a 1200</h3><p>Como os bots dos grandes sites, o bot joga bem a maior parte dos lances e, de vez em quando, erra: uma imprecisão aqui, um peão perdido ali, às vezes uma peça entregue, até quando está ganhando. Quanto mais baixo o nível, mais erros por partida, mas nunca em todo lance. O 400 também enxerga pouco: muitas vezes nem olha a sua ameaça e deixa passar até um mate. Bom para treinar a punir peças soltas e terminar a partida.</p></div><div><h3>1500 a 2200</h3><p>Aqui o próprio Stockfish joga com a força limitada pelo nível escolhido. Os erros ficam mais raros e mais sutis: posições que pioram aos poucos, em vez de peças entregues. Para ganhar, é preciso plano e cálculo.</p></div>
       <div><h3>2500+</h3><p>O motor sem limite de força, com pouco tempo por lance. Ganhar é muito difícil; o objetivo realista é sobreviver à abertura, defender bem e chegar a um final.</p></div>
     </div>
     <h2>Depois da partida</h2>
     <p>Ao terminar, toque em <strong>Analisar esta partida</strong>. A partida abre no analisador já com os nomes, o resultado e o nível do bot, e você vê a precisão de cada lado, o gráfico de vantagem e onde o jogo virou. Uma boa rotina é anotar o primeiro lance em que a avaliação caiu e refazer a posição sem o motor antes de olhar a resposta. O <a href="aprender/como-estudar-suas-partidas">método de estudo em cinco etapas</a> mostra como.</p>
     <h2>Perguntas rápidas</h2>
     <div class="home-faq">
-      <details><summary>Posso desfazer um lance?</summary><p>Pode. O botão Voltar lance desfaz o seu último lance e a resposta do bot. É uma partida de treino, então use à vontade para testar ideias.</p></details>
+      <details><summary>Posso desfazer um lance?</summary><p>Pode. O botão Voltar lance desfaz o seu último lance e a resposta do bot, até depois do fim da partida (levou mate, desistiu): a partida continua de onde parou. Para só rever a partida, use as setas acima da lista de lances, as setas do teclado ou toque num lance da lista.</p></details>
+      <details><summary>Dá para fazer pré-lance?</summary><p>Dá. Enquanto o bot pensa, arraste ou toque na sua peça e na casa de destino: as casas ficam marcadas em vermelho e o lance sai assim que o bot jogar, se ainda for legal. Para desmarcar, toque numa casa vazia ou use o botão direito do mouse.</p></details>
       <details><summary>O bot aceita empate?</summary><p>Aceita quando a posição está igual ou pior para ele. Se ele estiver na frente, recusa e a partida continua. Empates pelas regras (afogamento, repetição tripla, regra dos 50 lances e material insuficiente) acontecem sozinhos.</p></details>
       <details><summary>Preciso de internet para jogar?</summary><p>Só para abrir a página. O motor (7 MB) roda no seu aparelho, então a partida não depende de servidor e nenhum lance seu é enviado a lugar nenhum.</p></details>
       <details><summary>O nível é igual ao rating do Chess.com ou do Lichess?</summary><p>É uma referência aproximada. Os níveis foram ajustados pela própria análise do Gambyte, jogando bot contra bot, para que a precisão e o nível estimado das partidas do bot fiquem perto do número escolhido.</p></details>

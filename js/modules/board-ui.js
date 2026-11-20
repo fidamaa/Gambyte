@@ -51,6 +51,7 @@ const BoardUI = (() => {
     hlSelect: 'rgba(20,110,50,0.50)',
     dot:      'rgba(0,0,0,0.18)',   // legal move dot (casa vazia)
     capture:  'rgba(220,55,55,0.55)', // casa de captura — destaque vermelho, não mais ponto
+    premove:  'rgba(200,60,60,0.55)', // pré-lance (Jogar contra o bot)
   };
 
   let canvas   = null;
@@ -67,6 +68,8 @@ const BoardUI = (() => {
   // ponteiro, ver ui-controller) e a casa sob o ponteiro ganha contorno.
   let _dragSq  = null;
   let _hoverSq = null;
+  // Pré-lance marcado (casas de origem e destino), por cima dos destaques.
+  let _preSqs = [];
 
 
   function init(canvasEl, boardSize) {
@@ -170,6 +173,12 @@ const BoardUI = (() => {
         ctx.fillStyle = color;
         ctx.fillRect(x, y, sqSize, sqSize);
       }
+    }
+
+    for (const sq of _preSqs) {
+      const { x, y } = sqToCanvas(sq);
+      ctx.fillStyle = THEME.premove;
+      ctx.fillRect(x, y, sqSize, sqSize);
     }
 
     // Casas marcadas com o botão direito (por baixo das peças)
@@ -464,10 +473,11 @@ const BoardUI = (() => {
     ArrowSystem.redraw();
   }
 
+  function setPremove(sqs) { _preSqs = sqs || []; }
   function setDrag(sq)  { _dragSq = sq || null; _forceRedraw(); }
   function setHover(sq) { if (sq === _hoverSq) return; _hoverSq = sq || null; _forceRedraw(); }
   function pieceSrc(piece) { return piece ? `pieces/${PIECE_NAME[piece]}-${PIECE_COLOR[piece]}.svg` : ''; }
 
   return { init, render, renderWithAnim, sqToXY, xyToSq, sqSize: () => sqSize,
-           setFlipped, isFlipped, canvasToSq, _forceRedraw, setDrag, setHover, pieceSrc };
+           setFlipped, isFlipped, canvasToSq, _forceRedraw, setDrag, setHover, setPremove, pieceSrc };
 })();

@@ -6,7 +6,7 @@
 (function () {
   const IC = {
     analisar: '<path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/>',
-    jogar: '<circle cx="12" cy="5.5" r="2.5"/><path d="M10 8.5c-.4 2.8-1.4 5.3-3 7.5h10c-1.6-2.2-2.6-4.7-3-7.5"/><path d="M5 20h14"/><path d="M7 16.5 6 20M17 16.5l1 3.5"/>',
+    jogar: '<rect x="2" y="6" width="20" height="12" rx="6"/><path d="M6 12h4M8 10v4"/><path d="M15 11h.01M18 13h.01"/>',
     aprender: '<path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/>',
     'como-usar': '<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
     guia: '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14"/><path d="M15 6v14"/>',

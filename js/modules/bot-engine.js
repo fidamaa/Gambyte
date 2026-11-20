@@ -18,6 +18,12 @@
      os lances bons; o erro e a gafe, quando nenhuma delas perde o
      bastante, saem de uma segunda busca, bem rasa, que avalia todos os
      outros lances. Nunca um lance ilegal: tudo sai da lista de legais.
+     O 400 ainda joga, em parte dos lances, o "xadrez da esperança" de
+     quem está começando: escolhe a jogada pensando só no que ele vai
+     fazer depois, como se o adversário não fosse responder (ataca a dama
+     com o cavalo e leva o mate pastor, deixa a peça atacada onde está).
+     Assim nem os lances "bons" dele são de computador: não vê o mate que
+     vem e não acha a defesa salvadora toda vez.
    - Repetição: o bot não volta a uma posição repetida (empate) quando
      não está claramente pior, igual à sugestão do Modo Livre.
 
@@ -45,9 +51,10 @@ const BotEngine = (() => {
   const limitar = cp => Math.max(-2000, Math.min(2000, cp));
 
   // chance: probabilidade de cada tipo de lance; abertura: quantos lances do
-  // bot, no começo, sem erro nem gafe.
+  // bot, no começo, sem erro nem gafe; esperanca: chance de, no lance, jogar
+  // sem olhar a resposta do adversário (ver _esperanca).
   const PERFIS = {
-    400:  { depth: 4,  multiPV: 5, abertura: 2, chance: { melhor: .26, bom: .18, imprecisao: .16, erro: .18, gafe: .22 } },
+    400:  { depth: 4,  multiPV: 5, abertura: 2, esperanca: .4, chance: { melhor: .26, bom: .18, imprecisao: .16, erro: .18, gafe: .22 } },
     800:  { depth: 5,  multiPV: 5, abertura: 4, chance: { melhor: .38, bom: .24, imprecisao: .14, erro: .13, gafe: .11 } },
     1200: { depth: 7,  multiPV: 5, abertura: 5, chance: { melhor: .48, bom: .26, imprecisao: .12, erro: .09, gafe: .05 } },
     1500: { elo: 1400, depth: 12, movetime: 700 },
@@ -159,6 +166,38 @@ const BotEngine = (() => {
     return { uci: escolha.uci, melhor, tipo, perda: escolha.perda };
   }
 
+  // "Xadrez da esperança": para cada lance, o bot olha só a posição depois
+  // dele como se fosse a vez dele de novo (o adversário "passa"): o que ele
+  // ganha, o que passa a atacar. A ameaça do adversário e a peça que fica
+  // solta não entram na conta. Busca de 1 lance por jogada, bem rápida.
+  // O lance que dá xeque é avaliado normalmente (com a resposta), porque a
+  // posição "passando" seria ilegal.
+  async function _esperanca(ctx, permitidos) {
+    const st = PGNParser.fenToBoard(ctx.fen);
+    const eu = ctx.fen.split(' ')[1];
+    const notas = [];
+    for (const u of permitidos) {
+      const depois = PGNParser.applyMoveUCI(st, u);
+      if (!depois) continue;
+      const fen = PGNParser.boardToFen(depois).split(' ');
+      let cp = null;
+      if (PGNParser.isInCheck(depois.board, eu !== 'w')) {
+        const r = await StockfishManager.analyzePosition(fen.join(' '), 1, 1, [], null, {});
+        cp = r && r.evals && r.evals[0] != null ? -r.evals[0] : null;
+      } else {
+        fen[1] = eu; fen[3] = '-';
+        const r = await StockfishManager.analyzePosition(fen.join(' '), 1, 1, [], null, {});
+        cp = r && r.evals ? r.evals[0] : null;
+      }
+      if (cp != null) notas.push({ uci: u, cp: limitar(cp) });
+    }
+    if (!notas.length) return null;
+    notas.sort((a, b) => b.cp - a.cp);
+    // Quase sempre a "melhor esperança"; às vezes a segunda ou a terceira.
+    const r = Math.random();
+    return (r < .65 ? notas[0] : r < .88 ? notas[1] : notas[2]) || notas[0];
+  }
+
   // 1500 em diante: o Stockfish com a força limitada (ou total, no 2500+).
   async function _limitado(p, inicio, lances, permitidos) {
     const res = await StockfishManager.analyzePosition(inicio, p.depth, 1, lances, null,
@@ -176,6 +215,11 @@ const BotEngine = (() => {
     const ctx = contexto(inicio, lances);
     if (!ctx.legais.length) return null;
     if (ctx.legais.length === 1) return { uci: ctx.legais[0], melhor: null, tipo: 'unico' };
+    // Fora da abertura, às vezes o 400 joga sem olhar a resposta do adversário.
+    if (p.esperanca && Math.floor(lances.length / 2) >= (p.abertura || 0) && Math.random() < p.esperanca) {
+      const e = await _esperanca(ctx, ctx.alternativas.length ? ctx.alternativas : ctx.legais);
+      if (e) return { uci: e.uci, melhor: null, tipo: 'esperanca' };
+    }
     const buscar = permitidos => (p.multiPV ? _comErros : _limitado)(p, inicio, lances, permitidos);
     if (ctx.evitar.length && ctx.alternativas.length) {
       const r = await buscar(ctx.alternativas);
