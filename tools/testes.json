@@ -1,0 +1,97 @@
+{
+  "_leia": "Teste rápido do fim de cada artigo. Chave = slug do artigo. Cada pergunta: p (pergunta), o (opções), c (índice da certa, a partir de 0), e (explicação mostrada depois de responder). O build embaralha nada: a ordem das opções é a daqui.",
+  "abertura-italiana": [
+    { "p": "Na Abertura Italiana, para onde vai o bispo branco no terceiro lance?", "o": ["c4", "b5", "e2"], "c": 0, "e": "Depois de 1. e4 e5 2. Nf3 Nc6, o lance 3. Bc4 aponta o bispo para f7, a casa mais fraca das pretas no começo, defendida só pelo rei. Com 3. Bb5 a abertura seria a Espanhola." },
+    { "p": "Qual resposta das pretas leva à Defesa dos Dois Cavalos?", "o": ["3... Bc5", "3... Nf6", "3... d6"], "c": 1, "e": "Com 3... Nf6 as pretas saem com o segundo cavalo e atacam o peão de e4 em vez de espelhar o bispo. 3... Bc5 leva ao Giuoco Piano e ao Pianissimo." },
+    { "p": "O que as brancas oferecem no Gambito Evans?", "o": ["O peão de b, com 4. b4", "O peão de f, com 4. f4", "O cavalo, com 4. Ng5"], "c": 0, "e": "O lance 4. b4 entrega um peão para tirar o bispo de c5 do lugar e ganhar tempo para montar o centro com c3 e d4." }
+  ],
+  "ataque-descoberto": [
+    { "p": "Como se responde a um xeque duplo?", "o": ["Capturando uma das peças que dão xeque", "Colocando uma peça no caminho", "Só movendo o rei"], "c": 2, "e": "Com duas peças dando xeque ao mesmo tempo, nenhuma captura ou interposição resolve as duas linhas. O rei é obrigado a se mover, e é isso que torna o xeque duplo o lance mais forçado do xadrez." },
+    { "p": "Num ataque descoberto, quem faz a ameaça que aparece de repente?", "o": ["A peça que se move", "A peça de longo alcance que estava atrás", "Sempre o rei"], "c": 1, "e": "A peça da frente sai do caminho e revela a linha da peça de trás (torre, bispo ou dama). A que se moveu fica livre para criar uma segunda ameaça no mesmo lance." }
+  ],
+  "como-estudar-suas-partidas": [
+    { "p": "Qual é a primeira etapa do método, logo depois do jogo?", "o": ["Abrir o motor e ver as gafes", "Anotar o que você pensou durante a partida", "Jogar a revanche na hora"], "c": 1, "e": "O que você estava pensando some da memória em poucas horas. Anotar os planos e as dúvidas antes de qualquer análise é o que permite, depois, descobrir por que cada erro aconteceu." },
+    { "p": "Por que revisar a partida sem motor antes de conferir com ele?", "o": ["Para descobrir o que você mesmo enxerga antes de ver a resposta pronta", "Porque o motor erra com frequência", "Para a análise terminar mais rápido"], "c": 0, "e": "Com a avaliação na tela, todo lance parece óbvio. Revisar sozinho primeiro treina o cálculo e mostra quais erros você consegue achar e quais só o motor viu." }
+  ],
+  "como-o-gambyte-classifica": [
+    { "p": "No Gambyte, quando um lance recebe a etiqueta de gafe?", "o": ["Sempre que o motor prefere outro lance", "Quando há perda material real ou mate forçado", "Quando o lance demorou mais de um minuto"], "c": 1, "e": "Uma queda grande na avaliação sozinha não basta: para ser gafe, o lance precisa entregar material de verdade ou permitir um mate forçado. Isso evita chamar de gafe um lance que só piora uma posição já perdida." },
+    { "p": "O que o Gambyte mede para decidir o tamanho de um erro?", "o": ["A queda na chance esperada de vitória", "Quantas peças foram perdidas", "Quantos lances a partida ainda durou"], "c": 0, "e": "Os centipeões viram uma chance esperada de vitória, e a classificação depende de quanto essa chance caiu com o lance. Perder 2 pontos numa posição equilibrada pesa muito mais do que com 10 pontos de vantagem." }
+  ],
+  "cravada-e-espeto": [
+    { "p": "O que diferencia a cravada absoluta da relativa?", "o": ["Na absoluta, a peça de trás é o rei e mover a cravada seria ilegal", "Na absoluta, a peça cravada é sempre a dama", "Na relativa, a peça cravada não pode se mover de jeito nenhum"], "c": 0, "e": "Quando o rei está atrás, a peça cravada não pode sair da linha pelas regras. Na cravada relativa ela até pode sair, mas entrega a peça mais valiosa que está atrás." },
+    { "p": "No espeto, onde está a peça mais valiosa?", "o": ["Atrás da menos valiosa", "Na frente: ela sai e a de trás cai", "Fora da linha do ataque"], "c": 1, "e": "O espeto é a cravada ao contrário: a peça valiosa (muitas vezes o rei ou a dama) está na frente, precisa sair, e a peça que estava atrás dela fica exposta." }
+  ],
+  "defesa-siciliana": [
+    { "p": "Com qual lance as pretas entram na Defesa Siciliana?", "o": ["1... e5", "1... c5", "1... c6"], "c": 1, "e": "1. e4 c5 é a Siciliana. 1... c6 é a Caro-Kann, e 1... e5 leva às aberturas abertas, como a Italiana e a Espanhola." },
+    { "p": "Na Siciliana Aberta, o que as pretas ganham ao trocar o peão de c pelo de d?", "o": ["Uma peça a mais", "Um peão central a mais em troca de um de flanco", "O roque garantido"], "c": 1, "e": "Depois de 2. Nf3 e 3. d4 cxd4, as pretas ficam com os peões de d e de e contra só o de e das brancas, e ainda ganham a coluna c semiaberta para as torres." }
+  ],
+  "estrutura-de-peoes": [
+    { "p": "O que é um peão isolado?", "o": ["Um peão sem peões da mesma cor nas colunas vizinhas", "Um peão bloqueado por outro peão", "Dois peões da mesma cor na mesma coluna"], "c": 0, "e": "Sem vizinhos, nenhum peão pode defendê-lo, e a casa da frente dele vira um bom posto para as peças adversárias. Dois peões na mesma coluna são peões dobrados." },
+    { "p": "O que o lado que defende deve fazer contra um peão passado?", "o": ["Ignorá-lo até ele chegar à sétima", "Bloqueá-lo com uma peça na casa da frente", "Trocar todas as torres"], "c": 1, "e": "Peões passados devem ser empurrados por quem os tem e bloqueados por quem defende. Uma peça parada na frente do peão, de preferência um cavalo, impede o avanço." },
+    { "p": "Por onde se ataca uma cadeia de peões?", "o": ["Pela ponta mais avançada", "Pela base", "Pelo meio"], "c": 1, "e": "A base é o único peão da cadeia que não é defendido por outro peão. Quando ela cai, a cadeia inteira perde a sustentação." }
+  ],
+  "exportar-pgn": [
+    { "p": "Quantas partidas colar de cada vez no Gambyte?", "o": ["Uma por vez", "Até dez", "Quantas couberem"], "c": 0, "e": "Cada análise é de uma partida. Se o arquivo exportado tiver várias, copie só o trecho de uma delas, do primeiro cabeçalho até o resultado." },
+    { "p": "Qual o jeito mais rápido de trazer uma partida do Chess.com para o Gambyte?", "o": ["Colar o link da partida", "Digitar o seu usuário e escolher a partida na lista", "Enviar um print da tela"], "c": 1, "e": "O Chess.com não libera a busca por link, então o Gambyte busca pelo usuário e mostra as partidas recentes. No Lichess, colar o link também funciona." }
+  ],
+  "finais-de-rei-e-peao": [
+    { "p": "O que diz a regra do quadrado?", "o": ["Se o rei defensor está dentro do quadrado do peão, ou entra nele no seu lance, alcança o peão", "Todo peão na quinta fileira promove", "O rei precisa ficar a quatro casas do peão"], "c": 0, "e": "O quadrado tem como lado a distância do peão até a promoção. Com o rei defensor dentro dele, não é preciso calcular: o peão é alcançado." },
+    { "p": "O que significa ter a oposição?", "o": ["Ter mais peões que o adversário", "Os reis estão frente a frente, com uma casa entre eles, e quem joga é o adversário", "Seu rei está mais perto do centro"], "c": 1, "e": "Com os reis frente a frente, quem tem a vez precisa ceder passagem. Ter a oposição é deixar o adversário nessa obrigação." },
+    { "p": "Qual peão costuma empatar mesmo com o rei atacante bem colocado?", "o": ["O peão central", "O peão de cavalo", "O peão de torre"], "c": 2, "e": "Com o peão de torre, o rei defensor que chega ao canto não pode ser expulso, e as tentativas de forçar a passagem acabam em afogamento." }
+  ],
+  "finais-de-torre": [
+    { "p": "Qual é a técnica que vence a posição de Lucena?", "o": ["Construir a ponte com a torre", "Dar xeques pelo lado", "Trocar as torres"], "c": 0, "e": "A torre atacante vai para a quarta fileira e serve de escudo: quando os xeques laterais acabam, ela se interpõe e o peão promove." },
+    { "p": "Na defesa de Philidor, onde fica a torre defensora enquanto o peão não avança?", "o": ["Na primeira fileira", "Na sexta fileira, cortando o rei atacante", "Ao lado do próprio rei"], "c": 1, "e": "Na sexta fileira a torre impede o rei atacante de avançar. Assim que o peão chega à sexta, a torre vai para o fundo do tabuleiro e dá xeques por trás, porque o rei atacante fica sem abrigo." }
+  ],
+  "gambito-da-dama": [
+    { "p": "Por que o Gambito da Dama não é um gambito de verdade?", "o": ["Porque as pretas raramente conseguem manter o peão de c4 sem se prejudicar", "Porque as brancas não oferecem peão nenhum", "Porque capturar em c4 é ilegal"], "c": 0, "e": "Se as pretas tentam segurar o peão com b5, abrem fraquezas e atrasam o desenvolvimento. Em geral as brancas recuperam o peão com tranquilidade." },
+    { "p": "Qual é o plano típico das brancas na estrutura Carlsbad?", "o": ["Roque grande e avanço dos peões g e h", "O ataque de minoria com os peões de a e b", "Trocar as damas cedo"], "c": 1, "e": "As brancas avançam dois peões da ala da dama contra três das pretas para criar um peão fraco em c6, que depois vira alvo das peças." },
+    { "p": "Qual lance caracteriza a Defesa Eslava?", "o": ["2... c6", "2... e6", "2... dxc4"], "c": 0, "e": "Com 2... c6 as pretas defendem d5 sem fechar o bispo de c8, que é a peça que mais sofre no Gambito da Dama Recusado com 2... e6." }
+  ],
+  "garfo": [
+    { "p": "O que vale para os dois alvos de um garfo de cavalo?", "o": ["Estão sempre na mesma fileira", "Estão em casas da mesma cor, oposta à da casa onde o cavalo pousa", "Estão em casas de cores diferentes"], "c": 1, "e": "O cavalo sempre salta para uma casa de cor diferente. Por isso, todas as casas que ele ataca de um mesmo lugar têm a mesma cor, e procurar rei e dama em casas da mesma cor é um atalho para ver garfos." },
+    { "p": "Por que os garfos com xeque são tão comuns?", "o": ["Porque o xeque precisa ser respondido e o segundo alvo cai", "Porque o rei não pode ser atacado por cavalos", "Porque eles valem pontos extras"], "c": 0, "e": "Diante de um xeque, o adversário não tem tempo de salvar a outra peça. A terceira condição do garfo, não conseguir resolver as duas ameaças com um lance, fica quase garantida." }
+  ],
+  "gestao-do-tempo": [
+    { "p": "Num ritmo 3+2, o que significa o 2?", "o": ["Dois minutos extras no fim", "Dois segundos acrescentados a cada lance", "Duas partidas seguidas"], "c": 1, "e": "O primeiro número é o tempo inicial em minutos e o segundo é o incremento, em segundos, somado ao relógio depois de cada lance." },
+    { "p": "No apuro de tempo, qual é a atitude mais segura?", "o": ["Iniciar complicações para confundir o adversário", "Jogar lances seguros e manter as peças protegidas", "Gastar o que resta no lance mais difícil"], "c": 1, "e": "Com pouco tempo, o objetivo é não cometer a gafe. Peças protegidas e lances simples reduzem as chances de perder material, e quem está ganhando deve simplificar." }
+  ],
+  "glossario": [
+    { "p": "O que é zugzwang?", "o": ["Quando qualquer lance piora a própria posição, mas é obrigatório jogar", "Um xeque que se repete três vezes", "Promover um peão a cavalo"], "c": 0, "e": "No xadrez não se pode passar a vez. Zugzwang é a situação em que essa obrigação prejudica quem joga, muito comum nos finais de rei e peão." },
+    { "p": "O que acontece no afogamento?", "o": ["O lado que joga perde a partida", "O lado que joga não está em xeque e não tem lance legal, e a partida empata", "O rei é capturado"], "c": 1, "e": "Afogamento é empate. É o recurso clássico de quem está perdendo e um descuido comum de quem está ganhando com a dama." }
+  ],
+  "notacao-algebrica": [
+    { "p": "No PGN, que usa as letras em inglês, qual letra é o cavalo?", "o": ["C", "K", "N"], "c": 2, "e": "Em inglês o cavalo é knight, mas o K já é do rei (king). Por isso o cavalo usa o N." },
+    { "p": "O que significa O-O-O?", "o": ["Roque pequeno", "Roque grande", "Empate por repetição"], "c": 1, "e": "O-O é o roque do lado do rei, e O-O-O é o roque do lado da dama, em que a torre anda três casas." },
+    { "p": "O que indica o sinal ?? depois de um lance?", "o": ["Um lance brilhante", "Um lance duvidoso, mas interessante", "Um lance muito ruim, uma gafe"], "c": 2, "e": "!! é um lance brilhante, ?! é duvidoso e ?? marca um erro grave. Esses sinais são opinião de quem anotou, não parte do lance." }
+  ],
+  "padroes-de-mate": [
+    { "p": "Qual é o mate mais rápido possível no xadrez?", "o": ["O mate do louco", "O mate do pastor", "O mate do corredor"], "c": 0, "e": "No mate do louco as pretas dão mate no segundo lance, depois de as brancas enfraquecerem a diagonal do rei com os peões de f e de g." },
+    { "p": "No mate sufocado, qual peça dá o xeque-mate?", "o": ["A dama", "O cavalo", "O bispo"], "c": 1, "e": "O rei está cercado pelas próprias peças, e só o cavalo, que salta, consegue dar xeque sem ser bloqueado." },
+    { "p": "Qual é a prevenção mais simples contra o mate do corredor?", "o": ["Abrir uma “janela” para o rei com um lance de peão", "Fazer o roque grande", "Trocar as damas"], "c": 0, "e": "Um lance como h3 dá ao rei uma casa de fuga e acaba com o perigo na última fileira. Também ajuda manter uma torre vigiando a primeira fileira." }
+  ],
+  "partida-da-opera": [
+    { "p": "Quem venceu a Partida da Ópera, em Paris, 1858?", "o": ["Adolf Anderssen", "Paul Morphy", "José Raúl Capablanca"], "c": 1, "e": "Paul Morphy jogou com as brancas contra dois nobres que se consultavam durante uma ópera, e venceu em dezessete lances." },
+    { "p": "Qual é a lição principal da partida?", "o": ["Material vale mais que tudo", "Desenvolvimento é uma vantagem que se converte em ataque", "Trocar damas cedo é sempre bom"], "c": 1, "e": "Morphy entregou material várias vezes porque as peças dele estavam todas em jogo, enquanto as pretas ficaram com peças paradas e o rei no centro." },
+    { "p": "Com que peças Morphy deu o mate final?", "o": ["Torre, apoiada pelo bispo", "Dama e cavalo", "Os dois bispos"], "c": 0, "e": "No lance 17, a torre chega a d8 com mate, protegida pelo bispo de g5. A dama branca tinha sido sacrificada no lance anterior." }
+  ],
+  "partida-imortal": [
+    { "p": "Onde e quando foi jogada a Partida Imortal?", "o": ["Londres, 1851", "Paris, 1858", "Viena, 1873"], "c": 0, "e": "Anderssen e Kieseritzky jogaram em Londres, em 1851, numa partida amistosa durante o primeiro torneio internacional da história." },
+    { "p": "Com que peças Anderssen deu o mate?", "o": ["Com a dama e uma torre", "Com três peças menores", "Com dois peões"], "c": 1, "e": "Depois de entregar um bispo, as duas torres e a dama, Anderssen deu mate com os dois cavalos e um bispo, que bastavam para cercar o rei preto." },
+    { "p": "Por que Anderssen pôde entregar tanto material?", "o": ["Porque as peças pretas que capturavam não participavam da defesa do rei", "Porque a partida era sem relógio", "Porque as pretas desistiram"], "c": 0, "e": "Material só conta se participa. As peças pretas ganharam pontos longe do rei, enquanto as brancas que sobraram estavam todas no ataque." }
+  ],
+  "pecas-indefesas": [
+    { "p": "Em que ordem o checklist de 10 segundos olha os lances?", "o": ["Xeques, capturas, ameaças", "Ameaças, capturas, xeques", "Capturas, roques, xeques"], "c": 0, "e": "Xeques vêm primeiro porque obrigam a resposta e são os lances mais forçados. Depois as capturas, que mudam o material, e só então as ameaças." },
+    { "p": "Quando fazer o checklist?", "o": ["Só nos primeiros lances", "Depois de escolher o lance e antes de tocá-lo", "Depois que o adversário responde"], "c": 1, "e": "É a última conferência antes de jogar: você já tem um candidato e verifica se ele deixa alguma peça solta ou ignora um xeque, uma captura ou uma ameaça do adversário." },
+    { "p": "O que é um defensor sobrecarregado?", "o": ["Uma peça que defende duas coisas e não consegue cumprir as duas tarefas", "Uma peça defendida por várias outras", "O rei depois do roque"], "c": 0, "e": "Se uma peça defende dois alvos, basta atacar ou capturar um deles para ela ter de escolher, e o outro fica indefeso." }
+  ],
+  "principios-de-abertura": [
+    { "p": "Quais são os três objetivos da abertura?", "o": ["Trocar as damas, avançar os peões de torre e atacar f7", "Controlar o centro, desenvolver as peças e colocar o rei em segurança", "Ganhar um peão, fazer o roque grande e dar xeque"], "c": 1, "e": "São os objetivos que valem em qualquer abertura. Quem cumpre os três chega ao meio-jogo com peças ativas e o rei protegido, mesmo sem saber teoria." },
+    { "p": "O que mais costuma custar tempo na abertura?", "o": ["Mexer a mesma peça várias vezes sem necessidade", "Desenvolver um cavalo", "Fazer o roque"], "c": 0, "e": "Cada lance gasto com a mesma peça é um lance a menos para trazer as outras. Saídas de dama cedo e lances de peão sem função entram na mesma conta." }
+  ],
+  "valor-das-pecas": [
+    { "p": "Quanto vale uma torre na tabela de referência?", "o": ["3 pontos", "5 pontos", "9 pontos"], "c": 1, "e": "Os valores de referência são peão 1, cavalo e bispo 3, torre 5 e dama 9. O rei não tem valor de troca, porque perdê-lo é perder a partida." },
+    { "p": "O que significa ganhar a qualidade?", "o": ["Ganhar uma torre em troca de uma peça menor", "Ganhar um peão a mais", "Trocar a dama por duas torres"], "c": 0, "e": "Qualidade é a diferença entre torre e peça menor, cerca de 2 pontos. Quem fica com a torre ganhou a qualidade." },
+    { "p": "Com material a mais, o que costuma ser bom fazer?", "o": ["Trocar peças", "Evitar qualquer troca", "Trocar só os peões"], "c": 0, "e": "Cada troca de peças aumenta o peso da vantagem e diminui as chances de contra-ataque. Já trocar peões ajuda quem defende, porque o final fica com menos material para promover." }
+  ]
+}

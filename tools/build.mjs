@@ -99,6 +99,9 @@ function jogar(arq, fen, lances) {
   const tokens = lances.replace(/\d+\.(\.\.)?/g, ' ').split(/\s+/).filter(Boolean)
     .filter(t => !/^(1-0|0-1|1\/2-1\/2|\*)$/.test(t));
   let ultimo = null;
+  // passo a passo para o diagrama interativo: FEN depois de cada lance e o lance com número
+  const passos = [{ fen: PGNParser.boardToFen(state), lance: '' }];
+  let num = +(fen.split(' ')[5] || 1) || 1;
   for (const san of tokens) {
     const antes = state;
     const prox = PGNParser.applyMove(state, san);
@@ -112,8 +115,10 @@ function jogar(arq, fen, lances) {
     if (marca !== real) falha(arq, `"${san}" anotado como "${marca || 'sem xeque'}" mas é "${real || 'sem xeque'}" em "${lances}"`);
     ultimo = PGNParser.boardToFen(antes);
     state = prox;
+    passos.push({ fen: PGNParser.boardToFen(state), lance: antes.turn === 'w' ? `${num}. ${san}` : `${num}... ${san}` });
+    if (antes.turn === 'b') num++;
   }
-  return { fen: PGNParser.boardToFen(state), fenAntesDoUltimo: ultimo };
+  return { fen: PGNParser.boardToFen(state), fenAntesDoUltimo: ultimo, passos };
 }
 
 /* ── Diagrama estático (HTML puro, sem JavaScript na página) ────── */
@@ -126,11 +131,15 @@ function diagrama(arq, a) {
   const linhas = fen.split(' ')[0].split('/');
   if (linhas.length !== 8 || linhas.some(l => [...l].reduce((n, ch) => n + (/\d/.test(ch) ? +ch : 1), 0) !== 8)) falha(arq, `FEN com fileira errada: ${fen}`);
   if ((fen.split(' ')[0].match(/K/g) || []).length !== 1 || (fen.split(' ')[0].match(/k/g) || []).length !== 1) falha(arq, `FEN sem exatamente um rei de cada cor: ${fen}`);
+  let passos = null;
   if (a.lances) {
     const r = jogar(arq, fen, a.lances);
     if (!r) return '';
     if (a.mostra !== 'antes') fen = r.fen;
+    passos = { i: a.mostra === 'antes' ? 0 : r.passos.length - 1, f: r.passos.map(p => p.fen), l: r.passos.map(p => p.lance) };
   }
+  if (!miniaturaAtual) miniaturaAtual = fen;
+  diagramasAtual++;
   const st = PGNParser.fenToBoard(fen);
   // quem NÃO tem a vez não pode estar em xeque (posição impossível)
   if (PGNParser.isInCheck(st.board, st.turn !== 'w')) falha(arq, `posição impossível (lado sem a vez está em xeque): ${fen}`);
@@ -151,9 +160,45 @@ function diagrama(arq, a) {
     cel += `<span class="${cls}"${coord}>${img}</span>`;
   }
   const vez = a.vez === 'nao' ? '' : `<span class="tab-vez ${st.turn === 'w' ? 'vb' : 'vp'}">${st.turn === 'w' ? 'Jogam as brancas' : 'Jogam as pretas'}</span>`;
-  return `<figure class="tab-fig"><div class="tab" role="img" aria-label="Diagrama de xadrez: ${esc(pecas.join(', '))}.">${cel}</div>`
+  // "Abrir no tabuleiro": o analisador abre o FEN no tabuleiro livre (/?fen=...)
+  const abrir = `<a class="tab-abrir" href="/?fen=${encodeURIComponent(PGNParser.boardToFen(st))}">${ic('tabuleiro')}<span>Abrir no tabuleiro</span></a>`;
+  return `<figure class="tab-fig"${passos ? ` data-passos="${esc(JSON.stringify(passos))}"` : ''}><div class="tab" role="img" aria-label="Diagrama de xadrez: ${esc(pecas.join(', '))}.">${cel}</div>`
+    + `<div class="tab-acoes">${abrir}</div>`
     + `<figcaption>${vez}${a.leg ? `<span>${a.leg}</span>` : ''}</figcaption></figure>`;
 }
+let miniaturaAtual = null, diagramasAtual = 0;
+
+/* ── Ícones de traço fino (mesma família da barra de cima) ─────── */
+const ICONES = {
+  fundamentos: '<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>',
+  tatica: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
+  finais: '<path d="M4 22V4"/><path d="M4 4h13l-2.5 4.5L17 13H4"/>',
+  estrategia: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  aberturas: '<path d="M12 2v8"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 6 4-4 4 4"/><path d="M16 18a4 4 0 0 0-8 0"/>',
+  partidas: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>',
+  gambyte: '<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/>',
+  relogio: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  tabuleiro: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>',
+  teste: '<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  esq: '<path d="m15 18-6-6 6-6"/>',
+  dir: '<path d="m9 18 6-6-6-6"/>',
+  grade: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+};
+const ic = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONES[n]}</svg>`;
+
+/* Miniatura do cartão: casas por CSS e só as peças em HTML. */
+function miniatura(fen) {
+  const st = PGNParser.fenToBoard(fen);
+  let pecas = '';
+  for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+    const p = st.board[r][c];
+    if (p) pecas += `<img src="/pieces/${NOMES[p.toLowerCase()]}-${ehBranca(p) ? 'w' : 'b'}.svg" alt="" style="grid-area:${r + 1}/${c + 1}" loading="lazy" decoding="async">`;
+  }
+  return `<span class="ap-mini" aria-hidden="true">${pecas}</span>`;
+}
+
+const TESTES = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'testes.json'), 'utf8'));
 
 const attrs = s => Object.fromEntries([...s.matchAll(/(\w+)="([^"]*)"/g)].map(m => [m[1], m[2]]));
 
@@ -169,6 +214,7 @@ const artigos = fs.readdirSync(SRC).filter(f => f.endsWith('.html')).sort().map(
   for (const k of ['titulo', 'descricao', 'categoria', 'ordem']) if (meta[k] == null) falha(arq, `meta sem "${k}"`);
   if (!CATEGORIAS.some(c => c[0] === meta.categoria)) falha(arq, `categoria desconhecida: ${meta.categoria}`);
   let corpo = bruto.slice(m[0].length);
+  miniaturaAtual = null; diagramasAtual = 0;
 
   // [[partida id="x" titulo="..."]] PGN [[/partida]]
   corpo = corpo.replace(/\[\[partida ([^\]]*)\]\]([\s\S]*?)\[\[\/partida\]\]/g, (_, at, pgn) => {
@@ -196,7 +242,11 @@ const artigos = fs.readdirSync(SRC).filter(f => f.endsWith('.html')).sort().map(
   meta.palavras = texto.split(/\s+/).filter(Boolean).length;
   meta.minutos = Math.max(2, Math.round(meta.palavras / 190));
   const subt = [...corpo.matchAll(/<h2 id="([^"]+)">([\s\S]*?)<\/h2>/g)].map(x => ({ id: x[1], t: x[2] }));
-  return { meta, corpo, subt };
+  const teste = TESTES[meta.slug] || null;
+  if (!teste) falha(arq, 'sem "Teste rápido" em tools/testes.json');
+  for (const [n, q] of (teste || []).entries())
+    if (!q.p || !Array.isArray(q.o) || q.o.length < 2 || !(q.c >= 0 && q.c < q.o.length) || !q.e) falha(arq, `pergunta ${n + 1} do teste incompleta`);
+  return { meta, corpo, subt, teste, miniatura: miniaturaAtual, diagramas: diagramasAtual };
 }).filter(Boolean);
 
 artigos.sort((a, b) => a.meta.ordem - b.meta.ordem);
@@ -232,14 +282,24 @@ const head = ({ titulo, descricao, url, tipo, ld }) => `<!doctype html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/site-info.css?v=9"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0d0f14"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="Gambyte">
-<link rel="stylesheet" href="/aprender.css?v=4">
+<link rel="stylesheet" href="/aprender.css?v=5">
 <script type="application/ld+json">${JSON.stringify(ld)}</script>
 <script src="/menu.js" defer></script>
+<script src="/aprender.js?v=1" defer></script>
 </head>
 <!-- Página gerada por tools/build.mjs — edite o fragmento em tools/artigos/ e rode o build. -->`;
 
 const nomeCat = id => CATEGORIAS.find(c => c[0] === id)[1];
-const cartao = a => `<a class="ap-card" href="/aprender/${a.meta.slug}"><span class="ap-card-cat">${nomeCat(a.meta.categoria)}</span><strong>${esc(a.meta.titulo)}</strong><span class="ap-card-desc">${esc(a.meta.descricao)}</span><span class="ap-card-min">${a.meta.minutos} min de leitura</span></a>`;
+const cartao = a => `<a class="ap-card" href="/aprender/${a.meta.slug}" data-slug="${a.meta.slug}">`
+  + (a.miniatura ? miniatura(a.miniatura) : `<span class="ap-mini ap-mini-ic" aria-hidden="true">${ic(a.meta.categoria)}</span>`)
+  + `<span class="ap-card-txt"><span class="ap-card-cat">${nomeCat(a.meta.categoria)}</span><strong>${esc(a.meta.titulo)}</strong><span class="ap-card-desc">${esc(a.meta.descricao)}</span>`
+  + `<span class="ap-card-pe"><span class="ap-card-min">${ic('relogio')}${a.meta.minutos} min de leitura</span><span class="ap-card-lido">${ic('check')}Lido</span></span></span></a>`;
+
+const testeHTML = t => `<section class="ap-teste" aria-labelledby="teste-t"><div class="ap-teste-topo"><span class="ap-teste-ic">${ic('teste')}</span><div><h2 id="teste-t">Teste rápido</h2><p>${t.length} perguntas para fixar o que você leu. Toque na resposta.</p></div></div>`
+  + `<ol class="ap-qs">${t.map((q, n) => `<li class="ap-q" data-certa="${q.c}"><p class="ap-q-p"><span class="ap-q-n">${n + 1}</span>${esc(q.p)}</p><div class="ap-q-ops">`
+    + q.o.map((o, i) => `<button type="button" class="ap-q-op" data-i="${i}"><span class="ap-q-letra">${'ABCD'[i]}</span><span>${esc(o)}</span></button>`).join('')
+    + `</div><p class="ap-q-exp" hidden>${esc(q.e)}</p></li>`).join('')}</ol>`
+  + `<p class="ap-teste-placar" aria-live="polite"></p></section>`;
 
 fs.mkdirSync(OUT, { recursive: true });
 for (const f of fs.readdirSync(OUT)) if (f.endsWith('.html')) fs.unlinkSync(path.join(OUT, f));
@@ -264,18 +324,32 @@ for (const art of artigos) {
       { '@type': 'ListItem', position: 3, name: meta.titulo, item: url }],
   }];
   const sumario = subt.length >= 3 ? `<nav class="ap-toc" aria-label="Neste artigo"><strong>Neste artigo</strong><ol>${subt.map(s => `<li><a href="#${s.id}">${s.t}</a></li>`).join('')}</ol></nav>` : '';
+  const ant = artigos[i - 1], prox = artigos[i + 1];
+  const seq = `<nav class="ap-seq" aria-label="Outros guias">`
+    + (ant ? `<a class="ap-seq-a ap-seq-ant" href="/aprender/${ant.meta.slug}"><span>${ic('esq')}Anterior</span><strong>${esc(ant.meta.titulo)}</strong></a>` : '')
+    + (prox ? `<a class="ap-seq-a ap-seq-prox" href="/aprender/${prox.meta.slug}"><span>Próximo${ic('dir')}</span><strong>${esc(prox.meta.titulo)}</strong></a>`
+      : `<a class="ap-seq-a ap-seq-prox" href="/aprender/"><span>Fim da trilha${ic('dir')}</span><strong>Ver todos os guias</strong></a>`)
+    + `</nav>`;
+  const chips = `<div class="ap-chips"><span class="ap-chip">${ic(meta.categoria)}${nomeCat(meta.categoria)}</span><span class="ap-chip">${ic('relogio')}${meta.minutos} min</span>`
+    + (art.diagramas ? `<span class="ap-chip">${ic('tabuleiro')}${art.diagramas} ${art.diagramas > 1 ? 'diagramas' : 'diagrama'}</span>` : '')
+    + (art.teste ? `<a class="ap-chip ap-chip-link" href="#teste-t">${ic('teste')}Teste rápido</a>` : '') + `</div>`;
   const html = `${head({ titulo: meta.titulo, descricao: meta.descricao, url, tipo: 'article', ld })}
-<body class="info-page ap-page" data-site="gambyte">
+<body class="info-page ap-page ap-art" data-site="gambyte" data-slug="${meta.slug}">
 ${NAV('/aprender/')}
 <main class="info-content ap-content">
 <article>
 <p class="info-kicker"><a href="/aprender/">Aprender xadrez</a> / ${nomeCat(meta.categoria)}</p>
 <h1>${esc(meta.titulo)}</h1>
 <p class="info-summary">${esc(meta.descricao)}</p>
-<p class="ap-meta">Por Rampini · Atualizado em ${dataExtenso(HOJE)} · ${meta.minutos} min de leitura</p>
+${chips}
+<p class="ap-meta">Por Rampini · Atualizado em ${dataExtenso(HOJE)}</p>
 ${['gambyte'].includes(meta.categoria) || ['notacao-algebrica', 'glossario', 'exportar-pgn', 'como-estudar-suas-partidas', 'gestao-do-tempo'].includes(meta.slug) ? '' : '<p class="ap-notacao">Os lances usam a notação do PGN: K é rei, Q dama, R torre, B bispo e N cavalo. <a href="/aprender/notacao-algebrica">Como ler a notação</a></p>'}
 ${sumario}
+<div class="ap-corpo">
 ${corpo.trim()}
+</div>
+${art.teste ? testeHTML(art.teste) : ''}
+<div class="ap-fim"><button type="button" class="ap-lido-btn" data-lido hidden>${ic('check')}<span>Marcar como lido</span></button>${seq}</div>
 <aside class="ap-cta"><div><strong>Veja isso acontecer nas suas partidas</strong><p>Cole o PGN de um jogo seu e o Gambyte mostra, lance a lance, onde a avaliação mudou. É gratuito e roda no seu navegador.</p></div><a class="btn-ap btn-ap-solid" href="/">Analisar uma partida</a></aside>
 </article>
 <section class="ap-rel" aria-labelledby="rel-t"><h2 id="rel-t">Continue estudando</h2><div class="ap-grid">${relacionados.map(cartao).join('')}</div></section>
@@ -293,22 +367,34 @@ ${FOOTER}
   const descricao = 'Guias originais de xadrez em português: tática, finais, aberturas, estratégia e partidas clássicas comentadas, com diagramas e exemplos para testar no analisador.';
   const secoes = CATEGORIAS.map(([id, nome, desc]) => {
     const lista = artigos.filter(a => a.meta.categoria === id);
-    return lista.length ? `<section class="ap-sec" aria-labelledby="c-${id}"><h2 id="c-${id}">${nome}</h2><p class="ap-sec-desc">${desc}</p><div class="ap-grid">${lista.map(cartao).join('')}</div></section>` : '';
+    return lista.length ? `<section class="ap-sec" aria-labelledby="c-${id}" data-cat="${id}"><div class="ap-sec-topo"><span class="ap-sec-ic">${ic(id)}</span><div><h2 id="c-${id}">${nome}</h2><p class="ap-sec-desc">${desc}</p></div></div><div class="ap-grid">${lista.map(cartao).join('')}</div></section>` : '';
   }).join('\n');
+  const temas = CATEGORIAS.filter(c => artigos.some(a => a.meta.categoria === c[0])).map(([id, nome]) => {
+    const n = artigos.filter(a => a.meta.categoria === id).length;
+    return `<a class="ap-tema" href="#c-${id}" data-cat="${id}"><span class="ap-tema-ic">${ic(id)}</span><span class="ap-tema-txt"><strong>${nome}</strong><span class="ap-tema-n" data-total="${n}">${n} ${n > 1 ? 'guias' : 'guia'}</span></span><span class="ap-tema-barra" aria-hidden="true"><span></span></span></a>`;
+  }).join('');
   const ld = [{
     '@context': 'https://schema.org', '@type': 'CollectionPage', name: 'Aprender xadrez', description: descricao, inLanguage: 'pt-BR', url,
     hasPart: artigos.map(a => ({ '@type': 'Article', headline: a.meta.titulo, url: `${SITE}/aprender/${a.meta.slug}` })),
   }];
   const total = artigos.reduce((n, a) => n + a.meta.minutos, 0);
   fs.writeFileSync(path.join(OUT, 'index.html'), `${head({ titulo: 'Aprender xadrez: guias de tática, finais e aberturas', descricao, url, tipo: 'website', ld })}
-<body class="info-page ap-page" data-site="gambyte">
+<body class="info-page ap-page ap-hub-page" data-site="gambyte">
 ${NAV('/aprender/')}
 <main class="info-content ap-content ap-hub">
+<div class="ap-hero">
+<div class="ap-hero-txt">
 <p class="info-kicker">Gambyte / Aprender xadrez</p>
 <h1>Aprenda xadrez com exemplos que você pode testar</h1>
 <p class="info-summary">${artigos.length} guias originais em português, com diagramas e sequências conferidas lance a lance. Leia um tema, depois procure o mesmo padrão em uma partida sua.</p>
 <p class="ap-meta">${artigos.length} artigos · cerca de ${total} minutos de leitura no total · Atualizado em ${dataExtenso(HOJE)}</p>
-<nav class="ap-cats" aria-label="Categorias">${CATEGORIAS.filter(c => artigos.some(a => a.meta.categoria === c[0])).map(c => `<a href="#c-${c[0]}">${c[1]}</a>`).join('')}</nav>
+</div>
+<div class="ap-prog" data-total="${artigos.length}">
+<div class="ap-prog-topo"><span class="ap-prog-anel" aria-hidden="true"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.5"/><circle class="ap-prog-arco" cx="18" cy="18" r="15.5" pathLength="100" stroke-dasharray="0 100"/></svg><b class="ap-prog-pct">0%</b></span><div><strong>Seu progresso</strong><span class="ap-prog-txt">Nenhum guia lido ainda. Os guias que você terminar ficam marcados aqui, neste aparelho.</span></div></div>
+<a class="btn-ap btn-ap-solid ap-prog-btn" href="/aprender/${artigos[0].meta.slug}">Começar pelo primeiro guia</a>
+</div>
+</div>
+<nav class="ap-temas" aria-label="Temas">${temas}</nav>
 ${secoes}
 <aside class="ap-cta"><div><strong>Do estudo para a prática</strong><p>Depois de ler, cole o PGN de uma partida sua e veja onde esses temas apareceram. A análise é gratuita e roda no seu navegador.</p></div><a class="btn-ap btn-ap-solid" href="/">Analisar uma partida</a></aside>
 </main>

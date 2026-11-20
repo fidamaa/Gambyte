@@ -50,5 +50,18 @@
       proximo = ids.indexOf(pedido) + 1;
       if (carregar(pedido, true)) { GameImport.mostrarAba('pgn'); campo.scrollIntoView({ block: 'center' }); }
     }
+    // ?fen=... vindo do botão "Abrir no tabuleiro" dos diagramas do Aprender:
+    // a posição abre no tabuleiro livre, como se o FEN tivesse sido colado.
+    const fen = new URLSearchParams(location.search).get('fen');
+    if (fen && /^[pnbrqkPNBRQK1-8]+(\/[pnbrqkPNBRQK1-8]+){7}\s+[wb]\b/.test(fen.trim()) && campo && typeof PhotoPosition !== 'undefined') {
+      campo.value = fen.trim();
+      GameImport.mostrarAba('pgn');
+      setTimeout(() => {
+        const erro = PhotoPosition.abrirFEN(fen.trim());
+        if (erro) { AuthUI.showToast(erro, 'error'); return; }
+        AuthUI.showToast('Posição do artigo aberta no tabuleiro. Mexa as peças à vontade.', 'success');
+        document.getElementById('board-wrapper')?.scrollIntoView({ block: 'center' });
+      }, 0);
+    }
   });
 })();
