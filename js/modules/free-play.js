@@ -634,7 +634,8 @@ const FreePlay = (() => {
 
     const sig = _posSignature(targetFEN);
     let count = 0;
-    for (const f of fens) if (_posSignature(f) === sig) count++;
+    // Só as posições até a mostrada (as de depois, numa linha revista, não contam).
+    for (const f of (fen ? fens : fens.slice(0, idx + 2))) if (_posSignature(f) === sig) count++;
     if (count >= 3) return { type: 'repetition' };
 
     return null;
@@ -664,7 +665,47 @@ const FreePlay = (() => {
       EngineSuggestion.updateArrow(null);
       return;
     }
-    LiveEngine.analyze(currentFEN, { played, fenBefore });
+    LiveEngine.analyze(currentFEN, { played, fenBefore, ..._repeticao() });
+  }
+
+  // Lances legais (UCI) de uma posição, com as quatro promoções.
+  function _lancesLegais(state) {
+    const w = state.turn === 'w', out = [];
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const p = state.board[r][c];
+        if (!p || (w ? p !== p.toUpperCase() : p !== p.toLowerCase())) continue;
+        const de = FILES[c] + (8 - r);
+        for (const para of _filterKingTargets(_getLegalTargets(de, state, w), de, state)) {
+          const promo = (p === 'P' && para[1] === '8') || (p === 'p' && para[1] === '1');
+          if (promo) for (const x of 'qrbn') out.push(de + para + x);
+          else out.push(de + para);
+        }
+      }
+    }
+    return out;
+  }
+
+  // Sugestão sem repetição: a linha jogada vai para o motor (ele passa a ver
+  // as posições repetidas) e, se a posição atual já apareceu duas vezes, os
+  // lances que voltam a uma posição já vista ficam de fora da busca. Lance
+  // que faria a terceira repetição (empate) também fica de fora sempre.
+  // Quem decide se repetir é aceitável (desvantagem clara) é o LiveEngine.
+  function _repeticao() {
+    const historico = { inicio: fens[0], lances: ucis.slice(0, idx + 1) };
+    const vistas = new Map();
+    for (const f of fens.slice(0, idx + 2)) { const s = _posSignature(f); vistas.set(s, (vistas.get(s) || 0) + 1); }
+    const vezesAqui = vistas.get(_posSignature(currentFEN)) || 0;
+    const state = PGNParser.fenToBoard(currentFEN);
+    if (!state) return { historico };
+    const legais = _lancesLegais(state);
+    const evitar = legais.filter(u => {
+      let n = 0;
+      try { n = vistas.get(_posSignature(PGNParser.boardToFen(PGNParser.applyMoveUCI(state, u)))) || 0; } catch (e) { /* lance inválido */ }
+      return n >= 2 || (vezesAqui >= 2 && n >= 1);
+    });
+    if (!evitar.length) return { historico };
+    return { historico, evitar, alternativas: legais.filter(u => !evitar.includes(u)) };
   }
 
   // ── module: pgn-exporter.js ────────────────────────────────

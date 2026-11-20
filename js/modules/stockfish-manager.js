@@ -365,7 +365,9 @@ const StockfishManager = (() => {
     slot.w.postMessage(`position fen ${fen}${movesSuffix}`);
     // movetime é só uma trava de segurança: o motor para na profundidade
     // pedida OU quando o tempo acaba, o que vier primeiro.
-    slot.w.postMessage(`go depth ${depth}` + (movetime ? ` movetime ${movetime}` : ''));
+    // searchmoves (se houver) fica por último: o motor lê tudo depois dele como lances.
+    const busca = item.searchMoves && item.searchMoves.length ? ` searchmoves ${item.searchMoves.join(' ')}` : '';
+    slot.w.postMessage(`go depth ${depth}` + (movetime ? ` movetime ${movetime}` : '') + busca);
   }
 
   /**
@@ -408,7 +410,9 @@ const StockfishManager = (() => {
    * uma análise ao vivo anterior é simplesmente cancelada. Uma linha
    * (MultiPV 1) para responder rápido.
    */
-  function analyzeLive(fen, depth, onUpdate) {
+  // opts.movesUCI: lances desde `fen` até a posição mostrada (o motor passa a
+  // enxergar as repetições). opts.searchMoves: só estes lances são buscados.
+  function analyzeLive(fen, depth, onUpdate, opts = {}) {
     return new Promise((resolve) => {
       if (!slots.length) { resolve(null); return; }
       analysisQueue = analysisQueue.filter(it => {
@@ -416,7 +420,7 @@ const StockfishManager = (() => {
         it.resolve({ evals: [null], mateNs: [null], pvLines: [null], bestMove: null, cancelled: true });
         return false;
       });
-      const item = { fen, depth, multiPV: 1, movesUCI: [], resolve, onUpdate, movetime: 0, live: true };
+      const item = { fen, depth, multiPV: 1, movesUCI: opts.movesUCI || [], searchMoves: opts.searchMoves || null, resolve, onUpdate, movetime: 0, live: true };
       analysisQueue.unshift(item);
       // Ao vivo anterior ainda rodando em algum motor: cancela.
       for (const s of slots) if (s.busy && s.item && s.item.live) { s.item.cancelled = true; s.onUpdate = null; s.w.postMessage('stop'); }

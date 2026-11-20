@@ -21,6 +21,7 @@ const LiveEngine = (() => {
   const MAX_PLIES  = 10;      // lances mostrados na linha prevista
   const cache = new Map();    // fen → { cp, pv, depth }  (cp do ponto de vista de quem joga)
   const CACHE_MAX = 400;
+  const DESVANTAGEM_CLARA = 150; // centipeões: abaixo de −1,50 repetir para empatar é aceitável
 
   // Posição inicial já calculada (Stockfish 18, motor recém-aberto), para o
   // site abrir com a avaliação e a seta na hora, sem esperar o motor. Uma
@@ -118,12 +119,20 @@ const LiveEngine = (() => {
     modo = { arrow: opts.arrow !== false, evalBar: opts.evalBar !== false };
     if (timer) clearTimeout(timer);
 
+    // Repetição (Modo Livre): o motor recebe a linha jogada até aqui, para
+    // enxergar as posições repetidas. Se algum lance repetiria a posição
+    // (ver FreePlay), a busca fica só com os outros lances — a não ser que
+    // eles deixem quem joga em desvantagem clara; aí repetir (empatar) vale.
+    const hist = opts.historico || null;
+    const evitar = (opts.evitar && opts.evitar.length && opts.alternativas && opts.alternativas.length) ? opts.evitar : null;
+    const chave = evitar ? `${fen}|sem:${[...evitar].sort().join(',')}` : fen;
+
     // 1) Resposta imediata
-    let r = cache.get(fen) || null, previa = false;
+    let r = cache.get(chave) || null, previa = false;
     if (fen === INICIAL && (!r || r.depth < alvo())) r = INICIAL_PRONTA[alvo()] || r;
     if (!r && opts.played && opts.fenBefore) {
       const ant = cache.get(opts.fenBefore);
-      if (ant && ant.pv && ant.pv[0] === opts.played && ant.pv.length > 1) {
+      if (ant && ant.pv && ant.pv[0] === opts.played && ant.pv.length > 1 && !(evitar && evitar.includes(ant.pv[1]))) {
         r = { cp: -ant.cp, pv: ant.pv.slice(1), depth: Math.max(1, ant.depth - 1) };
         previa = true;
       }
@@ -133,13 +142,20 @@ const LiveEngine = (() => {
     // 2) Busca ao vivo (pequena espera para juntar cliques rápidos)
     const profundidade = alvo();
     if (r && !previa && r.depth >= profundidade) return;
+    const buscar = (k, extra) => StockfishManager.analyzeLive(hist ? hist.inicio : fen, profundidade, u => {
+      if (tok !== token || !u || !u.pv || !u.pv.length) return;
+      const res = { cp: u.eval, pv: u.pv, depth: u.depth };
+      guardar(k, res);
+      mostrar(fen, res, false);
+    }, { movesUCI: hist ? hist.lances : [], ...extra });
     timer = setTimeout(() => {
       if (tok !== token) return;
-      StockfishManager.analyzeLive(fen, profundidade, u => {
-        if (tok !== token || !u || !u.pv || !u.pv.length) return;
-        const res = { cp: u.eval, pv: u.pv, depth: u.depth };
-        guardar(fen, res);
-        mostrar(fen, res, false);
+      if (!evitar) { buscar(chave); return; }
+      buscar(chave, { searchMoves: opts.alternativas }).then(fim => {
+        if (tok !== token || !fim || fim.cancelled) return;
+        const cp = fim.evals && fim.evals[0];
+        // Sem repetir, quem joga fica claramente pior: mostra o melhor de verdade.
+        if (cp != null && cp <= -DESVANTAGEM_CLARA) { cache.delete(chave); buscar(fen); }
       });
     }, 30);
   }
