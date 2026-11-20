@@ -228,3 +228,31 @@ body[data-site="gambyte"]>.app-aviso{position:fixed;z-index:1300}
 .app-secao-btn:hover{filter:brightness(1.07)}
 .app-secao-btn svg{width:18px;height:18px}
 @media(prefers-reduced-motion:reduce){.app-modal-fundo,.app-aviso{animation:none}}
+/* Botão "Baixar app" na barra do PC */
+.nav-app-btn{display:inline-flex;align-items:center;gap:7px;flex:none;min-height:38px;padding:8px 13px;border-radius:10px;border:1px solid #7a6233;background:#ecbd6e14;color:#ecbd6e;font:inherit;font-weight:600;font-size:13.5px;line-height:1;white-space:nowrap;cursor:pointer;transition:background .18s,border-color .18s}
+.nav-app-btn:hover{background:#ecbd6e26;border-color:#ecbd6e}
+.nav-app-btn svg{width:17px;height:17px;flex:none}
+.nav-app-btn:focus-visible{outline:2px solid #f6d391;outline-offset:3px}
+@media(max-width:1100px){.nav-app-btn{width:38px;padding:0;justify-content:center}.nav-app-btn span{display:none}}
+@media(max-width:900px){.nav-app-btn{display:none}}
+/* Faixa "Instalar" (celular e fim da análise) */
+.app-faixa,.app-faixa *{box-sizing:border-box}
+.app-faixa{position:fixed;right:20px;bottom:20px;z-index:950;width:min(380px,calc(100% - 40px));display:flex;align-items:center;gap:12px;padding:12px 10px 12px 12px;border:1px solid #51422b;border-radius:16px;background:linear-gradient(135deg,#231d13,#161b26);box-shadow:0 14px 40px #0009;font-family:'Outfit',system-ui,sans-serif;color:#e8eaf0;animation:app-faixa-sobe .3s ease;transition:transform .28s ease}
+body[data-site="gambyte"]>.app-faixa{position:fixed;z-index:950}
+.app-faixa img{width:44px;height:44px;flex:none;border-radius:11px}
+.app-faixa-texto{flex:1;min-width:0;line-height:1.35}
+.app-faixa-texto strong{display:block;font-size:14.5px;font-weight:600;color:#f4cc80}
+.app-faixa-texto span{display:block;font-size:12.5px;color:#b4bdd0}
+.app-faixa-btn{flex:none;min-height:38px;padding:8px 14px;border-radius:10px;border:1px solid #f6d39166;background:linear-gradient(135deg,#f4cc80,#d39a45);color:#1a1408;font:inherit;font-weight:650;font-size:13.5px;cursor:pointer}
+.app-faixa-x{flex:none;width:32px;height:32px;display:grid;place-items:center;padding:0;border:0;border-radius:8px;background:none;color:#8b95ad;cursor:pointer}
+.app-faixa-x:hover{background:#ffffff0d;color:#e8eaf0}
+.app-faixa-x svg{width:16px;height:16px}
+.app-faixa-btn:focus-visible,.app-faixa-x:focus-visible{outline:2px solid #f6d391;outline-offset:2px}
+@keyframes app-faixa-sobe{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@media(max-width:900px){
+  .app-faixa{left:8px;right:8px;width:auto;bottom:calc(76px + env(safe-area-inset-bottom))}
+  html.nav-recolhida .app-faixa{transform:translateY(68px)}
+  body.com-faixa-app #toast-container{bottom:calc(150px + env(safe-area-inset-bottom))}
+}
+@media(prefers-reduced-motion:reduce){.app-faixa{animation:none;transition:none}}
+@media(max-width:520px){.app-faixa{gap:10px;padding:10px 6px 10px 10px}.app-faixa img{width:38px;height:38px;border-radius:10px}.app-faixa-btn{padding:8px 12px}}

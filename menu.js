@@ -197,11 +197,12 @@
   /* ── Baixar o app (o site instalado como app) ── */
   let pedidoInstalar = null;
   const instalado = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-  addEventListener('beforeinstallprompt', e => { e.preventDefault(); pedidoInstalar = e; });
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); pedidoInstalar = e; agendarFaixa(); });
   addEventListener('appinstalled', () => {
     pedidoInstalar = null;
     document.documentElement.classList.add('app-instalado');
     fecharComoInstalar();
+    fecharFaixa();
     avisoApp('Pronto! O Gambyte está na sua tela inicial.');
   });
 
@@ -264,6 +265,48 @@
     setTimeout(() => t.remove(), 4000);
   }
 
+  /* Faixa "Instalar": no celular (quando dá para instalar) e no fim de uma
+     análise. Fechou no X, some por uns dias (lembrado no aparelho). */
+  const DIA = 864e5;
+  const lembrar = (k, v) => { try { if (v === undefined) return +localStorage.getItem(k) || 0; localStorage.setItem(k, String(v)); } catch (e) { return 0; } };
+  let faixa = null, faixaAgendada = false;
+  function fecharFaixa(chave) {
+    if (!faixa) return;
+    if (chave) lembrar(chave, Date.now());
+    faixa.remove();
+    faixa = null;
+    document.body.classList.remove('com-faixa-app');
+  }
+  function mostrarFaixa(titulo, texto, chave) {
+    if (instalado() || faixa || document.querySelector('.app-modal')) return;
+    // Celular: texto curto para caber em duas linhas.
+    if (matchMedia('(max-width: 520px)').matches) { titulo = titulo.curto || titulo; texto = 'Grátis, em tela cheia.'; }
+    faixa = document.createElement('div');
+    faixa.className = 'app-faixa';
+    faixa.setAttribute('role', 'complementary');
+    faixa.setAttribute('aria-label', 'Baixar o app do Gambyte');
+    faixa.innerHTML = `<img src="/icone-192.png" alt="" width="44" height="44"><div class="app-faixa-texto"><strong>${titulo}</strong><span>${texto}</span></div><button type="button" class="app-faixa-btn" data-instalar>Instalar</button><button type="button" class="app-faixa-x" aria-label="Agora não">${svg('fechar')}</button>`;
+    faixa.querySelector('.app-faixa-x').addEventListener('click', () => fecharFaixa(chave));
+    faixa.querySelector('.app-faixa-btn').addEventListener('click', () => { lembrar(chave, Date.now()); setTimeout(() => fecharFaixa(), 0); });
+    document.body.appendChild(faixa);
+    document.body.classList.add('com-faixa-app');
+  }
+  // Celular: uma vez por visita, alguns segundos depois de abrir, e só onde
+  // a instalação funciona (navegador liberou ou é iPhone/iPad).
+  function agendarFaixa() {
+    if (faixaAgendada || instalado() || !matchMedia('(max-width: 900px)').matches) return;
+    if (!pedidoInstalar && aparelho() !== 'ios') return;
+    if (Date.now() - lembrar('gambyte_app_faixa') < 14 * DIA) return;
+    faixaAgendada = true;
+    setTimeout(() => mostrarFaixa(Object.assign(new String('Gambyte no seu celular'), { curto: 'Baixe o app' }), 'Grátis, ícone na tela e abre em tela cheia.', 'gambyte_app_faixa'), 4000);
+  }
+  // Fim de uma análise: o momento em que o app faz mais sentido.
+  addEventListener('gambyte:analise-concluida', () => {
+    if (instalado() || aparelho() === 'firefox-pc') return;
+    if (Date.now() - lembrar('gambyte_app_fim') < 7 * DIA) return;
+    setTimeout(() => mostrarFaixa(Object.assign(new String('Analise as próximas pelo app'), { curto: 'Analise pelo app' }), 'Instale grátis: abre direto no tabuleiro, em tela cheia.', 'gambyte_app_fim'), 1500);
+  });
+
   async function instalar() {
     fecharGaveta();
     if (instalado()) { avisoApp('Você já está usando o app do Gambyte.'); return; }
@@ -281,6 +324,10 @@
     // Rodapé: mais um lugar para achar o app.
     const rodape = document.querySelector('.info-footer nav');
     if (rodape && !rodape.querySelector('[data-instalar]')) rodape.insertAdjacentHTML('beforeend', '<button type="button" class="rodape-app" data-instalar>Baixar o app</button>');
+    // PC: botão de baixar ao lado do Pro, na barra de cima.
+    const nav = document.querySelector('body > .info-nav'), lado = nav && nav.querySelector('.info-nav-side');
+    if (lado && !nav.querySelector('.nav-app-btn')) lado.insertAdjacentHTML('beforebegin', `<button type="button" class="nav-app-btn" data-instalar title="Baixar o app do Gambyte">${svg('baixar')}<span>Baixar app</span></button>`);
+    agendarFaixa();
     document.addEventListener('click', e => { if (e.target.closest('[data-instalar]')) { e.preventDefault(); instalar(); } });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && modalApp) fecharComoInstalar(); });
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {

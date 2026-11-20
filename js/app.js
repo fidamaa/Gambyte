@@ -211,6 +211,7 @@ const App = (() => {
             : 'Análise Profunda concluída: as avaliações já estavam estáveis antes da profundidade 22.', 'success');
         }
         GameHistory.save(parsedGame, allMoves, pgn);
+        window.dispatchEvent(new CustomEvent('gambyte:analise-concluida'));
       }
     });
 
