@@ -500,7 +500,6 @@ const AnalysisEngine = (() => {
         } else if (bRes.mateNs) {
           m.mateNs = [bRes.mateNs[0], ...((m.mateNs || []).slice(1))];
         }
-        m._stable      = isStable;
         // m.evalBefore mantém o valor original da Phase 1 — NÃO atualizar aqui
 
         // Material real capturável e mate, recalculados nesta profundidade
@@ -544,6 +543,17 @@ const AnalysisEngine = (() => {
           opponentGetsMate: opponentGetsMate2,
           depth
         });
+
+        // Só deixa de recalcular se a avaliação ficou parecida E o rótulo não
+        // deu um salto grande desde a passada anterior. Na profundidade rasa
+        // o motor às vezes ainda não enxerga o melhor lance (Partida da
+        // Ópera, 15. Bxd7+ saía "chance perdida" na profundidade 8): um salto
+        // assim (ex.: melhor lance ↔ erro) é sempre confirmado na profundidade
+        // seguinte, para o resultado final não depender disso. Oscilações
+        // pequenas (Excelente ↔ Boa) não contam — custariam muito tempo.
+        const NIVEL_ROTULO = { book: 0, brilliant: 0, great: 0, 'best-move': 0, excellent: 1, good: 2, inaccuracy: 3, mistake: 4, miss: 4, blunder: 5 };
+        const salto = Math.abs((NIVEL_ROTULO[newCls] ?? 0) - (NIVEL_ROTULO[m.classification] ?? 0));
+        m._stable = isStable && salto <= 1;
 
         if (newCls !== m.classification) {
           m.classification = newCls;
