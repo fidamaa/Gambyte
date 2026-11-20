@@ -33,6 +33,23 @@ const AnalysisEngine = (() => {
   // (a profundidade alcançada fica registrada) e a análise termina antes.
   const MOVETIME_POR_PROF = { 16: 450, 18: 1800 };
 
+  // Nota do lance jogado pela MESMA busca do melhor lance: se o lance
+  // jogado está entre as linhas do motor (MultiPV), a avaliação dele vem
+  // dessa linha, não de uma segunda busca feita depois do lance. Duas
+  // buscas diferentes chegam a discordar em vários pontos (ex.: Partida da
+  // Ópera, 15. Bxd7+: +8,3 antes e +3,5 depois, por ver a defesa Qxd7),
+  // e aí o mesmo lance oscilava entre "melhor lance" e "erro".
+  // Diagnóstico: ?consistente=0 volta ao jeito antigo.
+  const CONSISTENTE = typeof location === 'undefined' || !/[?&]consistente=0/.test(location.search);
+  function linhaDoLance(res, uci) {
+    if (!CONSISTENTE || !res || !res.pvLines || !uci) return -1;
+    for (let k = 0; k < res.pvLines.length; k++) {
+      const pv = res.pvLines[k];
+      if (pv && res.evals[k] != null && pv.split(' ')[0].slice(0, 4) === uci.slice(0, 4)) return k;
+    }
+    return -1;
+  }
+
   let onProgress = null;
   let onMoveUpdate = null;
   let onComplete = null;
@@ -206,8 +223,8 @@ const AnalysisEngine = (() => {
     // O cache guarda a PROMESSA da busca: assim as posições de uma passada
     // podem ser adiantadas para a fila de uma vez (vários motores trabalham
     // em paralelo) e o laço só espera cada uma na sua vez.
-    function getAnalysis(fen, depth, fundo = false) {
-      const key = `${fen}@${depth}`;
+    function getAnalysis(fen, depth, fundo = false, sufixo = '') {
+      const key = `${fen}@${depth}${sufixo}`;
       if (cache.has(key)) return cache.get(key);
       const mt = MOVETIME_POR_PROF[depth] || 0;
       const p = StockfishManager.analyzePosition(fen, depth, MULTIPV, [], null,
@@ -216,14 +233,14 @@ const AnalysisEngine = (() => {
       return p;
     }
     // Adianta para a fila todas as posições dos lances indicados.
-    function adiantar(indices, depth) {
-      for (const i of indices) { getAnalysis(fensBefore[i], depth, true); getAnalysis(fensAfter[i], depth, true); }
+    function adiantar(indices, depth, sufixo = '') {
+      for (const i of indices) { getAnalysis(fensBefore[i], depth, true, sufixo); getAnalysis(fensAfter[i], depth, true, sufixo); }
     }
 
     // Busca da passada final da Análise Profunda: 1 linha, trava de tempo
     // e atualização ao vivo da profundidade alcançada.
-    function getDeepAnalysis(fen, depth, onLive) {
-      const key = `${fen}@${depth}#deep`;
+    function getDeepAnalysis(fen, depth, onLive, sufixo = '') {
+      const key = `${fen}@${depth}#deep${sufixo}`;
       if (cache.has(key)) return cache.get(key);
       const p = StockfishManager.analyzePosition(fen, depth, DEEP_MULTIPV, [],
         onLive ? (u => onLive(u.depth)) : null, { movetime: DEEP_MOVETIME });
@@ -275,6 +292,7 @@ const AnalysisEngine = (() => {
       // Posições antes e depois (já adiantadas para a fila acima)
       const beforeResult = await getAnalysis(fenBefore, PHASE1_DEPTH);
       const afterResult  = await getAnalysis(fenAfter,  PHASE1_DEPTH);
+      movesData[i]._motor = beforeResult.motor === 'lite' || afterResult.motor === 'lite' ? 'lite' : 'full';
       if (dead()) return;
 
       // evalBefore e bestEval: perspectiva do lado a mover (positivo = bom para quem joga)
@@ -285,7 +303,7 @@ const AnalysisEngine = (() => {
       // FIX 5: Se é xeque-mate, não usar a eval "after" (seria 0 ou errada)
       // Tratar como vitória máxima: evalAfter = +29999 (melhor resultado possível)
       const rawEvalAfter = isCheckmateMove ? 29999 : -(afterResult.evals[0] ?? 0);
-      const evalAfter    = rawEvalAfter;
+      let evalAfter      = rawEvalAfter;
 
       const bestEval   = beforeResult.evals[0] ?? 0;
       const multiPV    = beforeResult.evals;
@@ -296,6 +314,8 @@ const AnalysisEngine = (() => {
       const playedMoveUCI = (moveSquare && moveSquare.from && moveSquare.to)
         ? (moveSquare.from + moveSquare.to)
         : null;
+      const kJogado = isCheckmateMove ? -1 : linhaDoLance(beforeResult, playedMoveUCI);
+      if (kJogado >= 0) evalAfter = beforeResult.evals[kJogado];
 
       // Material real que o adversário captura na resposta do motor à
       // posição pós-lance, e se essa resposta é um mate forçado contra nós.
@@ -401,25 +421,27 @@ const AnalysisEngine = (() => {
 
     const isProMode = document.getElementById('pro-deep-toggle')?.checked ?? false;
     const PHASE2_DEPTHS = isProMode ? PHASE2_DEPTHS_PRO : PHASE2_DEPTHS_FREE;
-    for (let pass = 0; pass < PHASE2_DEPTHS.length; pass++) {
-      const depth = PHASE2_DEPTHS[pass];
+    // O motor completo manda: se ele ficou pronto no meio da análise, os
+    // lances cujo resultado final saiu do motor rápido são refeitos com o
+    // completo numa passada extra (refazer), na profundidade final.
+    const passadas = PHASE2_DEPTHS.map((d, pass) => ({ pass, depth: d, refazer: null }));
+    for (let k = 0; k < passadas.length; k++) {
+      const { pass, depth, refazer } = passadas[k];
+      const sufixo = refazer ? '#completo' : '';
       if (dead()) return;
       const deep = isProMode && pass === PHASE2_DEPTHS.length - 1;
-      // Passada final começando com o motor rápido: termina com ele (o
-      // completo, se ficar pronto agora, entra na próxima análise).
-      if (pass === PHASE2_DEPTHS.length - 1 && StockfishManager.getEngineInfo().kind === 'lite') StockfishManager.segurarTroca(true);
       const prevDepth = pass > 0 ? PHASE2_DEPTHS[pass - 1] : PHASE1_DEPTH;
       // Só entram na conta os lances que serão de fato recalculados nesta
       // profundidade (os estáveis são pulados) — assim a barra e o tempo
       // restante refletem o trabalho real.
-      const toRefine = candidates.filter(c => {
+      const toRefine = refazer ? candidates.filter(c => refazer.has(c.index)) : candidates.filter(c => {
         const mm = movesData[c.index];
         return !mm.isBook && !(mm._stable && depth > PHASE1_DEPTH);
       });
       const passInfo = { pass, passCount: PHASE2_DEPTHS.length, passStart: Date.now(), deep };
 
       if (onProgress) onProgress({ phase: 2, done: 0, total: toRefine.length, depth, ...passInfo });
-      if (!deep) adiantar(toRefine.map(c => c.index), depth);
+      if (!deep) adiantar(toRefine.map(c => c.index), depth, sufixo);
 
       for (let ci = 0; ci < toRefine.length; ci++) {
         if (dead()) return;
@@ -440,13 +462,14 @@ const AnalysisEngine = (() => {
 
         let bRes, aRes;
         if (deep) {
-          bRes = await getDeepAnalysis(fenBefore, depth, onLive);
+          bRes = await getDeepAnalysis(fenBefore, depth, onLive, sufixo);
           lastLive = 0; half = 1;
-          aRes = await getDeepAnalysis(fenAfter, depth, onLive);
+          aRes = await getDeepAnalysis(fenAfter, depth, onLive, sufixo);
         } else {
-          bRes = await getAnalysis(fenBefore, depth);
-          aRes = await getAnalysis(fenAfter,  depth);
+          bRes = await getAnalysis(fenBefore, depth, false, sufixo);
+          aRes = await getAnalysis(fenAfter,  depth, false, sufixo);
         }
+        m._motor = bRes.motor === 'lite' || aRes.motor === 'lite' ? 'lite' : 'full';
         if (dead()) return;
         // Na passada profunda, as 3 linhas (lance único, peça pendurada)
         // vêm da passada anterior, que ainda usou MultiPV 3.
@@ -468,6 +491,8 @@ const AnalysisEngine = (() => {
         // FIX 5: Se é xeque-mate, não usar a eval "after" — manter como vitória máxima
         m.bestEval     = newBestEval;
         m.evalAfter    = m.isCheckmate ? 29999 : -(newEvalAfter);  // ← perspectiva do jogador
+        const kJog2 = m.isCheckmate ? -1 : linhaDoLance(bRes, m.playedMoveUCI);
+        if (kJog2 >= 0) m.evalAfter = bRes.evals[kJog2];
         m.bestMoveUCI  = bRes.bestMove ?? m.bestMoveUCI;
         if (!deep) {
           m.multiPVEvals = bRes.evals;
@@ -548,6 +573,13 @@ const AnalysisEngine = (() => {
         depthComplete: true,          // ← sinaliza fim de depth
         movesData: [...movesData]
       });
+
+      // Fim da última passada com o completo já em uso: refaz com ele o que
+      // ainda tem resultado do motor rápido.
+      if (!refazer && pass === PHASE2_DEPTHS.length - 1 && StockfishManager.getEngineInfo().kind === 'full') {
+        const doRapido = new Set(candidates.filter(c => movesData[c.index]._motor === 'lite').map(c => c.index));
+        if (doRapido.size) passadas.push({ pass, depth, refazer: doRapido });
+      }
     }
 
     StockfishManager.segurarTroca(false);
@@ -556,7 +588,7 @@ const AnalysisEngine = (() => {
   }
 
   return {
-    analyze, setCallbacks, abort, pieceValueAtSquare, computeImmediateCaptureValue,
+    analyze, setCallbacks, abort, pieceValueAtSquare, computeImmediateCaptureValue, linhaDoLance,
     isSquareHanging, isRecapturable
   };
 })();

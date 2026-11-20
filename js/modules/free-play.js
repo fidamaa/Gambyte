@@ -479,7 +479,10 @@ const FreePlay = (() => {
       if (!stillCurrent()) return;
 
       const evalBefore = beforeRes.evals[0] ?? 0;
-      const evalAfter  = isCheckmateMove ? 29999 : -(afterRes.evals[0] ?? 0);
+      // Lance jogado entre as linhas do motor: nota da mesma busca do
+      // melhor lance (ver AnalysisEngine.linhaDoLance).
+      const kJog = isCheckmateMove ? -1 : AnalysisEngine.linhaDoLance(beforeRes, playedMoveUCI);
+      const evalAfter  = isCheckmateMove ? 29999 : kJog >= 0 ? beforeRes.evals[kJog] : -(afterRes.evals[0] ?? 0);
       const bestEval    = evalBefore;
 
       const immediateCaptureValue = AnalysisEngine.computeImmediateCaptureValue(fenAfter, afterRes.bestMove);

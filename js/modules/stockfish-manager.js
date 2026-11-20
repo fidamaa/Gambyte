@@ -14,13 +14,10 @@
      passada final de uma análise já começou com o Lite, a troca espera
      a análise acabar (segurarTroca).
 
-   ── Vários motores ao mesmo tempo ──────────────────────────────
-   No computador (4+ núcleos e memória suficiente) rodam 2 motores
-   independentes, cada um com sua thread; uma fila única distribui as
-   posições para quem estiver livre. No celular, 1 só (memória).
-   Cada motor é o build single-thread — o build multi-thread (pthreads)
-   foi testado antes e deu tempos erráticos; motores separados não
-   disputam a mesma busca e escalam bem.
+   ── Um motor por vez ───────────────────────────────────────────
+   Só um motor calcula: o completo, assim que estiver pronto (a análise
+   refaz com ele o que tinha saído do Lite); o Lite é o reserva quando o
+   completo não carrega, a internet está lenta ou o download para.
    ============================================================== */
 const StockfishManager = (() => {
   const usingMulti = false;
@@ -42,19 +39,9 @@ const StockfishManager = (() => {
 
   const param = (nome) => (location.search.match(new RegExp('[?&]' + nome + '=([\\w.-]+)')) || [])[1];
 
-  // Quantos motores rodam juntos: 2 no computador, 1 no celular.
-  // Diagnóstico: ?motores=1 ou ?motores=2.
-  function _quantos() {
-    const p = parseInt(param('motores'), 10);
-    if (p === 1 || p === 2) return p;
-    const ua = navigator.userAgent || '';
-    const celular = (navigator.userAgentData && navigator.userAgentData.mobile) || /Android|iPhone|iPad|iPod|Mobi/i.test(ua);
-    const nucleos = navigator.hardwareConcurrency || 2;
-    const mem = navigator.deviceMemory;      // só Chrome/Edge; limitado a 8
-    if (celular || nucleos < 4) return 1;
-    if (mem != null ? mem < 8 : nucleos < 6) return 1;
-    return 2;
-  }
+  // Um motor só por vez (o completo manda; o rápido é o reserva).
+  // Diagnóstico: ?motores=2 testa dois em paralelo.
+  function _quantos() { return parseInt(param('motores'), 10) === 2 ? 2 : 1; }
   const ALVO = _quantos();
 
   // ── Motores (slots) ─────────────────────────────────────────
@@ -165,7 +152,13 @@ const StockfishManager = (() => {
         const partes = []; let recebido = 0, ultimo = -1;
         const t0 = performance.now();
         for (;;) {
-          const { done, value } = await leitor.read();
+          // Download parado por 10 s (internet caiu): desiste e fica com o rápido.
+          let parado;
+          const { done, value } = await Promise.race([
+            leitor.read(),
+            new Promise((_, rej) => { parado = setTimeout(() => rej(new Error('download parado')), 10000); })
+          ]).catch(err => { lenta = true; try { leitor.cancel(); } catch (e) {} throw err; })
+            .finally(() => clearTimeout(parado));
           if (done) break;
           partes.push(value); recebido += value.length;
           // Diagnóstico: ?velocidadeTeste=bytes/s simula uma internet lenta.
