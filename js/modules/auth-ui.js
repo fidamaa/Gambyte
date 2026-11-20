@@ -30,7 +30,7 @@ const AuthUI = (() => {
     } else {
       area.innerHTML = `
         <button class="btn-login-header" data-auth-action="login">Entrar</button>
-        <button class="btn-premium-header" data-auth-action="premium">Conhecer o Pro</button>
+        <button class="btn-premium-header" data-auth-action="premium"><span class="so-pc">Conhecer o&nbsp;</span>Pro</button>
       `;
     }
     // Update pro toggle

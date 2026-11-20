@@ -977,12 +977,21 @@ const UIController = (() => {
 
   // ── Keyboard nav ─────────────────────────────────────────────
   function setupKeyboard() {
+    // As setas são do tabuleiro: não rolam a página. ← volta, → avança,
+    // ↑ vai para o último lance jogado e ↓ para a posição inicial. Só não
+    // valem enquanto se digita (campos de texto, listas) ou no editor de posição.
+    const ACOES = {
+      ArrowLeft: () => navigate(-1), ArrowRight: () => navigate(+1),
+      ArrowUp: navToEnd, ArrowDown: navToStart, Home: navToStart, End: navToEnd,
+    };
     document.addEventListener('keydown', e => {
-      if (e.target.tagName === 'TEXTAREA') return;
-      if (e.key === 'ArrowLeft')  navigate(-1);
-      if (e.key === 'ArrowRight') navigate(+1);
-      if (e.key === 'ArrowUp' || e.key === 'Home') navToStart();
-      if (e.key === 'ArrowDown' || e.key === 'End') navToEnd();
+      const acao = ACOES[e.key];
+      if (!acao || e.ctrlKey || e.altKey || e.metaKey || e.defaultPrevented) return;
+      const t = e.target;
+      if (t && (t.isContentEditable || /^(TEXTAREA|INPUT|SELECT)$/.test(t.tagName))) return;
+      if (document.body.classList.contains('pos-ed-aberto')) return;
+      if (e.key.startsWith('Arrow')) e.preventDefault();
+      acao();
     });
 
     els.navStart.addEventListener('click', navToStart);

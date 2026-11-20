@@ -231,7 +231,7 @@ const head = ({ titulo, descricao, url, tipo, ld }) => `<!doctype html>
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/logo.png" type="image/png" sizes="192x192">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/site-info.css?v=7">
+<link rel="stylesheet" href="/site-info.css?v=8">
 <link rel="stylesheet" href="/aprender.css?v=4">
 <script type="application/ld+json">${JSON.stringify(ld)}</script>
 <script src="/menu.js" defer></script>
