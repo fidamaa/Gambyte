@@ -36,7 +36,7 @@ class COOPCOEPHandler(SimpleHTTPRequestHandler):
     # No Windows o Python manda .mjs como text/plain, e o navegador recusa
     # importar módulo assim (o leitor de fotos usa um .mjs do ONNX Runtime).
     extensions_map = {**SimpleHTTPRequestHandler.extensions_map,
-                      ".mjs": "text/javascript", ".js": "text/javascript", ".wasm": "application/wasm"}
+                      ".mjs": "text/javascript", ".js": "text/javascript", ".wasm": "application/wasm", ".webmanifest": "application/manifest+json"}
 
     # Endereços limpos, como no Cloudflare: /como-usar abre como-usar.html.
     def translate_path(self, path):

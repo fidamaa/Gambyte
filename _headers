@@ -9,3 +9,10 @@
 # Motor rápido: o arquivo muda de nome se um dia for atualizado.
 /stockfish-18-lite-single.wasm
   Cache-Control: public, max-age=2592000, immutable
+
+# App instalável: o service worker é sempre conferido no servidor.
+/sw.js
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Content-Type: application/manifest+json
+  Cache-Control: no-cache

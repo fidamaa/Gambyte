@@ -14,6 +14,10 @@
     fechar: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
     seta: '<path d="m6 9 6 6 6-6"/>',
     conta: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    baixar: '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>',
+    compartilhar: '<path d="M12 3v13"/><path d="m8 7 4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/>',
+    somar: '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8"/><path d="M8 12h8"/>',
+    pontos: '<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>',
   };
   const svg = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]}</svg>`;
   const PAGINAS = [
@@ -94,6 +98,7 @@
     btn.addEventListener('click', e => { e.stopPropagation(); abrir(!caixa.classList.contains('aberta')); });
     document.addEventListener('click', e => { if (!caixa.contains(e.target)) abrir(false); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && caixa.classList.contains('aberta')) { abrir(false); btn.focus(); } });
+    lista.insertAdjacentHTML('beforeend', `<button type="button" class="nav-mais-app" data-instalar>${svg('baixar')}Baixar o app</button>`);
     lista.addEventListener('click', () => abrir(false));
   }
 
@@ -113,7 +118,8 @@
       ? `<a class="nav-gaveta-conta" href="/gambyte-login.html"><span class="perfil-ini">${esc(c.nome.charAt(0).toUpperCase())}</span><span>${esc(c.nome)}<small>${c.pro ? 'Gambyte Pro ativo' : 'Minha conta'}</small></span></a>`
       : `<a class="nav-gaveta-conta" href="/gambyte-login.html"><span class="perfil-ini nav-ini-vazio">${svg('conta')}</span><span>Entrar<small>ou criar uma conta grátis</small></span></a>`;
     gaveta.querySelector('.nav-gaveta-links').innerHTML = links;
-    gaveta.querySelector('.nav-gaveta-fim').innerHTML = pro + conta;
+    const app = `<button type="button" class="nav-gaveta-app" data-instalar>${svg('baixar')}<span>Baixar o app<small>Ícone na tela e abre em tela cheia</small></span></button>`;
+    gaveta.querySelector('.nav-gaveta-fim').innerHTML = app + pro + conta;
   }
   function montarGaveta(nav) {
     const fundo = document.createElement('div');
@@ -188,6 +194,100 @@
     }, { passive: true });
   }
 
+  /* ── Baixar o app (o site instalado como app) ── */
+  let pedidoInstalar = null;
+  const instalado = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); pedidoInstalar = e; });
+  addEventListener('appinstalled', () => {
+    pedidoInstalar = null;
+    document.documentElement.classList.add('app-instalado');
+    fecharComoInstalar();
+    avisoApp('Pronto! O Gambyte está na sua tela inicial.');
+  });
+
+  function aparelho() {
+    const ua = navigator.userAgent;
+    const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    if (ios) return 'ios';
+    if (/Android/.test(ua)) return /SamsungBrowser/.test(ua) ? 'samsung' : 'android';
+    if (/Firefox\//.test(ua)) return 'firefox-pc';
+    if (/Edg\//.test(ua)) return 'edge';
+    if (/Safari\//.test(ua) && !/Chrome\//.test(ua)) return 'safari-pc';
+    return 'chrome-pc';
+  }
+
+  function passos() {
+    const i = n => `<span class="app-ic">${svg(n)}</span>`;
+    switch (aparelho()) {
+      case 'ios': return ['Abra o gambyte.com.br no <strong>Safari</strong>.', `Toque em <strong>Compartilhar</strong> ${i('compartilhar')} na barra de baixo.`, `Escolha <strong>Adicionar à Tela de Início</strong> ${i('somar')} e toque em <strong>Adicionar</strong>.`];
+      case 'android': return [`Toque no menu ${i('pontos')} do navegador, no canto de cima.`, 'Escolha <strong>Instalar app</strong> (ou <strong>Adicionar à tela inicial</strong>).', 'Confirme. O ícone do Gambyte aparece junto com seus apps.'];
+      case 'samsung': return ['Toque no menu <strong>☰</strong> do navegador, embaixo.', 'Escolha <strong>Adicionar página a</strong> e depois <strong>Tela inicial</strong>.', 'Confirme. O ícone do Gambyte aparece junto com seus apps.'];
+      case 'edge': return [`Clique no menu ${i('pontos')} do Edge.`, 'Vá em <strong>Aplicativos</strong> e em <strong>Instalar este site como aplicativo</strong>.', 'Confirme. O Gambyte abre numa janela própria.'];
+      case 'firefox-pc': return ['O Firefox no computador não instala sites como app.', 'Abra o <strong>gambyte.com.br</strong> no Chrome ou no Edge.', 'Lá, clique em <strong>Baixar o app</strong> de novo.'];
+      case 'safari-pc': return ['No Safari do Mac, abra o menu <strong>Arquivo</strong>.', 'Escolha <strong>Adicionar ao Dock</strong>.', 'Confirme. O Gambyte abre numa janela própria.'];
+      default: return [`Clique no ícone de instalar ${i('baixar')} no fim da barra de endereço, ou no menu ${i('pontos')} do navegador.`, 'Escolha <strong>Instalar Gambyte</strong> (ou <strong>Transmitir, salvar e compartilhar → Instalar</strong>).', 'Confirme. O Gambyte abre numa janela própria.'];
+    }
+  }
+
+  let modalApp = null;
+  function fecharComoInstalar() {
+    if (!modalApp) return;
+    modalApp.remove();
+    modalApp = null;
+    document.documentElement.classList.remove('app-modal-aberto');
+  }
+  function mostrarComoInstalar() {
+    fecharComoInstalar();
+    modalApp = document.createElement('div');
+    modalApp.className = 'app-modal-fundo';
+    modalApp.innerHTML = `<div class="app-modal" role="dialog" aria-modal="true" aria-labelledby="app-modal-t">
+      <button type="button" class="app-modal-x" aria-label="Fechar">${svg('fechar')}</button>
+      <img src="/icone-192.png" alt="" width="64" height="64" class="app-modal-icone">
+      <h2 id="app-modal-t">Baixar o app do Gambyte</h2>
+      <p class="app-modal-sub">Grátis, sem loja e sem ocupar espaço: o Gambyte ganha um ícone na tela e abre em tela cheia, como qualquer app.</p>
+      <ol class="app-passos">${passos().map(p => `<li>${p}</li>`).join('')}</ol>
+      <button type="button" class="nav-pro app-modal-ok">Entendi</button>
+    </div>`;
+    document.body.appendChild(modalApp);
+    document.documentElement.classList.add('app-modal-aberto');
+    const fechar = () => fecharComoInstalar();
+    modalApp.addEventListener('click', e => { if (e.target === modalApp || e.target.closest('.app-modal-x,.app-modal-ok')) fechar(); });
+    modalApp.querySelector('.app-modal-ok').focus({ preventScroll: true });
+  }
+
+  function avisoApp(msg) {
+    const t = document.createElement('div');
+    t.className = 'app-aviso';
+    t.setAttribute('role', 'status');
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 4000);
+  }
+
+  async function instalar() {
+    fecharGaveta();
+    if (instalado()) { avisoApp('Você já está usando o app do Gambyte.'); return; }
+    if (pedidoInstalar) {
+      const p = pedidoInstalar;
+      pedidoInstalar = null;
+      try { await p.prompt(); await p.userChoice; } catch (e) { mostrarComoInstalar(); }
+      return;
+    }
+    mostrarComoInstalar();
+  }
+
+  function montarInstalar() {
+    if (instalado()) document.documentElement.classList.add('app-instalado');
+    // Rodapé: mais um lugar para achar o app.
+    const rodape = document.querySelector('.info-footer nav');
+    if (rodape && !rodape.querySelector('[data-instalar]')) rodape.insertAdjacentHTML('beforeend', '<button type="button" class="rodape-app" data-instalar>Baixar o app</button>');
+    document.addEventListener('click', e => { if (e.target.closest('[data-instalar]')) { e.preventDefault(); instalar(); } });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && modalApp) fecharComoInstalar(); });
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+      addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+    }
+  }
+
   function montar() {
     const nav = document.querySelector('body > .info-nav');
     const links = nav && nav.querySelector('.info-links');
@@ -224,7 +324,7 @@
       (c.pro ? '<span class="perfil-pro">PRO</span>' : '') + '</a>';
   }
 
-  function iniciar() { montar(); perfil(); }
+  function iniciar() { montar(); perfil(); montarInstalar(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
   else iniciar();
 })();
