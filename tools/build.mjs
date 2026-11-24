@@ -281,7 +281,7 @@ const head = ({ titulo, descricao, url, tipo, ld }) => `<!doctype html>
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/logo.png" type="image/png" sizes="192x192">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/site-info.css?v=9"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0d0f14"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="Gambyte">
+<link rel="stylesheet" href="/site-info.css?v=10"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0d0f14"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="Gambyte">
 <link rel="stylesheet" href="/aprender.css?v=5">
 <script type="application/ld+json">${JSON.stringify(ld)}</script>
 <script src="/menu.js" defer></script>

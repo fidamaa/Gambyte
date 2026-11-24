@@ -346,6 +346,13 @@
     if (!links.querySelector('[aria-current]') && atual) {
       for (const a of links.querySelectorAll(':scope > a')) if (idDe(new URL(a.href, location.href).pathname) === atual) { a.setAttribute('aria-current', 'page'); break; }
     }
+    // Nomes curtos no PC quando falta espaço (o resto some abaixo de 1280 px):
+    // "Analisar partida" → "Analisar", "Aprender xadrez" → "Aprender"...
+    const CURTO = { analisar: ['Analisar', ' partida'], aprender: ['Aprender', ' xadrez'], guia: ['Guia', ' de análise'] };
+    for (const a of links.querySelectorAll(':scope > a')) {
+      const c = CURTO[idDe(new URL(a.href, location.href).pathname)];
+      if (c && a.textContent.trim() === c[0] + c[1]) a.innerHTML = `${c[0]}<span class="nav-longo">${c[1]}</span>`;
+    }
     // "Jogar contra o bot" logo depois de "Analisar partida", em todas as páginas.
     if (!links.querySelector('a[href="/jogar"],a[href="jogar"],a[href="../jogar"]')) {
       const primeiro = links.querySelector(':scope > a');
