@@ -179,7 +179,6 @@ const ICONES = {
   gambyte: '<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/>',
   relogio: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
   tabuleiro: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>',
-  teste: '<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
   esq: '<path d="m15 18-6-6 6-6"/>',
   dir: '<path d="m9 18 6-6-6-6"/>',
@@ -198,7 +197,6 @@ function miniatura(fen) {
   return `<span class="ap-mini" aria-hidden="true">${pecas}</span>`;
 }
 
-const TESTES = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'testes.json'), 'utf8'));
 
 const attrs = s => Object.fromEntries([...s.matchAll(/(\w+)="([^"]*)"/g)].map(m => [m[1], m[2]]));
 
@@ -242,11 +240,7 @@ const artigos = fs.readdirSync(SRC).filter(f => f.endsWith('.html')).sort().map(
   meta.palavras = texto.split(/\s+/).filter(Boolean).length;
   meta.minutos = Math.max(2, Math.round(meta.palavras / 190));
   const subt = [...corpo.matchAll(/<h2 id="([^"]+)">([\s\S]*?)<\/h2>/g)].map(x => ({ id: x[1], t: x[2] }));
-  const teste = TESTES[meta.slug] || null;
-  if (!teste) falha(arq, 'sem "Teste rápido" em tools/testes.json');
-  for (const [n, q] of (teste || []).entries())
-    if (!q.p || !Array.isArray(q.o) || q.o.length < 2 || !(q.c >= 0 && q.c < q.o.length) || !q.e) falha(arq, `pergunta ${n + 1} do teste incompleta`);
-  return { meta, corpo, subt, teste, miniatura: miniaturaAtual, diagramas: diagramasAtual };
+  return { meta, corpo, subt, miniatura: miniaturaAtual, diagramas: diagramasAtual };
 }).filter(Boolean);
 
 artigos.sort((a, b) => a.meta.ordem - b.meta.ordem);
@@ -282,10 +276,10 @@ const head = ({ titulo, descricao, url, tipo, ld }) => `<!doctype html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/site-info.css?v=12"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#07090b"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="Gambyte">
-<link rel="stylesheet" href="/aprender.css?v=6">
+<link rel="stylesheet" href="/aprender.css?v=7">
 <script type="application/ld+json">${JSON.stringify(ld)}</script>
 <script src="/menu.js" defer></script>
-<script src="/aprender.js?v=1" defer></script>
+<script src="/aprender.js?v=2" defer></script>
 </head>
 <!-- Página gerada por tools/build.mjs — edite o fragmento em tools/artigos/ e rode o build. -->`;
 
@@ -294,12 +288,6 @@ const cartao = a => `<a class="ap-card" href="/aprender/${a.meta.slug}" data-slu
   + (a.miniatura ? miniatura(a.miniatura) : `<span class="ap-mini ap-mini-ic" aria-hidden="true">${ic(a.meta.categoria)}</span>`)
   + `<span class="ap-card-txt"><span class="ap-card-cat">${nomeCat(a.meta.categoria)}</span><strong>${esc(a.meta.titulo)}</strong><span class="ap-card-desc">${esc(a.meta.descricao)}</span>`
   + `<span class="ap-card-pe"><span class="ap-card-min">${ic('relogio')}${a.meta.minutos} min de leitura</span><span class="ap-card-lido">${ic('check')}Lido</span></span></span></a>`;
-
-const testeHTML = t => `<section class="ap-teste" aria-labelledby="teste-t"><div class="ap-teste-topo"><span class="ap-teste-ic">${ic('teste')}</span><div><h2 id="teste-t">Teste rápido</h2><p>${t.length} perguntas para fixar o que você leu. Toque na resposta.</p></div></div>`
-  + `<ol class="ap-qs">${t.map((q, n) => `<li class="ap-q" data-certa="${q.c}"><p class="ap-q-p"><span class="ap-q-n">${n + 1}</span>${esc(q.p)}</p><div class="ap-q-ops">`
-    + q.o.map((o, i) => `<button type="button" class="ap-q-op" data-i="${i}"><span class="ap-q-letra">${'ABCD'[i]}</span><span>${esc(o)}</span></button>`).join('')
-    + `</div><p class="ap-q-exp" hidden>${esc(q.e)}</p></li>`).join('')}</ol>`
-  + `<p class="ap-teste-placar" aria-live="polite"></p></section>`;
 
 fs.mkdirSync(OUT, { recursive: true });
 for (const f of fs.readdirSync(OUT)) if (f.endsWith('.html')) fs.unlinkSync(path.join(OUT, f));
@@ -332,7 +320,7 @@ for (const art of artigos) {
     + `</nav>`;
   const chips = `<div class="ap-chips"><span class="ap-chip">${ic(meta.categoria)}${nomeCat(meta.categoria)}</span><span class="ap-chip">${ic('relogio')}${meta.minutos} min</span>`
     + (art.diagramas ? `<span class="ap-chip">${ic('tabuleiro')}${art.diagramas} ${art.diagramas > 1 ? 'diagramas' : 'diagrama'}</span>` : '')
-    + (art.teste ? `<a class="ap-chip ap-chip-link" href="#teste-t">${ic('teste')}Teste rápido</a>` : '') + `</div>`;
+    + `</div>`;
   const html = `${head({ titulo: meta.titulo, descricao: meta.descricao, url, tipo: 'article', ld })}
 <body class="info-page ap-page ap-art" data-site="gambyte" data-slug="${meta.slug}">
 ${NAV('/aprender/')}
@@ -348,7 +336,6 @@ ${sumario}
 <div class="ap-corpo">
 ${corpo.trim()}
 </div>
-${art.teste ? testeHTML(art.teste) : ''}
 <div class="ap-fim"><button type="button" class="ap-lido-btn" data-lido hidden>${ic('check')}<span>Marcar como lido</span></button>${seq}</div>
 <aside class="ap-cta"><div><strong>Veja isso acontecer nas suas partidas</strong><p>Cole o PGN de um jogo seu e o Gambyte mostra, lance a lance, onde a avaliação mudou. É gratuito e roda no seu navegador.</p></div><a class="btn-ap btn-ap-solid" href="/">Analisar uma partida</a></aside>
 </article>
