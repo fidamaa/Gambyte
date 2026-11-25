@@ -28,9 +28,31 @@ const PlayerDNA = (() => {
   const MAX = 300;
   const MIN_PARTIDAS = 3;     // abaixo disso o rating é só preliminar
 
-  function ler() {
+  // Contas vinculadas (Chess.com/Lichess da conta do Gambyte). Quando
+  // existem, o DNA geral é das partidas dessas contas, e não de qualquer
+  // partida analisada neste aparelho.
+  let _contas = null, _fonte = 'ambos';
+  function usarContas(contas, fonte) {
+    const c = {};
+    if (contas && contas.chesscom) c.chesscom = contas.chesscom;
+    if (contas && contas.lichess) c.lichess = contas.lichess;
+    _contas = Object.keys(c).length ? c : null;
+    _fonte = fonte === 'chesscom' || fonte === 'lichess' ? fonte : 'ambos';
+  }
+  const fonteDe = x => x.fonte || (/lichess/i.test(x.site || '') ? 'lichess' : /chess\.com/i.test(x.site || '') ? 'chesscom' : 'manual');
+  function sitesAtivos() {
+    if (!_contas) return null;
+    return Object.keys(_contas).filter(k => _fonte === 'ambos' || _fonte === k);
+  }
+
+  function lerTudo() {
     try { const v = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(v) ? v : []; }
     catch (e) { return []; }
+  }
+  // O que entra no DNA: com contas vinculadas, só as partidas delas.
+  function ler() {
+    const v = lerTudo(), sites = sitesAtivos();
+    return sites ? v.filter(x => sites.includes(fonteDe(x))) : v;
   }
   function gravar(lista) {
     try { localStorage.setItem(KEY, JSON.stringify(lista.slice(0, MAX))); } catch (e) { /* cheio ou bloqueado */ }
@@ -75,7 +97,7 @@ const PlayerDNA = (() => {
     };
   }
 
-  function registrar(parsedGame, movesData) {
+  function registrar(parsedGame, movesData, meta) {
     if (!parsedGame || !movesData || !movesData.length || typeof MoveClassifier === 'undefined') return;
     if (!movesData.some(m => m && m.evalAfter != null)) return;
     const h = parsedGame.headers || {};
@@ -102,6 +124,7 @@ const PlayerDNA = (() => {
     const abertura = ((document.getElementById('opening-name') || {}).textContent || '').replace(/Detectando.*|Fora de livro|Posição inicial/, '').trim();
     const item = {
       v: 1, id: Date.now(), quando: new Date().toISOString(),
+      fonte: (meta && meta.fonte) || undefined, gameId: (meta && meta.gameId) || undefined,
       data: (h.UTCDate || h.Date || '').replace(/\?/g, '').replace(/\.+$/, ''),
       res: h.Result || '*', ritmo: h.TimeControl || '', site: h.Site || '', abertura,
       eco: ab ? ab.eco : '', abNome: ab ? ab.name : '', abVar: ab ? ab.variation : '',
@@ -110,8 +133,11 @@ const PlayerDNA = (() => {
       w: _lado(movesData, 'white', wS, nW, n('WhiteElo'), h.White),
       b: _lado(movesData, 'black', bS, nB, n('BlackElo'), h.Black),
     };
-    const lista = ler().filter(x => x.chave !== item.chave);
+    if (!item.fonte) item.fonte = fonteDe(item);
+    const lista = lerTudo().filter(x => x.chave !== item.chave && !(item.gameId && x.gameId === item.gameId));
     lista.unshift(item);
+    // mais recentes primeiro pela data da partida (a sincronização chega fora de ordem)
+    lista.sort((a, b) => (Date.parse((b.data || '').replace(/\./g, '-')) || b.id) - (Date.parse((a.data || '').replace(/\./g, '-')) || a.id));
     gravar(lista);
   }
 
@@ -129,6 +155,9 @@ const PlayerDNA = (() => {
     return Array.from(c.values()).sort((a, b) => b.partidas - a.partidas);
   }
   function meusNomes() {
+    // Com contas vinculadas, "você" são os usuários delas.
+    const sites = sitesAtivos();
+    if (sites) return sites.map(k => _contas[k]);
     try { const v = JSON.parse(localStorage.getItem(KEY_EU) || 'null'); if (Array.isArray(v) && v.length) return v; } catch (e) { /* ok */ }
     // Padrão: o último usuário buscado + "Você" (partidas contra o bot); se
     // nenhum aparece, o nome mais frequente.
@@ -305,7 +334,9 @@ const PlayerDNA = (() => {
   function fmtPct(v) { return v == null ? '—' : num(v) + '%'; }
   function plural(n, um, varios) { return n === 1 ? um : varios; }
 
-  function pgnDe(id) { const x = ler().find(e => String(e.id) === String(id)); return x ? x.pgn || '' : ''; }
+  function pgnDe(id) { const x = lerTudo().find(e => String(e.id) === String(id)); return x ? x.pgn || '' : ''; }
+  // Ids das partidas das contas já guardadas (a sincronização não repete)
+  function idsGuardados() { return new Set(lerTudo().map(x => x.gameId).filter(Boolean)); }
 
   // Rating estimado depois de cada partida (para a curva de evolução)
   function evolucaoRating(partidas) {
@@ -320,5 +351,5 @@ const PlayerDNA = (() => {
     return t < 180 ? 'bullet' : t < 480 ? 'blitz' : t < 1500 ? 'rápida' : 'clássica';
   }
 
-  return { registrar, ler, apagar, calcular, nomesDisponiveis, meusNomes, definirMeusNomes, rating, evolucaoRating, partidasDe, pgnDe, ritmoDe, MIN_PARTIDAS, num, fmtPct };
+  return { registrar, ler, lerTudo, usarContas, sitesAtivos, fonteDe, idsGuardados, apagar, calcular, nomesDisponiveis, meusNomes, definirMeusNomes, rating, evolucaoRating, partidasDe, pgnDe, ritmoDe, MIN_PARTIDAS, num, fmtPct };
 })();

@@ -111,3 +111,29 @@
   .ex-palco{padding:16px}
 }
 @media (prefers-reduced-motion:reduce){.hub-sec,.dna-corpo,.hl-det,.ex-c img{animation:none!important}}
+
+/* ── Contas vinculadas: fonte do DNA geral ─────────────────────── */
+.dna-contas{margin-top:22px; display:flex; flex-direction:column; gap:12px}
+.dna-contas[hidden],.dna-semconta[hidden]{display:none}
+.dc-topo{display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px}
+.dc-lbl{font-size:13.5px; color:var(--text3)}
+.dc-fontes button small{margin-left:6px; font:500 11.5px 'JetBrains Mono',monospace; color:var(--text3)}
+.dc-fontes button[aria-pressed="true"] small{color:#8ff0c4}
+.dc-status{display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; font-size:13.5px; line-height:1.5; color:var(--text2)}
+.dc-status:empty{display:none}
+.dc-status b{color:#f3f7f5}
+.dc-barra{flex-basis:100%; height:4px; border-radius:2px; background:rgba(255,255,255,.06); overflow:hidden}
+.dc-barra i{display:block; height:100%; background:linear-gradient(90deg,#14a372,#6ee7b4); transition:width .6s cubic-bezier(.2,.75,.2,1)}
+.dc-ok{width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 10px var(--accent)}
+.dc-erro{flex-basis:100%; color:#f0a48d}
+.dc-continuar{border:1px solid rgba(63,214,154,.45); background:none; color:#8ff0c4; border-radius:8px; padding:5px 10px; font:500 13px 'Outfit',sans-serif; cursor:pointer}
+.cavalo-carregando{display:inline-block; width:20px; height:20px; flex:none; perspective:80px}
+.cavalo-carregando i{display:block; width:100%; height:100%; background:var(--accent); -webkit-mask:url(/pieces/knight-b.svg) center/contain no-repeat; mask:url(/pieces/knight-b.svg) center/contain no-repeat; animation:cavalo-vira 1.5s cubic-bezier(.65,0,.35,1) infinite}
+@keyframes cavalo-vira{0%,28%{transform:rotateY(0)} 39%{transform:rotateY(90deg) translateY(-3px)} 50%,78%{transform:rotateY(180deg)} 89%{transform:rotateY(270deg) translateY(-3px)} 100%{transform:rotateY(360deg)}}
+.dna-semconta{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px 20px; margin-top:22px; padding:16px 18px; border-radius:14px; border:1px solid rgba(63,214,154,.3); background:rgba(63,214,154,.05)}
+.dna-semconta strong{display:block; color:#f3f7f5; font-size:15px; margin-bottom:3px}
+.dna-semconta span{font-size:13.5px; line-height:1.5; color:var(--text2)}
+.dna-semconta>div{flex:1 1 320px}
+/* com conta vinculada, "você" são as contas: some a escolha de nomes */
+body.dna-vinculado .dna-quem{display:none!important}
+@media (prefers-reduced-motion:reduce){.cavalo-carregando i{animation-duration:3s}}

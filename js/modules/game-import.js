@@ -63,20 +63,22 @@ const GameImport = (() => {
   }
 
   /* ── Chess.com ─────────────────────────────────────────────── */
-  async function buscarChessCom(nome) {
+  // max/nMeses: a busca da página inicial usa 24 partidas em até 2 meses;
+  // o DNA das contas vinculadas pede mais (ver dna-sync.js).
+  async function buscarChessCom(nome, max = 24, nMeses = 2) {
     const base = `https://api.chess.com/pub/player/${encodeURIComponent(nome.toLowerCase())}`;
     const arq = await (await getResp(`${base}/games/archives`)).json();
-    const meses = (arq.archives || []).slice(-2).reverse();
+    const meses = (arq.archives || []).slice(-nMeses).reverse();
     let lista = [];
     for (const url of meses) {
       const dados = await (await getResp(url)).json();
       lista = lista.concat(dados.games || []);
-      if (lista.length >= 20) break;
+      if (lista.length >= Math.max(20, max)) break;
     }
     return lista
       .filter(g => g.rules === 'chess' && g.pgn)
       .sort((a, b) => (b.end_time || 0) - (a.end_time || 0))
-      .slice(0, 24)
+      .slice(0, max)
       .map(g => ({
         id: g.url || g.uuid || g.pgn.slice(0, 80),
         pgn: g.pgn,
@@ -89,8 +91,8 @@ const GameImport = (() => {
   }
 
   /* ── Lichess ───────────────────────────────────────────────── */
-  async function buscarLichess(nome) {
-    const r = await getResp(`https://lichess.org/api/games/user/${encodeURIComponent(nome)}?max=24&perfType=ultraBullet,bullet,blitz,rapid,classical,correspondence&pgnInJson=true&clocks=false&evals=false&opening=false`,
+  async function buscarLichess(nome, max = 24) {
+    const r = await getResp(`https://lichess.org/api/games/user/${encodeURIComponent(nome)}?max=${max}&perfType=ultraBullet,bullet,blitz,rapid,classical,correspondence&pgnInJson=true&clocks=false&evals=false&opening=false`,
       { headers: { Accept: 'application/x-ndjson' } });
     const texto = await r.text();
     return texto.split('\n').filter(Boolean).map(l => JSON.parse(l))
@@ -427,5 +429,5 @@ const GameImport = (() => {
     });
   }
 
-  return { init, pararPrevia, renderAtalhos, mostrarAba };
+  return { init, pararPrevia, renderAtalhos, mostrarAba, buscarChessCom, buscarLichess };
 })();
