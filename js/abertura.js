@@ -14,6 +14,8 @@
 (function () {
   var raiz = document.documentElement;
   var teste = /[?&]abertura=teste/.test(location.search);
+  // ?vinheta: roda de novo mesmo já tendo visto nesta sessão (para conferir)
+  var forcar = /[?&]vinheta(=|&|$)/.test(location.search);
   var rodar = true;
   try {
     if (sessionStorage.getItem('gambyte_abertura')) rodar = false;
@@ -21,17 +23,22 @@
     if (/[?&](analisar|exemplo|fen|importar|abrir)=/.test(location.search)) rodar = false;
     if (!Element.prototype.animate) rodar = false;
   } catch (e) { rodar = false; }
-  if (teste && Element.prototype.animate) rodar = true;
+  if ((teste || forcar) && Element.prototype.animate) rodar = true;
+  // Duas classes separadas: "abertura-rodando" mantém a vinheta na tela;
+  // "abertura-segura" só segura a entrada do conteúdo até a hora certa.
   raiz.classList.add(rodar ? 'abertura-rodando' : 'sem-abertura');
+  if (rodar) raiz.classList.add('abertura-segura');
   if (!rodar) return;
   try { sessionStorage.setItem('gambyte_abertura', '1'); } catch (e) { /* ok */ }
 
   var acabou = false, el = null;
-  function liberarSite() { raiz.classList.remove('abertura-rodando'); raiz.classList.add('sem-abertura'); }
+  function liberarSite() { raiz.classList.remove('abertura-segura'); }
   function fim() {
     if (acabou) return;
     acabou = true;
     liberarSite();
+    raiz.classList.remove('abertura-rodando');
+    raiz.classList.add('sem-abertura');
     if (el) el.remove();
     removeEventListener('keydown', fim);
   }

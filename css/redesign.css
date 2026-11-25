@@ -64,7 +64,7 @@ html.abertura-rodando body{overflow:hidden}
 .hero{position:relative; max-width:1100px; margin:18px auto 14px; padding:0}
 .hero-form{display:flex; align-items:stretch; gap:6px; padding:6px; border-radius:15px; background:#0b1012; border:1px solid rgba(255,255,255,.09); transition:border-color .25s, box-shadow .25s;
   opacity:0; transform:translateY(-8px); animation:hero-texto .6s var(--ease) .05s forwards}
-html.abertura-rodando .hero-form{animation-play-state:paused}
+html.abertura-segura .hero-form{animation-play-state:paused}
 .hero-form:focus-within{border-color:rgba(63,214,154,.55); box-shadow:0 0 0 4px rgba(63,214,154,.10)}
 @keyframes hero-texto{to{opacity:1; transform:none}}
 @keyframes hero-aparece{to{opacity:1}}
