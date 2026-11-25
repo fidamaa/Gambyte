@@ -81,7 +81,7 @@ body.jg-jogando .jg-intro{display:none}
 .jg-desistir.confirmar{background:#e05c5c22;border-color:var(--red);color:#ffb3b3}
 
 /* Fim da partida */
-.jg-fim{display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:13px;border:1px solid #1f6b4f;background:linear-gradient(135deg,#231d13,#0f1518)}
+.jg-fim{display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:13px;border:1px solid #1f6b4f;background:linear-gradient(135deg,#101b18,#0f1518)}
 .jg-fim[hidden]{display:none}
 .jg-fim>strong{font-family:'DM Serif Display',Georgia,serif;font-weight:400;font-size:27px;line-height:1.1;color:var(--gold-1,#6ee7b4)}
 .jg-fim[data-resultado="derrota"]>strong{color:var(--text)}

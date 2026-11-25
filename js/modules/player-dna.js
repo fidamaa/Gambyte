@@ -58,12 +58,20 @@ const PlayerDNA = (() => {
       chances++;
       if (m.bestMoveUCI && m.playedMoveUCI && m.bestMoveUCI.slice(0, 4) === m.playedMoveUCI.slice(0, 4)) achou++;
     });
+    // Padrões que só fazem sentido somados entre partidas
+    const graves = meus.filter(m => ['blunder', 'mistake'].includes(m.classification));
+    const ultimoTerco = meus.slice(Math.floor(meus.length * 2 / 3));
+    const pad = {
+      vant: graves.filter(m => (m.evalBefore ?? 0) >= 150).length,      // erro grave estando melhor
+      fim: graves.filter(m => ultimoTerco.includes(m)).length,           // no último terço (relógio)
+      graves: graves.length,
+    };
     let fases = { opening: null, midgame: null, endgame: null };
     try { fases = InsightsEngine.calcPhaseAccuracy(movesData, cor); } catch (e) { /* sem fases */ }
     return {
       nome: nome || '', elo: elo || 0,
       acc: stats.accuracy, acpl: stats.acpl, lances: stats.lances || 0, eq: stats.equilibrio || 0,
-      nivel, fases, cont, tat: [chances, achou],
+      nivel, fases, cont, tat: [chances, achou], pad,
     };
   }
 
@@ -81,11 +89,23 @@ const PlayerDNA = (() => {
     let nW = null, nB = null;
     try { nW = RatingModel.estimarPartida(wS, bS, semW).white; nB = RatingModel.estimarPartida(wS, bS, semB).black; } catch (e) { /* sem nível */ }
     const chave = parsedGame.moves.join(' ');
+    // Abertura pelo livro ECO e o lance em que a partida saiu dele
+    let ab = null;
+    try { ab = OpeningDetector.detect(parsedGame.moves); } catch (e) { /* sem livro */ }
+    const iSaida = movesData.findIndex(m => m && !m.isBook);
+    const saida = iSaida >= 0 ? { ply: iSaida, cor: iSaida % 2 === 0 ? 'w' : 'b', san: parsedGame.moves[iSaida] } : null;
+    // PGN enxuto (sem comentários nem relógio) para reabrir a análise depois
+    const cab = ['Event', 'Site', 'Date', 'White', 'Black', 'Result', 'WhiteElo', 'BlackElo', 'TimeControl']
+      .filter(k => h[k]).map(k => `[${k} "${String(h[k]).replace(/"/g, "'")}"]`).join(String.fromCharCode(10));
+    const corpo = parsedGame.moves.map((m, i) => (i % 2 === 0 ? `${i / 2 + 1}. ` : '') + m).join(' ');
+    const pgnCurto = parsedGame.startFEN ? '' : cab + String.fromCharCode(10, 10) + corpo + ' ' + (h.Result || '*');
     const abertura = ((document.getElementById('opening-name') || {}).textContent || '').replace(/Detectando.*|Fora de livro|Posição inicial/, '').trim();
     const item = {
       v: 1, id: Date.now(), quando: new Date().toISOString(),
       data: (h.UTCDate || h.Date || '').replace(/\?/g, '').replace(/\.+$/, ''),
       res: h.Result || '*', ritmo: h.TimeControl || '', site: h.Site || '', abertura,
+      eco: ab ? ab.eco : '', abNome: ab ? ab.name : '', abVar: ab ? ab.variation : '',
+      inicio: parsedGame.moves.slice(0, 24), saida, pgn: pgnCurto.slice(0, 6000),
       plies: parsedGame.moves.length, chave: chave.slice(0, 600),
       w: _lado(movesData, 'white', wS, nW, n('WhiteElo'), h.White),
       b: _lado(movesData, 'black', bS, nB, n('BlackElo'), h.Black),
@@ -146,7 +166,8 @@ const PlayerDNA = (() => {
       const r = x.res;
       const pontos = r === '1/2-1/2' ? 0.5 : r === '1-0' ? (cor === 'w' ? 1 : 0) : r === '0-1' ? (cor === 'b' ? 1 : 0) : null;
       const quando = Date.parse((x.data || '').replace(/\./g, '-')) || Date.parse(x.quando) || x.id;
-      out.push({ id: x.id, quando, cor, eu, adv, pontos, abertura: x.abertura, ritmo: x.ritmo, plies: x.plies });
+      out.push({ id: x.id, quando, cor, eu, adv, pontos, abertura: x.abNome || x.abertura, variante: x.abVar || '', eco: x.eco || '',
+        ritmo: x.ritmo, plies: x.plies, inicio: x.inicio || null, saida: x.saida || null, temPgn: !!x.pgn, res: x.res });
     });
     return out.sort((a, b) => a.quando - b.quando);
   }
@@ -284,5 +305,20 @@ const PlayerDNA = (() => {
   function fmtPct(v) { return v == null ? '—' : num(v) + '%'; }
   function plural(n, um, varios) { return n === 1 ? um : varios; }
 
-  return { registrar, ler, apagar, calcular, nomesDisponiveis, meusNomes, definirMeusNomes, rating, MIN_PARTIDAS, num, fmtPct };
+  function pgnDe(id) { const x = ler().find(e => String(e.id) === String(id)); return x ? x.pgn || '' : ''; }
+
+  // Rating estimado depois de cada partida (para a curva de evolução)
+  function evolucaoRating(partidas) {
+    return partidas.map((p, i) => { const r = rating(partidas.slice(0, i + 1)); return { i, quando: p.quando, valor: r.valor, min: r.min, max: r.max }; });
+  }
+
+  // Ritmo pelo TimeControl do PGN ("180+2" → blitz)
+  function ritmoDe(tc) {
+    const m = String(tc || '').match(/^([0-9]+)(?:[+]([0-9]+))?/);
+    if (!m) return '';
+    const t = +m[1] + 40 * (+m[2] || 0);
+    return t < 180 ? 'bullet' : t < 480 ? 'blitz' : t < 1500 ? 'rápida' : 'clássica';
+  }
+
+  return { registrar, ler, apagar, calcular, nomesDisponiveis, meusNomes, definirMeusNomes, rating, evolucaoRating, partidasDe, pgnDe, ritmoDe, MIN_PARTIDAS, num, fmtPct };
 })();

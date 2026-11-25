@@ -54,6 +54,7 @@ const InsightsUI = (() => {
     if (hint) hint.textContent = _pov === 'both'
       ? 'Revendo uma partida sua? Escolha o seu lado para ver só os seus erros e o que treinar.'
       : `Mostrando a análise de ${nome(_pov)} (${LADO[_pov].toLowerCase()}).`;
+    window.dispatchEvent(new CustomEvent('gambyte:pov', { detail: _pov }));
     if (_moves) renderAll();
   }
 
@@ -171,27 +172,15 @@ const InsightsUI = (() => {
       <p class="ins-note">Avaliações no padrão do gráfico: número positivo favorece as brancas. "Antes" é a avaliação da posição com o melhor lance; a perda é a diferença para o lance jogado.</p>`;
   }
 
-  /* ── Aba Perfil ───────────────────────────────────────────────── */
+  /* ── Padrões desta partida (Pro), dentro do painel "DNA da partida" ── */
   function renderDna() {
     const box = $('ins-dna');
     if (!box) return;
     const dna = InsightsEngine.dna(_moves);
-    const GRUPOS = [['book', 'Livro', 'book'], ['top', 'Melhores', 'excellent'], ['good', 'Boas', 'good'], ['inaccuracy', 'Imprecisões', 'inaccuracy'], ['mistake', 'Erros', 'mistake'], ['blunder', 'Gafes', 'blunder']];
-    const cartao = cor => {
-      const p = dna[cor], d = InsightsEngine.distribution(_moves, cor), total = d.total || 1;
-      return `<article class="dna-card">
-        <header class="dna-head"><span class="dna-side"><i class="ins-side ins-side-${cor}"></i>${esc(nome(cor))}</span><strong class="dna-profile">${esc(p.profile)}</strong></header>
-        <p class="dna-desc">${esc(p.desc)}</p>
-        <div class="dna-dist" role="img" aria-label="Distribuição dos lances por classificação">${GRUPOS.filter(g => d[g[0]]).map(g => `<i class="cls-bg-${g[2]}" style="width:${(100 * d[g[0]] / total).toFixed(1)}%"></i>`).join('')}</div>
-        <div class="dna-dist-legend">${GRUPOS.filter(g => d[g[0]]).map(g => `<span><i class="cls-bg-${g[2]}"></i>${g[1]} ${d[g[0]]}</span>`).join('')}</div>
-        <div class="dna-tags">${p.tags.map(t => `<span class="dna-tag">${esc(t)}</span>`).join('')}</div>
-        <h5 class="ins-subhead">Padrões nesta partida</h5>
-        <ul class="ins-bullets">${dna.patterns[cor].map(t => `<li>${esc(t)}</li>`).join('')}</ul>
-      </article>`;
-    };
-    box.innerHTML = cores().map(cartao).join('')
-      + (dna.patterns.game.length ? `<section class="ins-block"><h4>Sobre a partida</h4><ul class="ins-bullets">${dna.patterns.game.map(t => `<li>${esc(t)}</li>`).join('')}</ul></section>` : '')
-      + `<p class="ins-note">O perfil descreve como cada lado jogou esta partida. Para conhecer o seu estilo, compare várias análises.</p>`;
+    const bloco = cor => `<section class="ins-block"><h4><i class="ins-side ins-side-${cor}"></i>${esc(nome(cor))}</h4>
+        <ul class="ins-bullets">${dna.patterns[cor].map(t => `<li>${esc(t)}</li>`).join('')}</ul></section>`;
+    box.innerHTML = cores().map(bloco).join('')
+      + (dna.patterns.game.length ? `<section class="ins-block"><h4>Sobre a partida</h4><ul class="ins-bullets">${dna.patterns.game.map(t => `<li>${esc(t)}</li>`).join('')}</ul></section>` : '');
   }
 
   function renderAll() {
@@ -232,6 +221,8 @@ const InsightsUI = (() => {
         switchTab('move');
       }
     });
+    // O cadeado dos padrões fica no painel do DNA da partida, fora desta seção.
+    document.getElementById('side-dna')?.addEventListener('click', e => { if (e.target.closest('[data-ins-pro]')) AuthUI.openPremiumPage(); });
     setPov(_pov, false);
     updatePremiumGates();
   }

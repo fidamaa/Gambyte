@@ -72,6 +72,7 @@
     if (e) e.preventDefault();
     const v = (campo.value || '').trim();
     const t = tipo(v);
+    if (t) botaoCarregando();
     if (!t) { campo.focus(); campo.closest('.hero-form')?.animate?.([{ transform: 'translateX(0)' }, { transform: 'translateX(-6px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(0)' }], { duration: 260 }); return; }
     if (t === 'usuario' || t === 'link' || t === 'link-chesscom') {
       const imp = $('imp-input');
@@ -112,23 +113,28 @@
     if (b) marcarSite(b.dataset.impSite);
   });
 
-  /* ── Paralaxe suave (só com mouse, e se o sistema não pede menos movimento) ── */
-  const hero = $('hero');
-  if (hero && !reduzir && window.matchMedia && matchMedia('(pointer:fine)').matches) {
-    let alvoX = 0, alvoY = 0, x = 0, y = 0, raf = 0;
-    const passo = () => {
-      x += (alvoX - x) * 0.06; y += (alvoY - y) * 0.06;
-      hero.style.setProperty('--px', x.toFixed(3));
-      hero.style.setProperty('--py', y.toFixed(3));
-      raf = (Math.abs(alvoX - x) + Math.abs(alvoY - y) > 0.002) ? requestAnimationFrame(passo) : 0;
-    };
-    hero.addEventListener('pointermove', e => {
-      const r = hero.getBoundingClientRect();
-      alvoX = ((e.clientX - r.left) / r.width - 0.5) * -2;
-      alvoY = ((e.clientY - r.top) / r.height - 0.5) * -2;
-      if (!raf) raf = requestAnimationFrame(passo);
-    });
-    hero.addEventListener('pointerleave', () => { alvoX = 0; alvoY = 0; if (!raf) raf = requestAnimationFrame(passo); });
+  /* ── Carregando: cavalo que vira de um lado para o outro ───────
+     Sobre o tabuleiro, do começo da análise até chegarem as primeiras
+     avaliações; no botão da primeira dobra, logo depois do clique. */
+  let cobertura = null;
+  function cobrirTabuleiro(sim, texto) {
+    const wrap = $('board-wrapper');
+    if (!wrap) return;
+    if (!cobertura) {
+      cobertura = document.createElement('div');
+      cobertura.className = 'board-carregando';
+      cobertura.setAttribute('role', 'status');
+      cobertura.innerHTML = '<span class="cavalo-carregando" aria-hidden="true"><i></i></span><span class="bc-txt"></span>';
+      wrap.appendChild(cobertura);
+    }
+    cobertura.querySelector('.bc-txt').textContent = texto || 'Preparando a análise…';
+    cobertura.hidden = !sim;
+  }
+  const btnHero = $('hero-btn');
+  function botaoCarregando() {
+    if (!btnHero) return;
+    btnHero.classList.add('carregando');
+    setTimeout(() => btnHero.classList.remove('carregando'), 1600);
   }
 
   /* ── Painel lateral em abas ──────────────────────────────────── */
@@ -170,12 +176,18 @@
     const p = e.detail && e.detail.parsed;
     temPartida = !!(p && p.moves && p.moves.length);
     document.body.classList.toggle('em-analise', temPartida);
+    cobrirTabuleiro(temPartida);
     if (temPartida) mostrarAbaLateral('lances');
     $('side-tab-resumo')?.classList.remove('novo');
     renderMomentos([], -1);
     renderInfo(null, -1);
   });
+  window.addEventListener('gambyte:lances', e => {
+    const md = (e.detail || {}).movesData || [];
+    if (cobertura && !cobertura.hidden && md.some(m => m && m.evalAfter != null)) cobrirTabuleiro(false);
+  });
   window.addEventListener('gambyte:analise-concluida', () => {
+    cobrirTabuleiro(false);
     const r = $('side-tab-resumo');
     if (r && r.getAttribute('aria-selected') !== 'true') r.classList.add('novo');
   });

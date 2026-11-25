@@ -44,6 +44,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     ProTools.init();
     GameHistory.init();
+    if (typeof GameDNA !== "undefined") GameDNA.init();
     GameImport.init();
     // Partida que veio do "Jogar contra o bot": abre e já analisa.
     const params = new URLSearchParams(location.search);

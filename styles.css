@@ -28,8 +28,8 @@
   --mistake:   #e05c5c;
   --blunder:   #c93030;
 
-  --sq-light:  #f0d9b5;
-  --sq-dark:   #b58863;
+  --sq-light:  #e4e9e3;
+  --sq-dark:   #6f8c80;
   --sq-hl:     rgba(20,180,100,0.5);
 
   --radius:    8px;
@@ -277,7 +277,7 @@ canvas#chart { width:100%; height:130px; display:block; }
   font-size:10px; font-family:'JetBrains Mono',monospace;
   color:var(--text3);
 }
-.chart-label-w { color:rgba(240,217,181,0.7); }
+.chart-label-w { color:rgba(228,233,227,0.7); }
 .chart-label-b { color:rgba(120,120,200,0.7); }
 
 /* Moves list */
@@ -401,7 +401,7 @@ canvas#chart { width:100%; height:130px; display:block; }
 .eval-bar-white {
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  background: #f0d9b5;
+  background: #e4e9e3;
   transition: height .5s cubic-bezier(.4,0,.2,1);
   border-radius: 0 0 3px 3px;
 }
@@ -581,7 +581,7 @@ canvas#chart { width:100%; height:130px; display:block; }
 
 /* ── Premium Gate Banner ── */
 .premium-gate {
-  background: linear-gradient(135deg, rgba(63,214,154,.06), rgba(232,160,32,.03));
+  background: linear-gradient(135deg, rgba(63,214,154,.06), rgba(20,163,114,.03));
   border: 1px solid rgba(63,214,154,.25);
   border-radius: var(--radius-lg);
   padding: 20px;
