@@ -160,6 +160,13 @@ body.dna-sem-conta .dna-hub,body.dna-sem-conta .dna-vazio,body.dna-sem-conta .dn
 .board-carregando .cavalo-carregando{width:96px; height:96px; margin:0}
 @media (prefers-reduced-motion:reduce){.cavalo-carregando i{animation-duration:4.8s,1.2s}}
 
-/* Histórico: comparar e padrões primeiro; o gráfico logo abaixo, mais baixo */
-#sec-historico .dna-duas:first-child .dna-bloco{margin-top:0}
-.h-rating-bloco .dna-evo{height:180px}
+/* Histórico: o gráfico, comparar períodos e padrões na mesma tela.
+   Computador largo: os três numa linha. Menor: gráfico em cima e os
+   outros dois lado a lado. Celular: um embaixo do outro. */
+.h-topo{display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr); gap:16px; align-items:start}
+.h-topo .dna-bloco{margin-top:0; padding:20px 20px}
+.h-topo .dna-evo{height:200px}
+.h-topo .h-padroes li{padding:9px 12px}
+@media (max-width:1180px){.h-topo .dna-evo{height:170px}.h-topo .dna-bloco h2{font-size:20px}}
+@media (max-width:900px){.h-topo{grid-template-columns:1fr 1fr}.h-topo .h-rating-bloco{grid-column:1 / -1}}
+@media (max-width:720px){.h-topo{grid-template-columns:1fr}}
