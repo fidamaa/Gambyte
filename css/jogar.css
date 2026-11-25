@@ -142,3 +142,8 @@ body.jg-jogando .jg-intro{display:none}
 .jg-nivel-marcas{position:relative;height:13px;margin:0 53px;font:11px 'JetBrains Mono',monospace;color:var(--text3)}
 .jg-nivel-marcas span{position:absolute;top:0;transform:translateX(-50%)}
 @media(max-width:480px){.jg-nivel-marcas span:nth-child(4){display:none}}
+
+/* Título e texto da página no fim, na seção "Como o bot joga" */
+.jg-sobre-tit{font-family:'DM Serif Display',Georgia,serif;font-weight:400;font-size:clamp(26px,3vw,34px);line-height:1.1;margin:0 0 10px}
+.jg-sobre-txt{margin:0 0 22px;font-size:16px;line-height:1.6;color:var(--text2)}
+.jg{padding-top:14px}

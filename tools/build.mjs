@@ -276,7 +276,7 @@ const head = ({ titulo, descricao, url, tipo, ld }) => `<!doctype html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/site-info.css?v=15"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#07090b"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="Gambyte">
-<link rel="stylesheet" href="/aprender.css?v=7">
+<link rel="stylesheet" href="/aprender.css?v=8">
 <script type="application/ld+json">${JSON.stringify(ld)}</script>
 <script src="/menu.js" defer></script>
 <script src="/aprender.js?v=2" defer></script>
@@ -369,13 +369,7 @@ ${FOOTER}
 <body class="info-page ap-page ap-hub-page" data-site="gambyte">
 ${NAV('/aprender/')}
 <main class="info-content ap-content ap-hub">
-<div class="ap-hero">
-<div class="ap-hero-txt">
-<p class="info-kicker">Gambyte / Aprender xadrez</p>
-<h1>Aprenda xadrez com exemplos que você pode testar</h1>
-<p class="info-summary">${artigos.length} guias originais em português, com diagramas e sequências conferidas lance a lance. Leia um tema, depois procure o mesmo padrão em uma partida sua.</p>
-<p class="ap-meta">${artigos.length} artigos · cerca de ${total} minutos de leitura no total · Atualizado em ${dataExtenso(HOJE)}</p>
-</div>
+<div class="ap-hero ap-hero-so">
 <div class="ap-prog" data-total="${artigos.length}">
 <div class="ap-prog-topo"><span class="ap-prog-anel" aria-hidden="true"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.5"/><circle class="ap-prog-arco" cx="18" cy="18" r="15.5" pathLength="100" stroke-dasharray="0 100"/></svg><b class="ap-prog-pct">0%</b></span><div><strong>Seu progresso</strong><span class="ap-prog-txt">Nenhum guia lido ainda. Os guias que você terminar ficam marcados aqui, neste aparelho.</span></div></div>
 <a class="btn-ap btn-ap-solid ap-prog-btn" href="/aprender/${artigos[0].meta.slug}">Começar pelo primeiro guia</a>
@@ -383,6 +377,11 @@ ${NAV('/aprender/')}
 </div>
 <nav class="ap-temas" aria-label="Temas">${temas}</nav>
 ${secoes}
+<section class="ap-sobre">
+<h1>Aprenda xadrez com exemplos que você pode testar</h1>
+<p class="info-summary">${artigos.length} guias originais em português, com diagramas e sequências conferidas lance a lance. Leia um tema, depois procure o mesmo padrão em uma partida sua.</p>
+<p class="ap-meta">${artigos.length} artigos · cerca de ${total} minutos de leitura no total · Atualizado em ${dataExtenso(HOJE)}</p>
+</section>
 <aside class="ap-cta"><div><strong>Do estudo para a prática</strong><p>Depois de ler, cole o PGN de uma partida sua e veja onde esses temas apareceram. A análise é gratuita e roda no seu navegador.</p></div><a class="btn-ap btn-ap-solid" href="/">Analisar uma partida</a></aside>
 </main>
 ${FOOTER}

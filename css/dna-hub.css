@@ -159,3 +159,7 @@ body.dna-sem-conta .dna-hub,body.dna-sem-conta .dna-vazio,body.dna-sem-conta .dn
 .hero-btn .cavalo-carregando i{filter:none}
 .board-carregando .cavalo-carregando{width:96px; height:96px; margin:0}
 @media (prefers-reduced-motion:reduce){.cavalo-carregando i{animation-duration:4.8s,1.2s}}
+
+/* Histórico: comparar e padrões primeiro; o gráfico logo abaixo, mais baixo */
+#sec-historico .dna-duas:first-child .dna-bloco{margin-top:0}
+.h-rating-bloco .dna-evo{height:180px}

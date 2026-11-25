@@ -272,3 +272,10 @@ html.ap-folha-aberta .ap-folha{opacity:1;visibility:visible;transform:none;trans
 .ap-content pre{white-space:pre-wrap;word-break:break-word;color:#e9efed}
 .ap-notacao{font-size:13.5px!important;color:#8892a8!important;margin:-18px 0 30px!important}
 .ap-notacao a{color:#aab3c7}
+
+/* Hub: o progresso no topo (largura toda) e o título no fim */
+.ap-hero-so{grid-template-columns:1fr;margin:8px 0 18px}
+.ap-hero-so .ap-prog{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 20px}
+.ap-sobre{margin:34px 0 8px;padding-top:24px;border-top:1px solid #1d2a26}
+.ap-sobre h1{font-size:clamp(24px,3vw,32px);margin:0 0 10px}
+@media (max-width:640px){.ap-hero-so .ap-prog{grid-template-columns:1fr}}

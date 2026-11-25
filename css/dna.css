@@ -229,3 +229,8 @@
 .di-tracos li{display:grid; grid-template-columns:1fr auto; align-items:center; gap:2px 8px; font-size:12.5px; color:var(--text2)}
 .di-tracos i{grid-column:1 / -1; grid-row:2; height:4px; border-radius:99px; background:linear-gradient(90deg,#5f74c9,#b9c9ff)}
 .di-tracos b{font:600 12px 'JetBrains Mono',monospace; color:var(--text)}
+
+/* O título e o texto da página ficam no fim, antes de "Como o DNA é calculado" */
+.dna-topo{margin-bottom:18px}
+.dna-sobre-tit{font:400 clamp(26px,3vw,34px)/1.1 'DM Serif Display',Georgia,serif; color:#f3f7f5; margin:0 0 10px}
+.dna-metodo .dna-resumo{margin:0 0 26px}
