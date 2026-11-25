@@ -26,6 +26,8 @@ const MODELO = Deno.env.get("TREINADOR_MODELO") || "claude-haiku-5-5";
 const BUCKET = "treinador";
 const SEMANA_MS = 7 * 24 * 3600 * 1000;
 const NOVAS_PARA_REFAZER = 5;
+const MIN_ENTRE_MS = 6 * 3600 * 1000;   // trava do servidor: 6 h entre relatórios
+const MAX_POR_SEMANA = 3;               // trava do servidor: 3 relatórios em 7 dias
 const MAX_DNA_BYTES = 24_000;
 
 const ORIGEM = "https://gambyte.com.br";
@@ -68,7 +70,9 @@ Seu trabalho: interpretar esses números como um treinador humano faria e dizer,
 
 Regras:
 - Use só os números do DNA. Nunca invente estatística, partida, lance ou abertura que não esteja nele. Quando citar um número, use o valor que veio no DNA.
-- Se houver poucas partidas (menos de 10) ou um dado faltar, diga isso em "aviso_dados" e seja mais cauteloso nas conclusões.
+- Se houver poucas partidas (menos de 10) ou um dado essencial faltar, diga isso em "aviso_dados" e seja mais cauteloso nas conclusões. Com 10 partidas ou mais e os dados completos, deixe "aviso_dados" vazio.
+- Não atribua sentimentos ou motivos que os números não mostram (como "você relaxa" ou "você fica nervoso"). Descreva o que os números mostram.
+- Em "fortes", só entra o que se destaca de verdade no próprio DNA (as melhores notas, os melhores resultados). Um número mediano não é ponto forte; se nada se destacar, liste um item só.
 - Escreva em português do Brasil, tratando o jogador por "você", em frases curtas. Nada de jargão sem explicar.
 - Priorize: no máximo 3 prioridades, da mais importante para a menos. Cada uma precisa de um porquê ligado a um número do DNA e de um "como treinar" concreto (o que fazer, quanto tempo, como saber que melhorou).
 - Em "guia", use um destes slugs quando combinar com a prioridade, ou deixe vazio: ${Object.keys(GUIAS).join(", ")}.
@@ -169,12 +173,21 @@ Deno.serve(async (req: Request) => {
     const nPartidas = Math.max(0, Math.floor(Number(dna.n_partidas) || 0));
     if (nPartidas < 3) return json({ error: "O Treinador precisa de pelo menos 3 partidas analisadas no seu DNA." }, 400);
 
-    // Limite: um por semana, ou com 5 partidas novas desde o último
+    // Limite: um por semana, ou antes com 5 partidas novas desde o último.
+    // O número de partidas vem do navegador, então há travas que só o
+    // servidor controla: no mínimo 6 h entre relatórios e no máximo 3 em
+    // 7 dias, seja qual for o número enviado.
+    const historico: string[] = ((ultimo as { historico?: string[] } | null)?.historico || (ultimo ? [ultimo.criado_em] : []))
+      .filter((t) => Date.now() - new Date(t).getTime() < SEMANA_MS);
     if (ultimo) {
-      const recente = Date.now() - new Date(ultimo.criado_em).getTime() < SEMANA_MS;
+      const desde = Date.now() - new Date(ultimo.criado_em).getTime();
       const novas = nPartidas - (ultimo.n_partidas || 0);
-      if (recente && novas < NOVAS_PARA_REFAZER) {
-        return json({ ultimo, limite: true, proximo_em: proximoEm, faltam_partidas: NOVAS_PARA_REFAZER - Math.max(0, novas) });
+      const travado = desde < MIN_ENTRE_MS || historico.length >= MAX_POR_SEMANA;
+      if (desde < SEMANA_MS && (travado || novas < NOVAS_PARA_REFAZER)) {
+        const liberaEm = travado && historico.length >= MAX_POR_SEMANA
+          ? new Date(new Date(historico[0]).getTime() + SEMANA_MS).toISOString()
+          : travado ? new Date(new Date(ultimo.criado_em).getTime() + MIN_ENTRE_MS).toISOString() : proximoEm;
+        return json({ ultimo, limite: true, proximo_em: liberaEm, faltam_partidas: travado ? 0 : NOVAS_PARA_REFAZER - Math.max(0, novas) });
       }
     }
 
@@ -197,7 +210,8 @@ Deno.serve(async (req: Request) => {
     relatorio.fortes = relatorio.fortes.slice(0, 3);
     relatorio.plano_semana = relatorio.plano_semana.slice(0, 5);
 
-    const novo = { criado_em: new Date().toISOString(), n_partidas: nPartidas, relatorio, modelo: resposta.model };
+    const agora = new Date().toISOString();
+    const novo = { criado_em: agora, n_partidas: nPartidas, relatorio, modelo: resposta.model, historico: [...historico, agora].slice(-MAX_POR_SEMANA) };
     await admin.storage.from(BUCKET).upload(caminho, new Blob([JSON.stringify(novo)], { type: "application/json" }), { upsert: true });
     console.log(`[treinador] relatório gerado (${resposta.model}): entrada ${resposta.usage.input_tokens}, saída ${resposta.usage.output_tokens} tokens`);
     return json({ ultimo: novo, novo: true, proximo_em: new Date(Date.now() + SEMANA_MS).toISOString() });

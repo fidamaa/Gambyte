@@ -11,6 +11,8 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const r1 = v => (v == null ? null : Math.round(v * 10) / 10);
   const dataBR = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }); };
+  // Para o aviso de quando libera: com hora se for nas próximas 24 h.
+  const quandoBR = iso => { const d = new Date(iso); if (isNaN(d)) return ''; return d - Date.now() < 864e5 ? `hoje ou amanhã às ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`.replace('hoje ou amanhã', d.getDate() === new Date().getDate() ? 'hoje' : 'amanhã') : `em ${dataBR(iso)}`; };
   const ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a4 4 0 0 1 4 4v1a4 4 0 0 1-8 0V7a4 4 0 0 1 4-4z"/><path d="M5 21a7 7 0 0 1 14 0"/><path d="m15 14 2 2 4-4"/></svg>';
   let estado = { carregado: false, ultimo: null, proximoEm: null, ocupado: false, erro: '', aviso: '' };
 
@@ -80,7 +82,9 @@
     try {
       const r = await chamar({ acao: 'gerar', dna });
       estado = { ...estado, ocupado: false, ultimo: r.ultimo || estado.ultimo, proximoEm: r.proximo_em || estado.proximoEm };
-      if (r.limite) estado.aviso = `Um relatório novo fica disponível em ${dataBR(r.proximo_em)}, ou antes disso com mais ${r.faltam_partidas} ${r.faltam_partidas === 1 ? 'partida analisada' : 'partidas analisadas'}.`;
+      if (r.limite) estado.aviso = r.faltam_partidas > 0
+        ? `Um relatório novo fica disponível ${quandoBR(r.proximo_em)}, ou antes disso com mais ${r.faltam_partidas} ${r.faltam_partidas === 1 ? 'partida analisada' : 'partidas analisadas'}.`
+        : `Um relatório novo fica disponível ${quandoBR(r.proximo_em)}.`;
     } catch (e) { estado = { ...estado, ocupado: false, erro: e.message }; }
     render();
   }
