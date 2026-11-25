@@ -259,7 +259,7 @@ const PlayerDNA = (() => {
     const lances = ps.reduce((s, p) => s + (p.eu.lances || 0), 0) || 1;
     const accs = ps.map(p => p.eu.acc).filter(v => v != null);
     res.precisao = media(accs);
-    res.precisaoUlt = media(ps.slice(-10).map(p => p.eu.acc).filter(v => v != null));
+    res.precisaoUlt = media(ps.slice(-12).map(p => p.eu.acc).filter(v => v != null));
     res.desvioPrec = desvio(accs);
 
     // Fases: média das partidas em que a fase existiu

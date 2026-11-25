@@ -228,8 +228,8 @@
       return;
     }
     let mostrado = todas, comp = null;
-    if (recorte === 'ultimas' && todas.n > 10) {
-      const ids = new Set(todas.partidas.slice(-10).map(p => p.id));
+    if (recorte === 'ultimas' && todas.n > 12) {
+      const ids = new Set(todas.partidas.slice(-12).map(p => p.id));
       mostrado = PlayerDNA.calcular(nomes, PlayerDNA.ler().filter(x => ids.has(x.id)));
       comp = todas;
     }
@@ -238,7 +238,7 @@
     renderRating(todas);
     renderRadar(mostrado, comp);
     $('dna-prec').textContent = pct(todas.precisao);
-    $('dna-prec-sub').textContent = todas.n >= 10 ? `Últimas 10: ${pct(todas.precisaoUlt)}` : 'Média das partidas';
+    $('dna-prec-sub').textContent = todas.n >= 12 ? `Últimas 12: ${pct(todas.precisaoUlt)}` : 'Média das partidas';
     $('dna-res').textContent = todas.pontos == null ? '—' : Math.round(todas.pontos * 100) + '%';
     const pl = (n, um, v) => `${n} ${n === 1 ? um : v}`;
     $('dna-res-sub').textContent = `${pl(todas.vde.v, 'vitória', 'vitórias')}, ${pl(todas.vde.e, 'empate', 'empates')}, ${pl(todas.vde.d, 'derrota', 'derrotas')}`;

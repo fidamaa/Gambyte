@@ -214,24 +214,40 @@
     f[1] = jogo.cor; f[3] = '-';
     return f.join(' ');
   }
+  // Casas do pré-lance: pelo movimento da peça, como nos grandes sites, sem
+  // olhar quem está no caminho nem na casa (a posição ainda vai mudar com o
+  // lance do bot). Assim dá para marcar a retomada numa casa onde hoje está
+  // a sua própria peça, ou tomar uma peça que o bot ainda vai trazer. Se não
+  // for legal quando o bot jogar, o pré-lance é descartado (executarPre).
   function alvosPre(sq) {
     const fen = fenPre();
-    const lista = R.alvos(fen, sq);
-    // O peão pode capturar na diagonal mesmo com a casa vazia agora: a peça
-    // do bot pode ir para lá.
+    const lista = new Set(R.alvos(fen, sq));   // inclui o roque
     const st = PGNParser.fenToBoard(fen);
     const peca = st.board[8 - +sq[1]][sq.charCodeAt(0) - 97];
-    if (peca === 'P' || peca === 'p') {
-      const fr = +sq[1] + (peca === 'P' ? 1 : -1), c = sq.charCodeAt(0) - 97;
-      for (const dc of [-1, 1]) {
-        if (c + dc < 0 || c + dc > 7 || fr < 1 || fr > 8) continue;
-        const alvo = String.fromCharCode(97 + c + dc) + fr;
-        const ali = st.board[8 - fr][c + dc];
-        const minha = ali && (ali === ali.toUpperCase()) === (peca === 'P');
-        if (!minha && !lista.includes(alvo)) lista.push(alvo);
+    if (!peca || (peca === peca.toUpperCase()) !== (jogo.cor === 'w')) return [...lista];
+    const c = sq.charCodeAt(0) - 97, r = +sq[1], t = peca.toLowerCase();
+    const casa = (cc, rr) => (cc >= 0 && cc < 8 && rr >= 1 && rr <= 8 ? String.fromCharCode(97 + cc) + rr : null);
+    const por = (dirs, longe) => {
+      for (const [dc, dr] of dirs) {
+        for (let k = 1; k <= (longe ? 7 : 1); k++) {
+          const a = casa(c + dc * k, r + dr * k);
+          if (!a) break;
+          lista.add(a);
+        }
       }
+    };
+    const RETAS = [[1, 0], [-1, 0], [0, 1], [0, -1]], DIAG = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+    if (t === 'n') por([[1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-2, 1], [-1, 2]], false);
+    else if (t === 'k') por(RETAS.concat(DIAG), false);
+    else if (t === 'r') por(RETAS, true);
+    else if (t === 'b') por(DIAG, true);
+    else if (t === 'q') por(RETAS.concat(DIAG), true);
+    else if (t === 'p') {
+      const d = peca === 'P' ? 1 : -1, ini = peca === 'P' ? 2 : 7;
+      for (const a of [casa(c, r + d), r === ini ? casa(c, r + 2 * d) : null, casa(c - 1, r + d), casa(c + 1, r + d)]) if (a) lista.add(a);
     }
-    return lista;
+    lista.delete(sq);
+    return [...lista];
   }
   function cancelarPre() {
     if (!pre) return false;

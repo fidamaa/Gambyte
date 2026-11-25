@@ -19,7 +19,7 @@ const DNASync = (() => {
   const KEY_FILA = 'gambyte_dna_fila_v1';
   const KEY_FONTE = 'gambyte_dna_fonte_v1';
   const KEY_DESCARTE = 'gambyte_dna_descartes_v1';   // ids que não dá para analisar
-  const POR_CONTA = 40;                                // partidas mais recentes de cada conta
+  const POR_CONTA = 12;                                // partidas mais recentes de cada conta (igual à lista de importar)
 
   const ouvintes = [];
   let estado = { fase: 'parado', feitas: 0, total: 0, atual: null, erro: null };
@@ -55,10 +55,13 @@ const DNASync = (() => {
     const atual = fila();
     const naFila = new Set(atual.map(x => x.id));
     let novas = 0;
+    const buscou = new Set(), recentes = new Set();
     for (const site of Object.keys(cs)) {
       try {
         const lista = site === 'lichess' ? await GameImport.buscarLichess(cs[site], POR_CONTA) : await GameImport.buscarChessCom(cs[site], POR_CONTA, 4);
+        buscou.add(site);
         for (const j of lista.slice(0, POR_CONTA)) {
+          recentes.add(j.id);
           if (guardadas.has(j.id) || naFila.has(j.id) || descartes.has(j.id)) continue;
           atual.push({ id: j.id, site, pgn: j.pgn, quando: j.quando || 0 });
           naFila.add(j.id); novas++;
@@ -67,8 +70,10 @@ const DNASync = (() => {
         avisar({ erro: `Não deu para buscar as partidas do ${site === 'lichess' ? 'Lichess' : 'Chess.com'} agora.` });
       }
     }
-    atual.sort((a, b) => (b.quando || 0) - (a.quando || 0));   // as mais recentes primeiro
-    gravarJSON(KEY_FILA, atual);
+    // Na fila, só as mais recentes de cada conta (sai o que ficou de buscas antigas).
+    const fila2 = atual.filter(x => !buscou.has(x.site) || recentes.has(x.id));
+    fila2.sort((a, b) => (b.quando || 0) - (a.quando || 0));   // as mais recentes primeiro
+    gravarJSON(KEY_FILA, fila2);
     return novas;
   }
 
