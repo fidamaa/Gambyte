@@ -29,66 +29,58 @@ body[data-site="gambyte"]>.info-nav{background:linear-gradient(135deg,rgba(14,20
 
 /* ══════════════════════════════════════════════════════════════
    VINHETA DE ABERTURA (uma vez por sessão; js/abertura.js anima)
-   O cavalo entra num laço com rastro, pousa com mola, apresenta o
-   nome e sobe puxando a cortina verde.
+   O tabuleiro da logo surge; cada coluna do "gráfico" é o lance de uma
+   peça (torre sobe a coluna inteira, peão avança duas casas, peão uma,
+   cavalo pula em L, bispo desce na diagonal); cada peça vira o quadrado
+   claro do topo da coluna. Com a logo pronta, o nome aparece e a logo
+   voa para o lugar dela na barra de cima enquanto a cortina sobe.
    ══════════════════════════════════════════════════════════════ */
 .abertura{display:none}
-html.abertura-rodando .abertura{display:block; position:fixed; inset:0; z-index:10000; cursor:pointer; will-change:transform;
-  background:radial-gradient(ellipse 70% 60% at 50% 45%, #1bc489 0%, #10a170 62%, #0b8a5f 100%)}
-/* borda de baixo arredondada: aparece quando a cortina é puxada */
-.abertura::after{content:""; position:absolute; left:-15%; right:-15%; top:calc(100% - 1px); height:18vh; background:#0b8a5f; border-radius:0 0 50% 50%}
+html.abertura-rodando .abertura{display:block; position:fixed; inset:0; z-index:10000; cursor:pointer}
 html.abertura-rodando body{overflow:hidden}
-.ab-palco{position:absolute; left:50%; top:50%; width:560px; height:360px; margin:-180px 0 0 -280px}
-.ab-cav{position:absolute; left:0; top:0; width:104px; height:104px; offset-anchor:center; offset-rotate:0deg; offset-distance:0%;
-  offset-path:path('M 30 560 C 30 300, 120 30, 250 34 C 390 38, 440 176, 360 232 C 292 280, 196 236, 226 166 C 248 116, 300 128, 280 180')}
-.ab-cav i{display:block; width:100%; height:100%; background:#04160e; transform:scaleX(-1); transform-origin:50% 92%;
-  -webkit-mask:url(/pieces/knight-b.svg) center/contain no-repeat; mask:url(/pieces/knight-b.svg) center/contain no-repeat}
-.ab-fant i{background:#d9fff0}
-.ab-fant{opacity:0}
-.ab-nome{position:absolute; left:216px; top:180px; transform:translateY(-54%); display:flex; font:400 76px/1 'DM Serif Display',Georgia,serif; letter-spacing:-.02em; color:#04160e}
+.ab-fundo{position:absolute; inset:0; background:radial-gradient(ellipse 70% 60% at 50% 45%, #1bc489 0%, #10a170 62%, #0b8a5f 100%); will-change:transform}
+.ab-fundo::after{content:""; position:absolute; left:-15%; right:-15%; top:calc(100% - 1px); height:18vh; background:#0b8a5f; border-radius:0 0 50% 50%}
+.ab-palco{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:calc(var(--t) * .14); --t:min(230px, 42vw)}
+.ab-tile{position:relative; flex:none; width:var(--t); height:var(--t); border-radius:21.9%; background:#0e1316;
+  box-shadow:inset 0 0 0 calc(var(--t) * .031) rgba(63,214,154,.3), 0 30px 60px rgba(2,40,26,.35); opacity:0; will-change:transform}
+.ab-c,.ab-b,.ab-p,.ab-luz{position:absolute; width:14.06%; height:14.06%}
+.ab-c{background:#18211f; opacity:0}
+.ab-b{width:11.56%; height:11.56%; border-radius:6%; transform:scaleY(0); transform-origin:50% 100%}
+.ab-b.esc{background:#14a372}
+.ab-b.cla{background:#8ff0c4; transform:scale(0); transform-origin:50% 50%}
+.ab-luz{border-radius:50%; background:radial-gradient(circle, rgba(170,255,220,.9), rgba(143,240,196,0) 70%); opacity:0; pointer-events:none}
+.ab-p{background:#eafff5; opacity:0; filter:drop-shadow(0 4px 6px rgba(0,0,0,.45));
+  -webkit-mask:var(--peca) center/82% no-repeat; mask:var(--peca) center/82% no-repeat}
+.ab-nome{display:flex; font:400 calc(var(--t) * .34)/1 'DM Serif Display',Georgia,serif; letter-spacing:-.02em; color:#04160e; will-change:transform}
 .ab-nome span{display:inline-block; opacity:0}
-@media (max-width:640px){.ab-palco{transform:scale(.62)}}
-@media (max-width:380px){.ab-palco{transform:scale(.56)}}
+@media (max-width:640px){.ab-palco{--t:min(150px, 30vw)}}
 
 /* ══════════════════════════════════════════════════════════════
-   PRIMEIRA DOBRA — mínima: marca, título, campo e botão
+   BARRA DE ANÁLISE — o topo é só ela, colada no tabuleiro
    ══════════════════════════════════════════════════════════════ */
-.hero{position:relative; isolation:isolate; width:100vw; margin:-82px 0 0 calc(50% - 50vw);
-  min-height:clamp(520px, 78vh, 760px); display:flex; align-items:center; justify-content:center; text-align:center;
-  padding:130px 24px 64px;
-  background:radial-gradient(ellipse 46% 40% at 50% 34%, rgba(63,214,154,.10), transparent 70%)}
-.hero-conteudo{position:relative; width:100%; max-width:720px; display:flex; flex-direction:column; align-items:center}
-.hero-conteudo>*{opacity:0; transform:translateY(14px); animation:hero-texto .8s var(--ease) forwards}
-html.abertura-rodando .hero-conteudo>*{animation-play-state:paused}
-.hero-conteudo>:nth-child(1){animation-delay:.05s}
-.hero-conteudo>:nth-child(2){animation-delay:.15s}
-.hero-conteudo>:nth-child(3){animation-delay:.22s}
-.hero-conteudo>:nth-child(4){animation-delay:.3s}
-.hero-conteudo>:nth-child(5){animation-delay:.38s}
-.hero-conteudo>:nth-child(6){animation-delay:.46s}
-.hero-conteudo>:nth-child(7){animation-delay:.54s}
+.hero{position:relative; max-width:1100px; margin:18px auto 14px; padding:0}
+.hero-form{display:flex; align-items:stretch; gap:6px; padding:6px; border-radius:15px; background:#0b1012; border:1px solid rgba(255,255,255,.09); transition:border-color .25s, box-shadow .25s;
+  opacity:0; transform:translateY(-8px); animation:hero-texto .6s var(--ease) .05s forwards}
+html.abertura-rodando .hero-form{animation-play-state:paused}
+.hero-form:focus-within{border-color:rgba(63,214,154,.55); box-shadow:0 0 0 4px rgba(63,214,154,.10)}
 @keyframes hero-texto{to{opacity:1; transform:none}}
 @keyframes hero-aparece{to{opacity:1}}
 
-/* o cavalo da vinheta fica aqui, pequeno, como marca */
-.hero-marca{width:30px; height:30px; margin-bottom:22px; background:var(--accent); filter:drop-shadow(0 0 14px rgba(63,214,154,.45));
-  -webkit-mask:url(/pieces/knight-b.svg) center/contain no-repeat; mask:url(/pieces/knight-b.svg) center/contain no-repeat}
-.hero-kicker{display:inline-flex; align-items:center; gap:10px; margin:0 0 18px; font:500 12px/1 'Outfit',sans-serif; letter-spacing:.16em; text-transform:uppercase; color:#8ff0c4}
-.hero-kicker-ponto{display:none}
-.hero h1{font:400 clamp(38px, 5vw, 66px)/1.03 'DM Serif Display',Georgia,serif; letter-spacing:-.02em; color:#f3f7f5; margin:0 0 18px; text-wrap:balance}
-.hero-texto{font-size:16px; line-height:1.65; color:var(--text2); max-width:60ch; margin:0 0 30px}
-.hero-texto a{color:#8ff0c4; text-underline-offset:3px}
+.hero-sites{flex:none; display:flex; align-items:center; gap:2px; padding:3px; border-radius:10px; background:rgba(255,255,255,.03)}
+.hero-sites button{border:0; background:none; color:var(--text3); font:500 13px/1 'Outfit',sans-serif; padding:0 11px; height:100%; min-height:38px; border-radius:8px; cursor:pointer; transition:color .2s, background .2s}
+.hero-sites button:hover{color:var(--text)}
+.hero-sites button[aria-pressed="true"]{color:#b5f5d8; background:rgba(63,214,154,.12)}
+.hero-sites button:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
 
-.hero-form{width:100%; max-width:640px; display:flex; align-items:stretch; gap:8px; padding:7px; border-radius:16px; background:#0b1012; border:1px solid rgba(255,255,255,.09); text-align:left; transition:border-color .25s, box-shadow .25s}
-.hero-form:focus-within{border-color:rgba(63,214,154,.55); box-shadow:0 0 0 4px rgba(63,214,154,.10)}
-.hero-campo{flex:1; display:flex; align-items:flex-start; gap:10px; padding:0 4px 0 12px; min-width:0}
-.hero-campo-ico{width:20px; height:20px; flex:none; margin-top:15px; color:var(--text3)}
-#hero-input{flex:1; min-width:0; resize:none; border:0; outline:0; background:transparent; color:var(--text); font:400 15.5px/1.5 'Outfit',sans-serif; padding:13px 0; max-height:168px; overflow-y:auto}
+.hero-campo{flex:1; display:flex; align-items:flex-start; gap:10px; padding:0 4px 0 10px; min-width:0}
+.hero-campo-ico{width:19px; height:19px; flex:none; margin-top:13px; color:var(--text3)}
+#hero-input{flex:1; min-width:0; resize:none; border:0; outline:0; background:transparent; color:var(--text); font:400 15px/1.5 'Outfit',sans-serif; padding:11px 0; max-height:168px; overflow-y:auto}
 #hero-input::placeholder{color:#6f7f7a}
 #hero-input.pgn{font:400 13px/1.55 'JetBrains Mono',monospace}
-.hero-btn{flex:none; display:inline-flex; align-items:center; gap:10px; padding:0 22px; min-height:52px; border:0; border-radius:11px; cursor:pointer;
-  background:var(--accent); color:var(--accent-ink); font:600 15.5px/1 'Outfit',sans-serif; transition:transform .15s, filter .2s}
-.hero-btn svg{width:18px; height:18px; transition:transform .2s}
+
+.hero-btn{flex:none; display:inline-flex; align-items:center; gap:9px; padding:0 20px; min-height:46px; border:0; border-radius:10px; cursor:pointer;
+  background:var(--accent); color:var(--accent-ink); font:600 15px/1 'Outfit',sans-serif; transition:transform .15s, filter .2s}
+.hero-btn svg{width:17px; height:17px; transition:transform .2s}
 .hero-btn:hover{filter:brightness(1.08)}
 .hero-btn:hover svg{transform:translateX(3px)}
 .hero-btn:active{transform:translateY(1px)}
@@ -98,28 +90,22 @@ html.abertura-rodando .hero-conteudo>*{animation-play-state:paused}
 .hero-btn.carregando svg{display:none}
 .hero-btn .cavalo-carregando i{background:var(--accent-ink)}
 
-.hero-sites{display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:6px 8px; margin:12px 0 0; font-size:13px; color:var(--text3)}
-.hero-sites button{border:1px solid transparent; background:none; color:var(--text2); font:500 13px/1 'Outfit',sans-serif; padding:6px 10px; border-radius:99px; cursor:pointer; transition:color .2s, background .2s, border-color .2s}
-.hero-sites button[aria-pressed="true"]{color:#b5f5d8; border-color:rgba(63,214,154,.35); background:rgba(63,214,154,.08)}
-.hero-sites button:hover{color:var(--text)}
-.hero-dica{flex-basis:100%; color:var(--text3)}
+/* dica curta, só quando há algo digitado */
+.hero-dica{margin:6px 4px 0; min-height:0; font-size:12.5px; color:var(--text3); text-align:center}
+.hero-dica:empty{display:none}
 
-.hero-acoes{display:flex; flex-wrap:wrap; justify-content:center; gap:8px 26px; margin-top:28px}
-.hero-link{display:inline-flex; align-items:center; gap:8px; padding:4px 0; border:0; background:none; color:#c9d6d2; font:500 14.5px/1.3 'Outfit',sans-serif; text-decoration:none; cursor:pointer; transition:color .2s}
-.hero-link svg{width:18px; height:18px; flex:none; color:var(--accent)}
-.hero-link:hover{color:#fff}
-.hero-link-nota{display:none}
-.hero-link:focus-visible{outline:2px solid var(--accent); outline-offset:4px; border-radius:4px}
+/* o exemplo fica na aba "Partida" do painel */
+.exemplo-link{display:flex; align-items:center; gap:12px; width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--linha); background:rgba(63,214,154,.04); color:var(--text); font:500 14px/1.3 'Outfit',sans-serif; text-align:left; cursor:pointer; transition:border-color .2s, background .2s}
+.exemplo-link:hover{border-color:rgba(63,214,154,.45); background:rgba(63,214,154,.08)}
+.exemplo-link svg{width:22px; height:22px; flex:none; color:var(--accent)}
+.exemplo-link small{display:block; margin-top:2px; font-size:12px; font-weight:400; color:var(--text3)}
 
-.hero-descer{position:absolute; left:50%; bottom:20px; width:24px; height:38px; margin-left:-12px; border:1.5px solid rgba(255,255,255,.18); border-radius:13px; opacity:0; animation:hero-aparece .6s .9s forwards}
-html.abertura-rodando .hero-descer{animation-play-state:paused}
-.hero-descer span{position:absolute; left:50%; top:8px; width:3px; height:7px; margin-left:-1.5px; border-radius:2px; background:var(--accent); animation:hero-rola 1.8s 1.6s ease-in-out 3}
-@keyframes hero-rola{0%{transform:translateY(0); opacity:1} 70%{transform:translateY(12px); opacity:0} 100%{transform:translateY(0); opacity:0}}
+/* título e apresentação, agora na primeira seção de conteúdo */
+.info-apresenta h1{font:400 clamp(28px,3.2vw,40px)/1.12 'DM Serif Display',Georgia,serif; letter-spacing:-.01em; color:#f3f7f5; margin:0 0 14px; text-wrap:balance}
+.info-apresenta p a{color:#8ff0c4}
 
-/* Análise em andamento: a primeira dobra encolhe e o tabuleiro assume */
-body.em-analise .hero{min-height:0; padding-top:104px; padding-bottom:20px}
-body.em-analise .hero-texto,body.em-analise .hero-acoes,body.em-analise .hero-descer,body.em-analise .hero-kicker,body.em-analise .hero-marca{display:none}
-body.em-analise .hero h1{font-size:clamp(24px,2.4vw,32px); margin-bottom:14px}
+/* antes de abrir uma partida, nada entre a barra e o tabuleiro */
+body:not(.em-analise) .game-strip{display:none}
 
 /* ── Carregando: o cavalo vira de um lado para o outro ───────── */
 .cavalo-carregando{display:inline-block; width:22px; height:22px; flex:none; margin-right:8px; vertical-align:-5px; perspective:80px}
@@ -135,18 +121,15 @@ body.em-analise .hero h1{font-size:clamp(24px,2.4vw,32px); margin-bottom:14px}
 .board-carregando .cavalo-carregando{width:64px; height:64px; margin:0}
 .board-carregando[hidden]{display:none}
 
-@media (max-width:900px){
-  .hero{margin-top:-74px; padding:112px 20px 34px; min-height:0}
-  .hero h1{font-size:clamp(32px, 8.6vw, 44px)}
-  .hero-texto{display:none}
-  .hero-form{flex-direction:column; padding:8px}
-  .hero-btn{justify-content:center; min-height:50px}
-  .hero-acoes{gap:10px 18px; margin-top:22px}
-  .hero-descer{display:none}
+@media (max-width:760px){
+  .hero{margin:12px 0 12px}
+  .hero-form{flex-wrap:wrap}
+  .hero-campo{order:1; flex:1 1 100%; padding-right:8px}
+  .hero-sites{order:2}
+  .hero-btn{order:3; flex:1; justify-content:center}
 }
-@media (max-width:420px){.hero-kicker{font-size:11px; letter-spacing:.1em}}
 @media (prefers-reduced-motion:reduce){
-  .hero-conteudo>*,.hero-descer,.hero-descer span{animation:none!important; opacity:1; transform:none}
+  .hero-form{animation:none!important; opacity:1; transform:none}
   .cavalo-carregando i{animation-duration:3s}
 }
 
@@ -275,7 +258,6 @@ html.nav-recolhida .side-panel{top:16px}
 /* Antes de abrir uma partida: sem placar vazio de traços */
 body:not(.em-analise) .players-row{display:none}
 body:not(.em-analise) .game-strip>.opening-banner{border-color:transparent; padding-left:0}
-@media (max-width:520px){.hero-so-pc{display:none}}
 /* Celular: placar → faixa da abertura → tabuleiro → painel em abas */
 @media (max-width:760px){
   #results-section>.players-row{order:2}
@@ -342,7 +324,6 @@ body:not(.em-analise) .game-strip>.opening-banner{border-color:transparent; padd
 .gd-padroes{margin-top:6px; padding-top:14px; border-top:1px solid var(--linha)}
 .gd-padroes h3{display:flex; align-items:center; gap:8px; margin:0 0 10px; font:600 13px/1 'Outfit',sans-serif; letter-spacing:.06em; text-transform:uppercase; color:var(--text2)}
 @media (prefers-reduced-motion:reduce){.gd-barra i,.gd-t{transition:none}.gd-exp{animation:none}}
-.ab-fant i{filter:blur(1.5px)}
 
 /* Seções da página inicial entram ao chegar na tela (só com JS ligado) */
 html.revelar .info-home{opacity:0; transform:translateY(18px); transition:opacity .6s cubic-bezier(.2,.75,.2,1), transform .6s cubic-bezier(.2,.75,.2,1)}
@@ -359,4 +340,7 @@ html.revelar .info-home.visto{opacity:1; transform:none}
 /* Abas do painel numa linha só; em telas médias o "+" fica sem texto */
 .side-tabs button{white-space:nowrap}
 @media (max-width:1100px){.side-tab-mais .side-tab-txt{display:none}.side-tabs button{font-size:13.5px}}
-.hero-kicker{display:block}
+
+/* A área do tabuleiro existe desde o primeiro quadro (sem piscar no carregamento) */
+#results-section{display:block}
+@media (max-width:760px){#results-section{display:flex; flex-direction:column; gap:12px}}

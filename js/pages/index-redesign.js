@@ -32,12 +32,12 @@
     return 'pgn';
   }
   const DICAS = {
-    '': 'PGN, FEN ou link do Lichess também valem.',
+    '': '',
     fen: 'Posição (FEN): abre no tabuleiro para analisar ao vivo.',
     link: 'Link do Lichess: a partida abre e a análise começa.',
     'link-chesscom': 'O Chess.com não libera a busca pelo link: digite o usuário e escolha a partida.',
     usuario: 'Vamos listar as últimas partidas desse usuário.',
-    pgn: 'PGN reconhecido: a análise começa ao clicar em Analisar.',
+    pgn: 'PGN reconhecido: é só clicar em Analisar.',
   };
 
   function crescer() {
@@ -46,7 +46,7 @@
     campo.style.height = Math.min(campo.scrollHeight, 168) + 'px';
     const t = tipo(campo.value);
     campo.classList.toggle('pgn', t === 'pgn' || t === 'fen');
-    if (dica) dica.textContent = DICAS[t] || DICAS[''];
+    if (dica) dica.textContent = t === 'usuario' ? `Vamos listar as últimas partidas de ${campo.value.trim().replace(/^@/, '')} no ${siteNome()}.` : (DICAS[t] || '');
   }
 
   // Site do usuário: espelha os botões da busca (que guardam a escolha).
@@ -55,12 +55,21 @@
     if (b) return b.dataset.impSite;
     try { return JSON.parse(localStorage.getItem('gambyte_import_v1') || '{}').site || 'chesscom'; } catch (e) { return 'chesscom'; }
   }
+  const siteNome = () => (document.querySelector('[data-hero-site][aria-pressed="true"]')?.dataset.heroSite === 'lichess' ? 'Lichess' : 'Chess.com');
+  function exemplo() {
+    if (!campo) return;
+    const curto = innerWidth < 520;
+    campo.placeholder = curto ? `Usuário do ${siteNome()} ou PGN` : `Seu usuário do ${siteNome()}, ou cole o PGN da partida`;
+  }
   function marcarSite(s) {
     document.querySelectorAll('[data-hero-site]').forEach(b => b.setAttribute('aria-pressed', b.dataset.heroSite === s ? 'true' : 'false'));
+    exemplo();
   }
   document.querySelectorAll('[data-hero-site]').forEach(b => b.addEventListener('click', () => {
     marcarSite(b.dataset.heroSite);
     document.querySelector(`#import-box [data-imp-site="${b.dataset.heroSite}"]`)?.click();
+    campo?.focus();   // escolheu o site: é para digitar o usuário
+    crescer();
   }));
 
   function irParaAnalise() {
@@ -101,9 +110,8 @@
       if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); enviar(); }
     });
     form.addEventListener('submit', enviar);
-    // Celular: texto de exemplo mais curto, para caber numa linha
-    const ajustarDica = () => { campo.placeholder = innerWidth < 520 ? 'Cole o PGN ou digite seu usuário' : 'Cole o PGN da partida ou digite seu usuário'; };
-    ajustarDica(); addEventListener('resize', ajustarDica);
+    // Texto de exemplo conforme o site escolhido (mais curto no celular)
+    exemplo(); addEventListener('resize', exemplo);
     marcarSite(siteAtual());
     crescer();
   }
