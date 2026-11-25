@@ -471,9 +471,13 @@ const FreePlay = (() => {
     for (const depth of depths) {
       if (!stillCurrent()) return;
 
+      // A passada rápida fura a fila (até a análise ao vivo da posição, que
+      // no Pro vai até a profundidade 22): a nota aparece logo depois do
+      // lance. A refinada espera a vez e atualiza a nota quando chega.
+      const op = { urgente: depth === BRANCH_QUICK_DEPTH };
       const [beforeRes, afterRes] = await Promise.all([
-        StockfishManager.analyzePosition(fenBefore, depth, 3),
-        StockfishManager.analyzePosition(fenAfter, depth, 3)
+        StockfishManager.analyzePosition(fenBefore, depth, 3, [], null, op),
+        StockfishManager.analyzePosition(fenAfter, depth, 3, [], null, op)
       ]);
 
       if (!stillCurrent()) return;

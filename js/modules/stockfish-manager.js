@@ -289,9 +289,10 @@ const StockfishManager = (() => {
       if (item && item.preempted) {
         // Interrompida por uma análise ao vivo: volta para a fila logo
         // depois dela e roda de novo do zero (o resultado parcial é descartado).
+        // (Uma ao vivo interrompida por uma urgente volta logo depois das urgentes.)
         item.preempted = false;
         let pos = 0;
-        while (pos < analysisQueue.length && analysisQueue[pos].live) pos++;
+        while (pos < analysisQueue.length && (analysisQueue[pos].urgente || (!item.live && analysisQueue[pos].live))) pos++;
         analysisQueue.splice(pos, 0, item);
       } else if (finish) finish({ bestmove: data, infoLines: lines });
 
@@ -414,8 +415,19 @@ const StockfishManager = (() => {
         return;
       }
       const item = { fen, depth, multiPV, movesUCI, resolve, onUpdate, movetime: opts.movetime || 0, travaAuto: !!opts.travaAuto, fundo: !!opts.fundo,
-                     elo: opts.elo || 0, searchMoves: opts.searchMoves || null };
-      if (item.fundo) analysisQueue.push(item);
+                     elo: opts.elo || 0, searchMoves: opts.searchMoves || null, urgente: !!opts.urgente };
+      if (item.urgente) {
+        // Nota rápida do lance que a pessoa acabou de fazer: fura a fila,
+        // inclusive a análise ao vivo, que volta logo depois (a tabela de
+        // hash do motor guarda o que ela já tinha calculado).
+        let pos = 0;
+        while (pos < analysisQueue.length && analysisQueue[pos].urgente) pos++;
+        analysisQueue.splice(pos, 0, item);
+        if (!slots.some(sl => !sl.busy)) {
+          const sl = slots.find(x => x.item && !x.item.urgente && !x.item.preempted);
+          if (sl && slots.every(x => x.busy)) { sl.item.preempted = true; sl.onUpdate = null; sl.w.postMessage('stop'); }
+        }
+      } else if (item.fundo) analysisQueue.push(item);
       else {
         let pos = analysisQueue.findIndex(it => it.fundo);
         if (pos < 0) pos = analysisQueue.length;
@@ -443,13 +455,16 @@ const StockfishManager = (() => {
         return false;
       });
       const item = { fen, depth, multiPV: 1, movesUCI: opts.movesUCI || [], searchMoves: opts.searchMoves || null, resolve, onUpdate, movetime: 0, live: true };
-      analysisQueue.unshift(item);
+      // Na frente de tudo, menos das notas rápidas de lance (urgentes).
+      let pos = 0;
+      while (pos < analysisQueue.length && analysisQueue[pos].urgente) pos++;
+      analysisQueue.splice(pos, 0, item);
       // Ao vivo anterior ainda rodando em algum motor: cancela.
-      for (const s of slots) if (s.busy && s.item && s.item.live) { s.item.cancelled = true; s.onUpdate = null; s.w.postMessage('stop'); }
+      for (const s of slots) if (s.busy && s.item && s.item.live) { s.item.cancelled = true; s.item.preempted = false; s.onUpdate = null; s.w.postMessage('stop'); }
       const livre = slots.find(s => !s.busy);
       if (livre) { _runNext(); return; }
       const s = slots[0];
-      if (s.item && !s.item.live) { s.item.preempted = true; s.onUpdate = null; s.w.postMessage('stop'); }
+      if (s.item && !s.item.live && !s.item.urgente && !s.item.preempted) { s.item.preempted = true; s.onUpdate = null; s.w.postMessage('stop'); }
     });
   }
 
