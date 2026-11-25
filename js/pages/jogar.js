@@ -6,24 +6,26 @@
   const $ = id => document.getElementById(id);
   const R = FreePlay.regras;
   const INICIAL = PGNParser.INITIAL_FEN;
-  const NOMES = { 400: 'Iniciante', 800: 'Iniciante+', 1200: 'Intermediário', 1500: 'Intermediário+', 1800: 'Avançado', 2200: 'Mestre', 2500: 'Grande mestre' };
-  const DESC = {
-    400: 'Erra muito, entrega peças e muitas vezes nem vê a sua ameaça. Para quem está aprendendo a mexer as peças.',
-    800: 'Já desenvolve as peças, mas ainda deixa material solto e não vê muitas ameaças.',
-    1200: 'Joga lances razoáveis, mas comete erros táticos de vez em quando.',
-    1500: 'Sólido na maior parte da partida; os erros ficam mais raros e mais sutis.',
-    1800: 'Bom cálculo e poucos erros graves. Exige plano para ganhar.',
-    2200: 'Nível de mestre: pune quase toda imprecisão.',
-    2500: 'O motor sem limite de força. Ganhar é para muito poucos.'
-  };
-  const nomeNivel = n => (n >= 2500 ? '2500+' : String(n));
+  // Faixas da barra de nível (o número escolhido vai de 100 a 2600, de 50 em 50).
+  const FAIXAS = [
+    { ate: 400,  nome: 'Iniciante',      desc: 'Erra muito, entrega peças e muitas vezes nem vê a sua ameaça. Para quem está aprendendo a mexer as peças.' },
+    { ate: 800,  nome: 'Iniciante+',     desc: 'Já desenvolve as peças, mas ainda deixa material solto e não vê muitas ameaças.' },
+    { ate: 1200, nome: 'Intermediário',  desc: 'Joga lances razoáveis, mas comete erros táticos de vez em quando.' },
+    { ate: 1500, nome: 'Intermediário+', desc: 'Sólido na maior parte da partida; os erros ficam mais raros e mais sutis.' },
+    { ate: 1800, nome: 'Avançado',       desc: 'Bom cálculo e poucos erros graves. Exige plano para ganhar.' },
+    { ate: 2200, nome: 'Mestre',         desc: 'Nível de mestre: pune quase toda imprecisão.' },
+    { ate: 2450, nome: 'Grande mestre',  desc: 'Joga como um grande mestre: quase não erra e transforma qualquer vantagem em vitória.' },
+    { ate: 2600, nome: 'Grande mestre',  desc: 'O motor sem limite de força. Ganhar é para muito poucos.' }
+  ];
+  const faixaDe = n => FAIXAS.find(f => n <= f.ate) || FAIXAS[FAIXAS.length - 1];
+  const nomeNivel = n => String(n);
   const guardar = (k, v) => { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* sem armazenamento */ } };
   const ler = (k, onde) => { try { return JSON.parse((onde || sessionStorage).getItem(k) || 'null'); } catch (e) { return null; } };
   const CHAVE_PARTIDA = 'gambyte_bot_partida', CHAVE_PREF = 'gambyte_bot_pref';
 
   // ── Estado ────────────────────────────────────────────────────
   let pref = ler(CHAVE_PREF, localStorage) || {};
-  let nivel = BotEngine.NIVEIS.includes(pref.nivel) ? pref.nivel : 1200;
+  let nivel = BotEngine.valido(pref.nivel) ? pref.nivel : 1200;
   let corPedida = ['w', 'b', 'x'].includes(pref.cor) ? pref.cor : 'w';
 
   let jogo = null;      // { nivel, cor, lances: [uci], sans: [san], fens: [fen], fim, voltas }
@@ -111,7 +113,7 @@
     $('jg-config').hidden = true;
     $('jg-partida').hidden = false;
     $('jg-nome-bot').textContent = 'Bot do Gambyte · ' + nomeNivel(jogo.nivel);
-    $('jg-nivel-bot').textContent = NOMES[jogo.nivel] + (jogo.cor === 'w' ? ' · pretas' : ' · brancas');
+    $('jg-nivel-bot').textContent = faixaDe(jogo.nivel).nome + (jogo.cor === 'w' ? ' · pretas' : ' · brancas');
     $('jg-cor-voce').textContent = jogo.cor === 'w' ? 'Brancas' : 'Pretas';
     document.body.classList.add('jg-jogando');
     montarTabuleiro();
@@ -163,7 +165,7 @@
 
   function restaurarSalva() {
     const s = ler(CHAVE_PARTIDA);
-    if (!s || !Array.isArray(s.lances) || !BotEngine.NIVEIS.includes(s.nivel) || !s.lances.length) return false;
+    if (!s || !Array.isArray(s.lances) || !BotEngine.valido(s.nivel) || !s.lances.length) return false;
     const j = { nivel: s.nivel, cor: s.cor === 'b' ? 'b' : 'w', lances: [], sans: [], fens: [INICIAL], fim: s.fim || null, voltas: s.voltas || 0 };
     for (const u of s.lances) {
       const st = PGNParser.fenToBoard(j.fens[j.fens.length - 1]);
@@ -554,9 +556,16 @@
   }
 
   function marcarEscolhas() {
-    for (const b of document.querySelectorAll('[data-nivel]')) b.setAttribute('aria-checked', String(+b.dataset.nivel === nivel));
+    const barra = $('jg-nivel'), f = faixaDe(nivel);
+    barra.value = nivel;
+    barra.style.setProperty('--p', ((nivel - BotEngine.MIN) / (BotEngine.MAX - BotEngine.MIN) * 100) + '%');
+    barra.setAttribute('aria-valuetext', nivel + ', ' + f.nome);
+    $('jg-nivel-num').textContent = nivel;
+    $('jg-nivel-faixa').textContent = f.nome;
+    $('jg-nivel-menos').disabled = nivel <= BotEngine.MIN;
+    $('jg-nivel-mais').disabled = nivel >= BotEngine.MAX;
     for (const b of document.querySelectorAll('[data-cor]')) b.setAttribute('aria-checked', String(b.dataset.cor === corPedida));
-    $('jg-desc').textContent = DESC[nivel];
+    $('jg-desc').textContent = f.desc;
   }
   function guardarPref() { try { localStorage.setItem(CHAVE_PREF, JSON.stringify({ nivel, cor: corPedida })); } catch (e) { /* ok */ } }
 
@@ -575,12 +584,13 @@
   }
 
   function iniciar() {
-    const niveis = document.querySelector('.jg-niveis'), cores = document.querySelector('.jg-cores');
-    const porNivel = b => { nivel = +b.dataset.nivel; guardarPref(); marcarEscolhas(); };
+    const cores = document.querySelector('.jg-cores');
+    const porNivel = n => { nivel = Math.max(BotEngine.MIN, Math.min(BotEngine.MAX, n)); guardarPref(); marcarEscolhas(); };
+    $('jg-nivel').addEventListener('input', e => porNivel(+e.target.value));
+    $('jg-nivel-menos').addEventListener('click', () => porNivel(nivel - BotEngine.PASSO));
+    $('jg-nivel-mais').addEventListener('click', () => porNivel(nivel + BotEngine.PASSO));
     const porCor = b => { corPedida = b.dataset.cor; guardarPref(); marcarEscolhas(); if (!jogo) { BoardUI.setFlipped(corPedida === 'b'); desenhar(); } };
-    niveis.addEventListener('click', e => { const b = e.target.closest('[data-nivel]'); if (b) porNivel(b); });
     cores.addEventListener('click', e => { const b = e.target.closest('[data-cor]'); if (b) porCor(b); });
-    teclasGrupo(niveis, 'data-nivel', porNivel);
     teclasGrupo(cores, 'data-cor', porCor);
     $('jg-comecar').addEventListener('click', () => {
       novaPartida();

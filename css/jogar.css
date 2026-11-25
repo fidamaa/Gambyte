@@ -120,3 +120,25 @@ body.jg-jogando .jg-intro{display:none}
   .jg-niveis span{font-size:9.5px}
 }
 @media(prefers-reduced-motion:reduce){.jg-pensa i{animation:none;opacity:.8}}
+
+/* Barra de nível (100 a 2600, de 50 em 50) */
+.jg-nivel-escolha{display:flex;flex-direction:column;gap:8px;padding:12px 14px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:12px}
+.jg-nivel-topo{display:flex;align-items:baseline;gap:10px}
+.jg-nivel-topo b{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:600;color:var(--accent);min-width:3.2ch;font-variant-numeric:tabular-nums}
+.jg-nivel-topo span{font-size:14px;font-weight:600;color:var(--text)}
+.jg-nivel-linha{display:flex;align-items:center;gap:10px}
+.jg-nivel-passo{flex:none;width:32px;height:32px;border-radius:50%;border:1px solid var(--border2);background:transparent;color:var(--text);font:600 18px/1 inherit;cursor:pointer;transition:border-color .15s,background .15s}
+.jg-nivel-passo:hover:not(:disabled){border-color:var(--accent);background:#3fd69a14}
+.jg-nivel-passo:disabled{opacity:.35;cursor:default}
+#jg-nivel{flex:1;min-width:0;height:28px;margin:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer;--p:44%}
+#jg-nivel::-webkit-slider-runnable-track{height:6px;border-radius:99px;background:linear-gradient(90deg,#14a372,#6ee7b4 var(--p),rgba(255,255,255,.1) var(--p))}
+#jg-nivel::-moz-range-track{height:6px;border-radius:99px;background:rgba(255,255,255,.1)}
+#jg-nivel::-moz-range-progress{height:6px;border-radius:99px;background:linear-gradient(90deg,#14a372,#6ee7b4)}
+#jg-nivel::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;margin-top:-8px;border-radius:50%;background:#e9fff5;border:3px solid var(--accent);box-shadow:0 0 0 4px #3fd69a26,0 2px 6px rgba(0,0,0,.4);transition:transform .15s}
+#jg-nivel::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#e9fff5;border:3px solid var(--accent);box-shadow:0 0 0 4px #3fd69a26}
+#jg-nivel:active::-webkit-slider-thumb{transform:scale(1.12)}
+#jg-nivel:focus-visible{outline:none}
+#jg-nivel:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px #8ff0c466}
+.jg-nivel-marcas{position:relative;height:13px;margin:0 53px;font:11px 'JetBrains Mono',monospace;color:var(--text3)}
+.jg-nivel-marcas span{position:absolute;top:0;transform:translateX(-50%)}
+@media(max-width:480px){.jg-nivel-marcas span:nth-child(4){display:none}}

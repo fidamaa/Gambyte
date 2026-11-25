@@ -34,7 +34,11 @@
    Depende de: stockfish-manager.js, pgn-parser.js, free-play.js (regras)
    ============================================================== */
 const BotEngine = (() => {
+  // Níveis calibrados (bot contra bot). A barra do Jogar vai de 100 a 2600,
+  // de 50 em 50: os níveis entre dois calibrados misturam os dois perfis.
   const NIVEIS = [400, 800, 1200, 1500, 1800, 2200, 2500];
+  const MIN = 100, MAX = 2600, PASSO = 50;
+  const valido = n => typeof n === 'number' && n >= MIN && n <= MAX && n % PASSO === 0;
   const DESVANTAGEM_CLARA = 150; // centipeões: abaixo disso, repetir para empatar vale
 
   // Perda de cada tipo de lance, em centipeões (avaliação limitada a ±20
@@ -54,18 +58,45 @@ const BotEngine = (() => {
   // bot, no começo, sem erro nem gafe; esperanca: chance de, no lance, jogar
   // sem olhar a resposta do adversário (ver _esperanca).
   const PERFIS = {
+    // 100: o começo do começo — erra quase metade dos lances e joga muito
+    // no "xadrez da esperança". 1300: ponte para o motor com força limitada.
+    100:  { depth: 3,  multiPV: 5, abertura: 1, esperanca: .6, chance: { melhor: .16, bom: .14, imprecisao: .18, erro: .22, gafe: .30 } },
     400:  { depth: 4,  multiPV: 5, abertura: 2, esperanca: .4, chance: { melhor: .26, bom: .18, imprecisao: .16, erro: .18, gafe: .22 } },
     800:  { depth: 5,  multiPV: 5, abertura: 4, chance: { melhor: .38, bom: .24, imprecisao: .14, erro: .13, gafe: .11 } },
     1200: { depth: 7,  multiPV: 5, abertura: 5, chance: { melhor: .48, bom: .26, imprecisao: .12, erro: .09, gafe: .05 } },
+    1300: { depth: 8,  multiPV: 5, abertura: 6, chance: { melhor: .53, bom: .26, imprecisao: .11, erro: .07, gafe: .03 } },
+    1350: { elo: 1320, depth: 12, movetime: 700 },
     1500: { elo: 1400, depth: 12, movetime: 700 },
     1800: { elo: 1800, depth: 14, movetime: 900 },
     2200: { elo: 2650, depth: 16, movetime: 1100 },
-    2500: { depth: 16, movetime: 1000 }
+    2450: { elo: 3150, depth: 16, movetime: 1100 },
+    2500: { depth: 16, movetime: 1000 },
+    2600: { depth: 18, movetime: 1600 }
   };
+  // Até 1300 o bot sorteia os erros; de 1350 em diante é o Stockfish com a
+  // força limitada (o UCI_Elo não desce abaixo de 1320); 2500+ é sem limite.
+  const COM_ERROS = [100, 400, 800, 1200, 1300];
+  const FORCA = [1350, 1500, 1800, 2200, 2450, 2500, 2600];
 
   // Diagnóstico (calibração): troca o perfil de um nível.
   function ajustar(nivel, perfil) { PERFIS[nivel] = { ...PERFIS[nivel], ...perfil }; }
-  function perfil(nivel) { return PERFIS[nivel] || PERFIS[1200]; }
+  function perfil(nivel) {
+    if (!valido(nivel)) nivel = 1200;
+    if (PERFIS[nivel]) return PERFIS[nivel];
+    const lista = nivel <= 1300 ? COM_ERROS : FORCA;
+    let k = 0;
+    while (k < lista.length - 2 && lista[k + 1] < nivel) k++;
+    const a = PERFIS[lista[k]], b = PERFIS[lista[k + 1]];
+    const t = (nivel - lista[k]) / (lista[k + 1] - lista[k]);
+    const mix = (x, y) => (x || 0) + ((y || 0) - (x || 0)) * t;
+    const p = {};
+    for (const c of ['depth', 'abertura', 'movetime']) if (a[c] != null || b[c] != null) p[c] = Math.round(mix(a[c], b[c]));
+    if (a.elo && b.elo) p.elo = Math.round(mix(a.elo, b.elo));
+    if (a.multiPV) p.multiPV = a.multiPV;
+    if (a.esperanca || b.esperanca) p.esperanca = mix(a.esperanca, b.esperanca);
+    if (a.chance) { p.chance = {}; for (const c of TIPOS) p.chance[c] = mix(a.chance[c], b.chance[c]); }
+    return p;
+  }
 
   const sortear = lista => lista[Math.floor(Math.random() * lista.length)];
 
@@ -285,5 +316,5 @@ const BotEngine = (() => {
     return vez === cor ? cp : -cp;
   }
 
-  return { NIVEIS, escolher, avaliar, contexto, ajustar, perfil, ingenuo };
+  return { NIVEIS, MIN, MAX, PASSO, valido, escolher, avaliar, contexto, ajustar, perfil, ingenuo };
 })();
