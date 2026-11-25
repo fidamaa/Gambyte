@@ -1,9 +1,9 @@
 /* Abertura da página inicial (vinheta de marca, ~3 s).
    O tabuleiro da logo surge; em cada coluna do "gráfico" da logo uma
    torre sobe de baixo até o topo da barra, preenchendo o caminho, e o
-   quadrado do topo acende verde-claro. Com a logo pronta, o nome aparece
-   e a logo voa para o lugar dela na barra de cima enquanto a cortina
-   verde sobe.
+   quadrado do topo acende verde-claro. Com a logo pronta, o nome aparece;
+   depois a logo cresce até o lugar do tabuleiro da página, vira um
+   tabuleiro 8x8 e o tabuleiro de verdade assume no mesmo lugar.
 
    Carregado no <head> (síncrono e pequeno) para decidir ANTES da primeira
    pintura se a vinheta roda: só na primeira visita da sessão, nunca para
@@ -68,12 +68,9 @@
     // A vinheta termina no topo da página, onde está a logo da barra
     try { history.scrollRestoration = 'manual'; } catch (e) { /* ok */ }
     window.scrollTo(0, 0);
-    // Medidas finais (antes de qualquer transformação) para o voo até a barra
+    // O tile começa centralizado; o nome entra depois ao lado dele
     var gap = parseFloat(getComputedStyle(el.querySelector('.ab-palco')).columnGap) || 30;
     var desloca = (nome.offsetWidth + gap) / 2;          // o tile começa centralizado
-    var rTile = tile.getBoundingClientRect(), rNome = nome.getBoundingClientRect();
-    var alvoImg = document.querySelector('body > .info-nav .info-brand img');
-    var alvoTxt = document.querySelector('body > .info-nav .info-brand span');
     tile.style.translate = desloca + 'px 0';
 
     var T0 = 80;
@@ -148,31 +145,79 @@
         { duration: 680, delay: TN + 120 + i * 45, easing: MOLA, fill: 'both' });
     });
 
-    // 5. A logo voa para o lugar dela na barra de cima; a cortina sobe
-    var TS = TN + 820;
-    if (alvoImg && alvoTxt) {
-      var ri = alvoImg.getBoundingClientRect(), rt = alvoTxt.getBoundingClientRect();
-      var voo = function (r, alvo, esc) {
-        return 'translate(' + ((alvo.left + alvo.width / 2) - (r.left + r.width / 2)) + 'px,' + ((alvo.top + alvo.height / 2) - (r.top + r.height / 2)) + 'px) scale(' + esc + ')';
-      };
-      var curva = 'cubic-bezier(.65,0,.25,1)';
-      anima(tile, [{ transform: 'none', opacity: 1 }, { transform: voo(rTile, ri, ri.width / rTile.width), opacity: 1, offset: .88 }, { transform: voo(rTile, ri, ri.width / rTile.width), opacity: 0 }],
-        { duration: 820, delay: TS, easing: curva, fill: 'forwards' });
-      anima(nome, [{ transform: 'none', opacity: 1 }, { transform: voo(rNome, rt, rt.height / rNome.height * .95), opacity: 1, offset: .88 }, { transform: voo(rNome, rt, rt.height / rNome.height * .95), opacity: 0 }],
-        { duration: 820, delay: TS + 40, easing: curva, fill: 'forwards' });
-    } else {
-      anima(el.querySelector('.ab-palco'), [{ opacity: 1 }, { opacity: 0 }], { duration: 400, delay: TS, fill: 'forwards' });
+    // 5. A logo vira o tabuleiro da página: cresce até o lugar dele, as
+    //    casas 5x5 dão lugar às 8x8 em onda, o fundo verde some e o
+    //    tabuleiro de verdade (com as peças) assume no mesmo lugar.
+    //    A posição do tabuleiro só é medida agora: no começo da vinheta ele
+    //    ainda não estava montado.
+    var TS = TN + 640, DUR = 900;
+    var saidaFeita = false, saidaAnims = [];
+    function saida() {
+      if (saidaFeita) return saidaAnims;
+      saidaFeita = true;
+      var lista = [];
+      function an(alvo, q, op) { var a = alvo.animate(q, op); lista.push(a); return a; }
+      var alvo = document.getElementById('board-canvas');
+      var rA = alvo && alvo.getBoundingClientRect();
+      var rT = tile.getBoundingClientRect();
+      // o nome sai primeiro
+      letras.forEach(function (l, i) {
+        an(l, [{ opacity: 1, filter: 'blur(0)' }, { opacity: 0, filter: 'blur(6px)', translate: '0 -14px' }],
+          { duration: 300, delay: i * 22, easing: 'ease-in', fill: 'forwards' });
+      });
+      if (!rA || rA.width < 50 || rA.bottom < 0 || rA.top > innerHeight) {
+        // sem tabuleiro visível: só some
+        an(el.querySelector('.ab-palco'), [{ opacity: 1 }, { opacity: 0 }], { duration: 400, fill: 'forwards' });
+        an(fundo, [{ opacity: 1 }, { opacity: 0 }], { duration: 500, delay: 150, fill: 'forwards' });
+        saidaAnims = lista; return lista;
+      }
+      var esc = rA.width / rT.width;
+      var dx = (rA.left + rA.width / 2) - (rT.left + rT.width / 2);
+      var dy = (rA.top + rA.height / 2) - (rT.top + rT.height / 2);
+      var curva = 'cubic-bezier(.65,0,.2,1)';
+      // as 64 casas do tabuleiro, nas cores do tabuleiro do site
+      var tab = document.createElement('div');
+      tab.className = 'ab-tab8';
+      for (var r = 0; r < 8; r++) for (var c = 0; c < 8; c++) {
+        var q = document.createElement('i');
+        q.className = (r + c) % 2 === 0 ? 'cl' : 'cd';
+        tab.appendChild(q);
+        an(q, [{ opacity: 0, transform: 'scale(.4)' }, { opacity: 1, transform: 'scale(1)' }],
+          { duration: 380, delay: 160 + (r + c) * 26, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'both' });
+      }
+      tile.appendChild(tab);
+      // a logo se desfaz enquanto as casas novas aparecem
+      Array.prototype.forEach.call(tile.querySelectorAll('.ab-c, .ab-b'), function (casa) {
+        an(casa, [{ opacity: 1 }, { opacity: 0 }], { duration: 320, delay: 120, fill: 'forwards' });
+      });
+      // o tile cresce até o tabuleiro e perde os cantos e a borda da logo
+      an(tile, [
+        { transform: 'translate(0,0) scale(1)', borderRadius: '21.9%', boxShadow: getComputedStyle(tile).boxShadow },
+        { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + esc + ')', borderRadius: (6 / esc) + 'px', boxShadow: '0 0 0 0 rgba(0,0,0,0)' }
+      ], { duration: DUR, easing: curva, fill: 'forwards' });
+      // o verde vai embora quando o tabuleiro pousa
+      an(fundo, [{ opacity: 1 }, { opacity: 0 }], { duration: 420, delay: DUR - 260, easing: 'ease-out', fill: 'forwards' });
+      // e o tabuleiro de verdade (com as peças) assume
+      an(tile, [{ opacity: 1 }, { opacity: 0 }], { duration: 320, delay: DUR + 60, easing: 'ease-out', fill: 'forwards', composite: 'replace' });
+      saidaAnims = lista;
+      return lista;
     }
-    var cortina = anima(fundo, [{ transform: 'translateY(0)' }, { transform: 'translateY(-118%)' }],
-      { duration: 760, delay: TS + 120, easing: 'cubic-bezier(.7,0,.2,1)', fill: 'forwards' });
 
     if (teste) {
       todas.forEach(function (a) { a.pause(); a.currentTime = 0; });
-      window.abertura = function (t) { todas.forEach(function (a) { a.currentTime = t; }); return todas.length; };
+      window.abertura = function (t) {
+        todas.forEach(function (a) { a.currentTime = t; });
+        if (t >= TS) {
+          var s = saida();
+          s.forEach(function (a) { a.pause(); a.currentTime = t - TS; });
+        }
+        return todas.length;
+      };
       return;
     }
-    setTimeout(liberarSite, TS + 260);
-    setTimeout(fim, TS + 900);
+    setTimeout(function () { saida(); }, TS);
+    setTimeout(liberarSite, TS + 200);
+    setTimeout(fim, TS + DUR + 420);
   }
 
   document.addEventListener('DOMContentLoaded', function () {

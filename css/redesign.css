@@ -51,6 +51,9 @@ html.abertura-rodando body{overflow:hidden}
 .ab-luz{border-radius:50%; background:radial-gradient(circle, rgba(170,255,220,.9), rgba(143,240,196,0) 70%); opacity:0; pointer-events:none}
 .ab-p{background:#eafff5; opacity:0; filter:drop-shadow(0 4px 6px rgba(0,0,0,.45));
   -webkit-mask:var(--peca) center/82% no-repeat; mask:var(--peca) center/82% no-repeat}
+.ab-tab8{position:absolute; inset:0; display:grid; grid-template-columns:repeat(8,1fr); grid-template-rows:repeat(8,1fr); border-radius:inherit; overflow:hidden}
+.ab-tab8 i{opacity:0}
+.ab-tab8 .cl{background:#e4e9e3} .ab-tab8 .cd{background:#6f8c80}
 .ab-nome{display:flex; font:400 calc(var(--t) * .34)/1 'DM Serif Display',Georgia,serif; letter-spacing:-.02em; color:#04160e; will-change:transform}
 .ab-nome span{display:inline-block; opacity:0}
 @media (max-width:640px){.ab-palco{--t:min(150px, 30vw)}}
