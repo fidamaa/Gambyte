@@ -48,34 +48,17 @@ const GameHistory = (() => {
 
   function esc(s) { return AuthSystem.escapeHTML(s); }
 
+  // A lista completa (com evolução, comparação e reabertura) fica na página
+  // Seu DNA → Histórico; aqui só um atalho, para não repetir a mesma coisa.
   function render() {
     const box = document.getElementById('history-panel');
     if (!box) return;
-    const lista = ler();
-    if (!lista.length) { box.hidden = true; box.innerHTML = ''; return; }
+    let n = 0;
+    try { n = (JSON.parse(localStorage.getItem('gambyte_dna_v1') || '[]') || []).length; } catch (e) { n = 0; }
+    n = Math.max(n, ler().length);
+    if (!n) { box.hidden = true; box.innerHTML = ''; return; }
     box.hidden = false;
-
-    if (!AuthSystem.isPremium()) {
-      box.innerHTML = `<div class="hist-teaser"><span><strong>${lista.length} ${lista.length === 1 ? 'análise guardada' : 'análises guardadas'} neste aparelho.</strong> A lista, com reabertura das partidas e precisão média, faz parte do Gambyte Pro.</span><button type="button" class="btn-secondary" data-hist="pro">Conhecer o Pro</button></div>`;
-      return;
-    }
-
-    const media = k => Math.round(lista.reduce((n, x) => n + (x[k] || 0), 0) / lista.length);
-    const linhas = lista.map(x => {
-      const d = new Date(x.quando);
-      const data = isNaN(d) ? '' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-      return `<li><button type="button" class="hist-item" data-hist="abrir" data-id="${x.id}" title="Analisar esta partida de novo">
-        <span class="hist-data">${data}</span>
-        <span class="hist-nomes">${esc(x.brancas)} <i>x</i> ${esc(x.pretas)}<small>${esc(x.abertura || '')}</small></span>
-        <span class="hist-acc" title="Precisão das brancas e das pretas">${InsightsEngine.pct(x.accB)} · ${InsightsEngine.pct(x.accP)}</span>
-        <span class="hist-res">${esc(x.resultado)}</span>
-      </button></li>`;
-    }).join('');
-    box.innerHTML = `<details class="hist"${box.dataset.aberto === '1' ? ' open' : ''}>
-      <summary><span class="section-label">Suas análises neste aparelho</span><span class="hist-resumo">${lista.length} ${lista.length === 1 ? 'partida' : 'partidas'} · precisão média ${media('accB')}% (brancas) e ${media('accP')}% (pretas)</span></summary>
-      <ul class="hist-lista">${linhas}</ul>
-      <div class="hist-rodape"><span>Guardado só neste navegador. Não é enviado ao servidor.</span><button type="button" class="hist-limpar" data-hist="limpar">Apagar histórico</button></div>
-    </details>`;
+    box.innerHTML = `<a class="hist-atalho" href="/dna#historico"><span><strong>${n} ${n === 1 ? 'partida analisada' : 'partidas analisadas'} neste aparelho.</strong> Veja a evolução do seu rating estimado, compare períodos e reabra análises.</span><span class="hist-atalho-ir">Histórico</span></a>`;
   }
 
   // Reabre uma partida do histórico: ela sobe para o topo da lista (sem

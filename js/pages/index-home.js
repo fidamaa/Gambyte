@@ -62,6 +62,20 @@
         return;
       }
     }
+    // ?abrir=<id>: reabre uma partida do histórico (página Seu DNA)
+    const abrir = params.get('abrir');
+    if (abrir && campo && typeof PlayerDNA !== 'undefined') {
+      const pgnSalvo = PlayerDNA.pgnDe(abrir);
+      try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* ok */ }
+      if (pgnSalvo) {
+        campo.value = pgnSalvo;
+        GameImport.mostrarAba('pgn');
+        AuthUI.showToast('Reabrindo a partida do seu histórico.', 'success');
+        if (typeof App !== 'undefined' && App.run) App.run(); else document.getElementById('btn-analyze')?.click();
+        document.getElementById('analise')?.scrollIntoView({ block: 'start' });
+        return;
+      }
+    }
     const pedido = params.get('exemplo');
     if (pedido && ids.includes(pedido)) {
       proximo = ids.indexOf(pedido) + 1;

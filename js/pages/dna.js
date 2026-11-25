@@ -6,6 +6,7 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const milhar = v => String(Math.round(v));   // rating de xadrez se escreve sem ponto
   let recorte = 'todas', serie = 'acc', eixoAtivo = null;
+  let _atual = null;
 
   function el(tag, attrs, pai) {
     const e = document.createElementNS(NS, tag);
@@ -29,6 +30,7 @@
     const nomes = Array.from($('dna-nomes').querySelectorAll('[aria-pressed="true"]')).map(x => x.dataset.nome);
     PlayerDNA.definirMeusNomes(nomes);
     render();
+    window.dispatchEvent(new Event('dna:nomes'));
   });
 
   /* ── Rating ──────────────────────────────────────────────── */
@@ -81,8 +83,21 @@
       const mostrar = () => {
         eixoAtivo = e.k;
         svg.querySelectorAll('.rd-eixo-g').forEach(x => x.classList.toggle('on', x === g));
-        const c = comp && comp.radar[i] && comp.radar[i].v != null ? ` <span style="color:#a8c9f0">Todas as partidas: ${comp.radar[i].v}.</span>` : '';
-        $('dna-radar-info').innerHTML = `<b>${e.nome}${e.v != null ? ' · ' + e.v : ''}</b> — ${esc(e.info)}${c}`;
+        // Comparação com as partidas anteriores: as 5 mais recentes contra as outras
+        let comparar = '';
+        if (comp && comp.radar[i] && comp.radar[i].v != null) comparar = `Nas suas partidas todas: ${comp.radar[i].v}.`;
+        else if (_atual && _atual.n >= 8) {
+          const ids = new Set(_atual.partidas.slice(0, -5).map(p => p.id));
+          const antes = PlayerDNA.calcular(PlayerDNA.meusNomes(), PlayerDNA.ler().filter(x => ids.has(x.id)));
+          const va = antes.radar[i] && antes.radar[i].v;
+          if (va != null && e.v != null) comparar = e.v - va >= 3 ? `Subiu ${e.v - va} pontos com as 5 partidas mais recentes.` : va - e.v >= 3 ? `Caiu ${va - e.v} pontos com as 5 partidas mais recentes.` : 'Estável nas partidas mais recentes.';
+        }
+        $('dna-radar-info').innerHTML = `<b class="ri-tit">${e.nome}${e.v != null ? ' · ' + e.v : ''}</b>
+          <span class="ri-l"><i>O que é</i>${esc(e.o || '')}</span>
+          <span class="ri-l"><i>Como foi calculado</i>${esc(e.como || '')}</span>
+          <span class="ri-l"><i>Você</i>${esc(e.info)}</span>
+          ${comparar ? `<span class="ri-l"><i>Comparação</i>${esc(comparar)}</span>` : ''}`;
+        $('dna-radar-info').classList.add('aberta');
       };
       g.addEventListener('mouseenter', mostrar); g.addEventListener('focus', mostrar); g.addEventListener('click', mostrar);
     });
@@ -180,7 +195,7 @@
     const todas = PlayerDNA.calcular(nomes);
     const vazio = !todas.n;
     $('dna-vazio').hidden = !vazio;
-    $('dna-corpo').hidden = vazio;
+    $('dna-corpo').hidden = vazio || (document.body.dataset.hub || 'dna') !== 'dna';
     if (vazio) {
       if (PlayerDNA.ler().length) {
         $('dna-vazio').querySelector('h2').textContent = 'Escolha acima quais nomes são seus';
@@ -194,12 +209,14 @@
       mostrado = PlayerDNA.calcular(nomes, PlayerDNA.ler().filter(x => ids.has(x.id)));
       comp = todas;
     }
+    _atual = todas;
     renderRating(todas);
     renderRadar(mostrado, comp);
     $('dna-prec').textContent = pct(todas.precisao);
     $('dna-prec-sub').textContent = todas.n >= 10 ? `Últimas 10: ${pct(todas.precisaoUlt)}` : 'Média das partidas';
     $('dna-res').textContent = todas.pontos == null ? '—' : Math.round(todas.pontos * 100) + '%';
-    $('dna-res-sub').textContent = `${todas.vde.v} vitórias, ${todas.vde.e} empates, ${todas.vde.d} derrotas`;
+    const pl = (n, um, v) => `${n} ${n === 1 ? um : v}`;
+    $('dna-res-sub').textContent = `${pl(todas.vde.v, 'vitória', 'vitórias')}, ${pl(todas.vde.e, 'empate', 'empates')}, ${pl(todas.vde.d, 'derrota', 'derrotas')}`;
     $('dna-n').textContent = String(todas.n);
     $('dna-n-sub').textContent = todas.n < todas.minimo ? `Faltam ${todas.minimo - todas.n} para a faixa confiável` : 'Neste aparelho';
     $('dna-elo').textContent = todas.eloPgn ? milhar(todas.eloPgn.media) : '—';
@@ -224,8 +241,10 @@
     if (b.dataset.confirma !== '1') { b.dataset.confirma = '1'; b.textContent = 'Clique de novo para apagar de vez'; return; }
     PlayerDNA.apagar(); b.dataset.confirma = ''; b.textContent = 'Dados apagados';
     render();
+    window.dispatchEvent(new Event('dna:nomes'));
   });
   let t = 0;
   window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(render, 200); });
+  window.DNAPagina = { render };
   render();
 })();

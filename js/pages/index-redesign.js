@@ -177,7 +177,7 @@
     temPartida = !!(p && p.moves && p.moves.length);
     document.body.classList.toggle('em-analise', temPartida);
     cobrirTabuleiro(temPartida);
-    if (temPartida) mostrarAbaLateral('lances');
+    if (temPartida) mostrarAbaLateral(location.hash === '#dna-da-partida' ? 'dna' : 'lances');
     $('side-tab-resumo')?.classList.remove('novo');
     renderMomentos([], -1);
     renderInfo(null, -1);
@@ -284,6 +284,13 @@
       aplicar();
     });
     aplicar();
+  }
+
+  /* ── Seções de baixo entram ao aparecer na tela ──────────────── */
+  if ('IntersectionObserver' in window && !reduzir) {
+    document.documentElement.classList.add('revelar');
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visto'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
+    document.querySelectorAll('.info-home').forEach(s => io.observe(s));
   }
 
   /* ── Estado inicial ──────────────────────────────────────────── */

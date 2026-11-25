@@ -343,3 +343,15 @@ body:not(.em-analise) .game-strip>.opening-banner{border-color:transparent; padd
 .gd-padroes h3{display:flex; align-items:center; gap:8px; margin:0 0 10px; font:600 13px/1 'Outfit',sans-serif; letter-spacing:.06em; text-transform:uppercase; color:var(--text2)}
 @media (prefers-reduced-motion:reduce){.gd-barra i,.gd-t{transition:none}.gd-exp{animation:none}}
 .ab-fant i{filter:blur(1.5px)}
+
+/* Seções da página inicial entram ao chegar na tela (só com JS ligado) */
+html.revelar .info-home{opacity:0; transform:translateY(18px); transition:opacity .6s cubic-bezier(.2,.75,.2,1), transform .6s cubic-bezier(.2,.75,.2,1)}
+html.revelar .info-home.visto{opacity:1; transform:none}
+@media (prefers-reduced-motion:reduce){html.revelar .info-home{opacity:1; transform:none; transition:none}}
+
+.history-panel{background:transparent!important; border:0!important; padding:0!important}
+.hist-atalho{display:flex; align-items:center; justify-content:space-between; gap:14px; padding:14px 18px; border-radius:14px; border:1px solid var(--linha); color:var(--text2); text-decoration:none; font-size:14px; line-height:1.5; transition:border-color .2s, background .2s}
+.hist-atalho strong{color:var(--text)}
+.hist-atalho:hover{border-color:rgba(63,214,154,.45); background:rgba(63,214,154,.04)}
+.hist-atalho-ir{flex:none; color:var(--accent); font-weight:600}
+.hist-atalho-ir::after{content:" \2192"}

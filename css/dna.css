@@ -147,3 +147,10 @@
 @media (prefers-reduced-motion:reduce){.dna-vazio-radar{animation:none}.rd-area,.db-barra{transition:none}}
 .dna-quem[hidden],.dna-vazio[hidden],.dna-corpo[hidden]{display:none}
 .da-linha .da-nome{text-align:left; font-family:"Outfit",sans-serif; font-size:14px; color:var(--text)}
+
+/* Explicação contextual do radar */
+.dna-radar-info.aberta{display:grid; gap:6px; text-align:left; padding:14px 16px; margin-top:10px; border-radius:12px; border:1px solid var(--linha); border-left:3px solid var(--accent); background:rgba(63,214,154,.04); animation:hub-entra .3s cubic-bezier(.2,.75,.2,1)}
+.ri-tit{font-size:15px; color:#f3f7f5}
+.ri-l{font-size:13.5px; line-height:1.5; color:var(--text2)}
+.ri-l i{display:inline-block; min-width:128px; margin-right:6px; font-style:normal; font:600 11px/1.5 'Outfit',sans-serif; letter-spacing:.08em; text-transform:uppercase; color:var(--text3)}
+@media (max-width:640px){.ri-l i{display:block; min-width:0}}

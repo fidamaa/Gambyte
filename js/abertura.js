@@ -16,7 +16,7 @@
   try {
     if (sessionStorage.getItem('gambyte_abertura')) rodar = false;
     if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) rodar = false;
-    if (/[?&](analisar|exemplo|fen|importar)=/.test(location.search)) rodar = false;
+    if (/[?&](analisar|exemplo|fen|importar|abrir)=/.test(location.search)) rodar = false;
     if (!Element.prototype.animate) rodar = false;
   } catch (e) { rodar = false; }
   if (teste && Element.prototype.animate) rodar = true;
