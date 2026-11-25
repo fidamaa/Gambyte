@@ -73,6 +73,26 @@ const InsightsUI = (() => {
   }
 
   /* ── Resumo: parte gratuita ───────────────────────────────────── */
+  // "Como foi a partida?": uma frase (resultado, precisão e erros graves)
+  // e os números principais.
+  const GRAVES = ['blunder', 'mistake', 'miss'];
+  const faixaPrec = a => a == null ? null : a >= 90 ? 'excelente' : a >= 80 ? 'boa' : a >= 70 ? 'regular' : 'baixa';
+  const graves = cor => _moves.filter(m => m.color === cor && GRAVES.includes(m.classification)).length;
+  const qtd = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+  function fraseComoFoi(acc) {
+    const r = resultado();
+    if (_pov === 'both') {
+      const quem = r === '1-0' ? 'Vitória das brancas' : r === '0-1' ? 'Vitória das pretas' : r === '1/2-1/2' ? 'Empate' : 'Partida';
+      const gw = graves('white'), gb = graves('black');
+      const erros = !gw && !gb ? 'sem erros graves dos dois lados' : `erros graves: ${gw} das brancas e ${gb} das pretas`;
+      return `${quem}, com precisão de ${pct(acc.white)} contra ${pct(acc.black)} e ${erros}.`;
+    }
+    const venceu = (r === '1-0' && _pov === 'white') || (r === '0-1' && _pov === 'black');
+    const perdeu = (r === '1-0' && _pov === 'black') || (r === '0-1' && _pov === 'white');
+    const res = venceu ? 'Vitória' : perdeu ? 'Derrota' : r === '1/2-1/2' ? 'Empate' : 'Partida';
+    const g = graves(_pov);
+    return `${res} com precisão ${faixaPrec(acc[_pov]) || '—'} (${pct(acc[_pov])})${g ? ` e ${qtd(g, 'erro grave', 'erros graves')}` : ', sem erros graves'}.`;
+  }
   function renderFree() {
     const box = $('ins-free');
     if (!box) return;
@@ -84,7 +104,7 @@ const InsightsUI = (() => {
          ['Gafes', `${gafes('white')} · ${gafes('black')}`, 'brancas · pretas']]
       : [['Sua precisão', pct(acc[_pov]), LADO[_pov]], ['Precisão do adversário', pct(acc[outro]), LADO[outro]],
          ['Suas gafes', String(gafes(_pov)), `adversário: ${gafes(outro)}`]];
-    box.innerHTML = `<p class="ins-lead">${esc(InsightsEngine.headline(_moves, resultado())[0])}</p>
+    box.innerHTML = `<section class="rs-como"><h4>${_pov === 'both' ? 'Como foi a partida?' : 'Como foi sua partida?'}</h4><p>${esc(fraseComoFoi(acc))}</p></section>
       <div class="ins-stats">${tiles.map(t => `<div class="ins-stat"><span class="ins-stat-label">${t[0]}</span><strong>${t[1]}</strong><span class="ins-stat-sub">${esc(t[2])}</span></div>`).join('')}</div>`;
   }
 
@@ -141,11 +161,61 @@ const InsightsUI = (() => {
       <p class="ins-note">Estimativa interna a partir da qualidade dos lances desta partida. Não é o rating de nenhum site.</p></section>`;
   }
 
+  // O que deu certo: lance brilhante/ótimo, lances únicos achados, a fase
+  // mais precisa, nenhuma gafe. Até `n` itens, do mais marcante para o menos.
+  const FASE_NOME = { opening: 'Abertura', midgame: 'Meio-jogo', endgame: 'Final' };
+  function bemFeito(cor, n) {
+    const itens = [];
+    const meus = _moves.filter(m => m.color === cor && m.classification && m.classification !== 'book');
+    const esp = meus.filter(m => m.classification === 'brilliant').concat(meus.filter(m => m.classification === 'great'));
+    if (esp.length) itens.push({ txt: `${InsightsEngine.moveLabel(esp[0])} foi ${InsightsEngine.NOMES[esp[0].classification].toLowerCase()}${esp.length > 1 ? ` (e mais ${esp.length - 1})` : ''}.`, ir: esp[0].index });
+    const dna = typeof GameDNA !== 'undefined' ? GameDNA.calcular(_moves) : null;
+    const tat = dna && dna[cor] && dna[cor].facetas.find(f => f.k === 'tatica');
+    if (tat && tat.chances >= 2 && tat.achou / tat.chances >= 0.8) itens.push({ txt: `Achou ${tat.achou} de ${tat.chances} lances únicos.` });
+    const fases = InsightsEngine.calcPhaseAccuracy(_moves, cor);
+    const melhorFase = Object.keys(FASE_NOME).filter(k => fases[k] != null).sort((a, b) => fases[b] - fases[a])[0];
+    if (melhorFase && fases[melhorFase] >= 85) itens.push({ txt: `${FASE_NOME[melhorFase]} muito precisa (${pct(fases[melhorFase])}).` });
+    if (!meus.some(m => m.classification === 'blunder')) itens.push({ txt: 'Nenhuma gafe na partida.' });
+    if (!itens.length && melhorFase) itens.push({ txt: `O melhor trecho foi ${melhorFase === 'opening' ? 'a abertura' : melhorFase === 'midgame' ? 'o meio-jogo' : 'o final'} (${pct(fases[melhorFase])}).` });
+    return itens.slice(0, n);
+  }
+  // Onde perdeu: chances perdidas primeiro, depois os lances que mais custaram.
+  function perdeuChance(cor, n) {
+    const lista = InsightsEngine.keyMoments(_moves, cor, 4).map(x => x.move);
+    lista.sort((a, b) => (b.classification === 'miss') - (a.classification === 'miss'));
+    return lista.slice(0, n).map(m => ({
+      txt: `${InsightsEngine.moveLabel(m)}: ${InsightsEngine.NOMES[m.classification].toLowerCase()}${m.bestMoveUCI && m.bestMoveUCI !== m.playedMoveUCI ? `, o melhor era ${melhor(m)}` : ''}.`,
+      ir: m.index, cls: m.classification }));
+  }
+  const ICO = {
+    bem: '<path d="M20 6 9 17l-5-5"/>',
+    perdeu: '<circle cx="12" cy="12" r="9"/><path d="M12 7v6"/><path d="M12 16.5h.01"/>',
+    aprender: '<path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>'
+  };
+  const ico = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO[k]}</svg>`;
+  function itemHTML(it, cor) {
+    const quem = _pov === 'both' && cor ? `<i class="ins-side ins-side-${cor}" title="${LADO[cor]}"></i>` : '';
+    return it.ir != null
+      ? `<li>${quem}<button type="button" class="rs-ir" data-goto="${it.ir}" title="Ver no tabuleiro">${esc(it.txt)}</button></li>`
+      : `<li>${quem}<span>${esc(it.txt)}</span></li>`;
+  }
   function renderPro() {
     const box = $('ins-pro');
     if (!box) return;
-    const segunda = InsightsEngine.headline(_moves, resultado())[1];
-    box.innerHTML = `<p class="ins-lead ins-lead-2">${esc(segunda)}</p>${blocoMomentos()}${blocoFases()}${blocoTreino()}${blocoGrafico()}${blocoNivel()}`;
+    const lados = cores();
+    const porLado = _pov === 'both' ? 1 : 2;
+    const bem = lados.flatMap(cor => bemFeito(cor, porLado).map(it => itemHTML(it, cor)));
+    const perdas = lados.flatMap(cor => perdeuChance(cor, porLado).map(it => itemHTML(it, cor)));
+    const licoes = lados.map(cor => ({ cor, s: InsightsEngine.suggestions(_moves, cor)[0] })).filter(x => x.s);
+    const voce = _pov === 'both' ? 'cada lado' : 'você';
+    box.innerHTML = `<div class="rs">
+      <section class="rs-q rs-bem"><h4>${ico('bem')}O que ${voce} fez bem</h4><ul>${bem.join('') || '<li><span>Nada de destaque nesta partida.</span></li>'}</ul></section>
+      <section class="rs-q rs-perdeu"><h4>${ico('perdeu')}Onde perdeu oportunidades</h4><ul>${perdas.join('') || '<li><span>Nenhuma oportunidade clara desperdiçada.</span></li>'}</ul></section>
+      <section class="rs-q rs-aprender"><h4>${ico('aprender')}O que aprender com esta partida</h4>${licoes.map(({ cor, s: x }) => `<p>${_pov === 'both' ? `<i class="ins-side ins-side-${cor}" title="${LADO[cor]}"></i>` : ''}${esc(x.text)}${x.href ? ` <a href="${x.href}" target="_blank" rel="noopener">Guia: ${esc(x.link)}</a>` : ''}</p>`).join('')}</section>
+    </div>
+    <details class="rs-detalhes"><summary>Ver a análise detalhada <small>momentos decisivos, fases, gráfico e nível</small></summary>
+      ${blocoMomentos()}${blocoFases()}${blocoTreino()}${blocoGrafico()}${blocoNivel()}
+    </details>`;
   }
 
   /* ── Aba Lances ───────────────────────────────────────────────── */

@@ -60,28 +60,54 @@
     el('line', { x1: 0, x2: 320, y1: 84.5, y2: 84.5, stroke: 'rgba(255,255,255,.08)', 'vector-effect': 'non-scaling-stroke' }, svg);
   }
 
-  /* ── Identidade de jogo ──────────────────────────────────────
-     O estilo em uma frase, a partir do radar. Só com partidas
-     suficientes: com poucas, diz quantas faltam. */
+  /* ── Seu perfil ──────────────────────────────────────────────
+     Diagnóstico rápido a partir do radar: o perfil (o eixo mais forte),
+     os destaques com um rótulo cada e o próximo passo (o eixo mais
+     fraco, com um guia). O radar logo abaixo tem o detalhe de cada nota.
+     Só com partidas suficientes: com poucas, diz quantas faltam. */
   const MIN_ESTILO = 5;
-  const FORTE = { abertura: 'Bem preparado na abertura', meio: 'Forte no meio-jogo', final: 'Seguro nos finais', tatica: 'Jogador tático', consistencia: 'Jogador regular', seguranca: 'Jogador cuidadoso' };
-  const FRACO = { abertura: 'que sofre nos primeiros lances', meio: 'que oscila no meio-jogo', final: 'que perde força nos finais', tatica: 'que deixa passar lances táticos', consistencia: 'que varia muito de uma partida para outra', seguranca: 'que ainda entrega material com frequência' };
+  const PERFIL = {
+    tatica:       ['Tático', 'Você enxerga as combinações e acha o lance certo nos momentos forçados.'],
+    meio:         ['Estrategista', 'Você se sente em casa no meio-jogo, com muitas peças e decisões.'],
+    final:        ['Finalizador', 'Você conduz bem as posições com poucas peças.'],
+    abertura:     ['Bem preparado', 'Você sai da abertura com boas posições.'],
+    consistencia: ['Regular', 'Seu nível se repete de uma partida para outra.'],
+    seguranca:    ['Cuidadoso', 'Você raramente entrega material ou a partida.']
+  };
+  const PASSO = {
+    abertura:     ['Revisar os princípios de abertura: centro, desenvolvimento e roque cedo.', '/aprender/principios-de-abertura', 'Princípios de abertura'],
+    meio:         ['Treinar o meio-jogo: cravadas, espetos e planos a partir da estrutura de peões.', '/aprender/cravada-e-espeto', 'Cravada e espeto'],
+    final:        ['Treinar finais básicos, começando por rei e peão.', '/aprender/finais-de-rei-e-peao', 'Finais de rei e peão'],
+    tatica:       ['Resolver exercícios de tática: garfos e ataques duplos.', '/aprender/garfo', 'Garfo e ataques duplos'],
+    consistencia: ['Manter o mesmo cuidado em todas as partidas, sem pressa no relógio.', '/aprender/gestao-do-tempo', 'Gestão do relógio'],
+    seguranca:    ['Antes de cada lance, conferir peças soltas e capturas do adversário.', '/aprender/pecas-indefesas', 'Peças indefesas']
+  };
+  const rotuloEixo = v => v >= 75 ? ['Forte', 'bom'] : v >= 55 ? ['Bom', 'bom'] : v >= 40 ? ['Regular', 'medio'] : ['Precisa melhorar', 'fraco'];
+  const rotuloPrec = a => a >= 90 ? ['Excelente', 'bom'] : a >= 80 ? ['Boa', 'bom'] : a >= 70 ? ['Regular', 'medio'] : ['Baixa', 'fraco'];
   function renderIdentidade(d) {
     const box = $('dna-identidade');
     if (!box) return;
     if (d.n < MIN_ESTILO) {
       const f = MIN_ESTILO - d.n;
-      box.innerHTML = `<span class="di-rot">Sua identidade de jogo</span><p class="di-falta">O estilo aparece a partir de ${MIN_ESTILO} partidas. ${f === 1 ? 'Falta 1' : 'Faltam ' + f}.</p>`;
+      box.innerHTML = `<span class="di-rot">Seu perfil</span><p class="di-falta">O perfil aparece a partir de ${MIN_ESTILO} partidas. ${f === 1 ? 'Falta 1' : 'Faltam ' + f}.</p>`;
       return;
     }
     const ax = d.radar.filter(e => e.v != null).sort((a, b) => b.v - a.v);
     if (ax.length < 2) { box.innerHTML = ''; return; }
     const forte = ax[0], fraco = ax[ax.length - 1];
-    const frase = fraco.v <= forte.v - 8 ? `${FORTE[forte.k]}, ${FRACO[fraco.k]}.` : `${FORTE[forte.k]}, sem um ponto fraco claro.`;
+    const claro = fraco.v <= forte.v - 8;
+    const [estilo, desc] = claro ? PERFIL[forte.k] : ['Equilibrado', 'Seu jogo não tem um ponto fraco claro: as notas estão próximas.'];
+    const destaques = [];
+    if (d.precisao != null) { const r = rotuloPrec(d.precisao); destaques.push(['Precisão', r, d.precisao]); }
+    d.radar.filter(e => e.v != null).forEach(e => destaques.push([e.nome, rotuloEixo(e.v), e.v]));
+    const passo = PASSO[fraco.k];
     const pts = d.pontos == null ? '' : `<span class="di-chip">Resultados <b>${Math.round(d.pontos * 100)}%</b></span>`;
-    box.innerHTML = `<span class="di-rot">Sua identidade de jogo · ${d.n} partidas</span>
-      <p class="di-frase">${esc(frase)}</p>
-      <div class="di-chips"><span class="di-chip di-forte">Ponto forte <b>${esc(forte.nome)} ${forte.v}</b></span>${fraco.v <= forte.v - 8 ? `<span class="di-chip di-fraco">Dificuldade <b>${esc(fraco.nome)} ${fraco.v}</b></span>` : ''}${pts}</div>`;
+    box.innerHTML = `<span class="di-rot">Seu perfil · ${d.n} partidas</span>
+      <div class="di-topo"><p class="di-frase">${esc(estilo)}</p><p class="di-desc">${esc(desc)}</p></div>
+      <ul class="di-dest" aria-label="Destaques">${destaques.map(([n, r, v]) => `<li class="di-l-${r[1]}"><span class="di-dn">${esc(n)}</span><span class="di-db"><i style="width:${Math.max(4, Math.min(100, v))}%"></i></span><b class="di-nv di-nv-${r[1]}">${r[0]}</b></li>`).join('')}</ul>
+      ${fraco.v < 75 && passo ? `<div class="di-passo"><span class="di-passo-rot">Seu próximo passo</span><p>${esc(passo[0])}</p><a href="${passo[1]}">Guia: ${esc(passo[2])}</a></div>`
+        : `<div class="di-passo"><span class="di-passo-rot">Seu próximo passo</span><p>Manter o ritmo: todas as notas estão fortes. Analise mais partidas para ver se o nível se confirma.</p></div>`}
+      ${pts ? `<div class="di-chips">${pts}<span class="di-chip di-mais">Detalhe de cada nota no gráfico abaixo</span></div>` : ''}`;
   }
 
   /* ── Radar ───────────────────────────────────────────────── */

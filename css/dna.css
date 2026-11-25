@@ -166,3 +166,24 @@
 .di-chip b{color:#f3f7f5; font-family:'JetBrains Mono',monospace; font-weight:600; margin-left:4px}
 .di-forte{border-color:rgba(63,214,154,.4)} .di-forte b{color:#8ff0c4}
 .di-fraco{border-color:rgba(229,125,95,.4)} .di-fraco b{color:#f0a48d}
+/* Seu perfil: estilo, destaques com rótulo e o próximo passo */
+.di-topo{margin:8px 0 14px}
+.di-topo .di-frase{margin:0 0 4px}
+.di-desc{margin:0; font-size:15px; line-height:1.45; color:var(--text2)}
+.di-dest{list-style:none; margin:0 0 16px; padding:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 22px}
+.di-dest li{display:grid; grid-template-columns:96px 1fr auto; align-items:center; gap:10px; font-size:14px}
+.di-dn{color:var(--text)}
+.di-db{height:6px; border-radius:99px; background:rgba(255,255,255,.07); overflow:hidden}
+.di-db i{display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#14a372,#3fd69a)}
+.di-l-medio .di-db i{background:linear-gradient(90deg,#b8952f,#f0d27a)}
+.di-l-fraco .di-db i{background:linear-gradient(90deg,#b5553f,#f29a86)}
+.di-nv{font:600 12px/1 'Outfit',sans-serif; padding:4px 8px; border-radius:99px; white-space:nowrap; min-width:64px; text-align:center}
+.di-nv-bom{color:#8ff0c4; background:rgba(63,214,154,.12)}
+.di-nv-medio{color:#f0d27a; background:rgba(240,210,122,.12)}
+.di-nv-fraco{color:#f29a86; background:rgba(242,154,134,.12)}
+.di-passo{margin:0 0 14px; padding:12px 14px; border-radius:12px; border:1px solid rgba(150,170,255,.25); background:rgba(150,170,255,.06)}
+.di-passo-rot{display:block; font:600 12px/1.2 'Outfit',sans-serif; letter-spacing:.08em; text-transform:uppercase; color:#b9c9ff; margin-bottom:4px}
+.di-passo p{margin:0 0 4px; font-size:15px; line-height:1.45; color:var(--text)}
+.di-passo a{font-size:13px; color:#8ff0c4}
+.di-mais{border-style:dashed}
+@media (max-width:640px){.di-dest{grid-template-columns:1fr}.dna-identidade{padding:18px}}
