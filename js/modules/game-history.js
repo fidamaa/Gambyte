@@ -48,17 +48,18 @@ const GameHistory = (() => {
 
   function esc(s) { return AuthSystem.escapeHTML(s); }
 
-  // A lista completa (com evolução, comparação e reabertura) fica na página
-  // Seu DNA → Histórico; aqui só um atalho, para não repetir a mesma coisa.
+  // O DNA e o histórico são da conta (Chess.com/Lichess vinculados): o
+  // atalho só aparece para quem tem conta vinculada.
   function render() {
     const box = document.getElementById('history-panel');
     if (!box) return;
-    let n = 0;
-    try { n = (JSON.parse(localStorage.getItem('gambyte_dna_v1') || '[]') || []).length; } catch (e) { n = 0; }
-    n = Math.max(n, ler().length);
-    if (!n) { box.hidden = true; box.innerHTML = ''; return; }
+    let s = null;
+    try { s = AuthSystem.currentSession(); } catch (e) { s = null; }
+    const l = (s && s.linked) || {};
+    const contas = [l.chesscom && 'Chess.com', l.lichess && 'Lichess'].filter(Boolean);
+    if (!contas.length) { box.hidden = true; box.innerHTML = ''; return; }
     box.hidden = false;
-    box.innerHTML = `<a class="hist-atalho" href="/dna#historico"><span><strong>${n} ${n === 1 ? 'partida analisada' : 'partidas analisadas'} neste aparelho.</strong> Veja a evolução do seu rating estimado, compare períodos e reabra análises.</span><span class="hist-atalho-ir">Histórico</span></a>`;
+    box.innerHTML = `<a class="hist-atalho" href="/dna"><span><strong>Seu DNA no xadrez.</strong> O retrato das suas partidas do ${contas.join(' e do ')}: rating estimado, evolução, histórico e aberturas.</span><span class="hist-atalho-ir">Ver</span></a>`;
   }
 
   // Reabre uma partida do histórico: ela sobe para o topo da lista (sem

@@ -31,7 +31,9 @@ const PlayerDNA = (() => {
   // Contas vinculadas (Chess.com/Lichess da conta do Gambyte). Quando
   // existem, o DNA geral é das partidas dessas contas, e não de qualquer
   // partida analisada neste aparelho.
-  let _contas = null, _fonte = 'ambos';
+  let _contas = null, _fonte = 'ambos', _soConta = false;
+  // A página do DNA exige conta: sem conta vinculada, o DNA fica vazio.
+  function exigirConta(sim) { _soConta = !!sim; }
   function usarContas(contas, fonte) {
     const c = {};
     if (contas && contas.chesscom) c.chesscom = contas.chesscom;
@@ -52,7 +54,8 @@ const PlayerDNA = (() => {
   // O que entra no DNA: com contas vinculadas, só as partidas delas.
   function ler() {
     const v = lerTudo(), sites = sitesAtivos();
-    return sites ? v.filter(x => sites.includes(fonteDe(x))) : v;
+    if (!sites) return _soConta ? [] : v;
+    return v.filter(x => sites.includes(fonteDe(x)));
   }
   function gravar(lista) {
     try { localStorage.setItem(KEY, JSON.stringify(lista.slice(0, MAX))); } catch (e) { /* cheio ou bloqueado */ }
@@ -158,6 +161,7 @@ const PlayerDNA = (() => {
     // Com contas vinculadas, "você" são os usuários delas.
     const sites = sitesAtivos();
     if (sites) return sites.map(k => _contas[k]);
+    if (_soConta) return [];
     try { const v = JSON.parse(localStorage.getItem(KEY_EU) || 'null'); if (Array.isArray(v) && v.length) return v; } catch (e) { /* ok */ }
     // Padrão: o último usuário buscado + "Você" (partidas contra o bot); se
     // nenhum aparece, o nome mais frequente.
@@ -351,5 +355,5 @@ const PlayerDNA = (() => {
     return t < 180 ? 'bullet' : t < 480 ? 'blitz' : t < 1500 ? 'rápida' : 'clássica';
   }
 
-  return { registrar, ler, lerTudo, usarContas, sitesAtivos, fonteDe, idsGuardados, apagar, calcular, nomesDisponiveis, meusNomes, definirMeusNomes, rating, evolucaoRating, partidasDe, pgnDe, ritmoDe, MIN_PARTIDAS, num, fmtPct };
+  return { registrar, ler, lerTudo, usarContas, exigirConta, sitesAtivos, fonteDe, idsGuardados, apagar, calcular, nomesDisponiveis, meusNomes, definirMeusNomes, rating, evolucaoRating, partidasDe, pgnDe, ritmoDe, MIN_PARTIDAS, num, fmtPct };
 })();

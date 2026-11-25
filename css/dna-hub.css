@@ -134,6 +134,11 @@
 .dna-semconta strong{display:block; color:#f3f7f5; font-size:15px; margin-bottom:3px}
 .dna-semconta span{font-size:13.5px; line-height:1.5; color:var(--text2)}
 .dna-semconta>div{flex:1 1 320px}
-/* com conta vinculada, "você" são as contas: some a escolha de nomes */
-body.dna-vinculado .dna-quem{display:none!important}
+/* O DNA é só da sua conta: não há escolha de nomes; sem conta vinculada
+   (ou enquanto a conta carrega) só aparece o convite e o método. */
+.dna-page .dna-quem{display:none!important}
+body.dna-carregando .dna-hub,body.dna-carregando .dna-vazio,body.dna-carregando .dna-corpo,body.dna-carregando .hub-sec,
+body.dna-sem-conta .dna-hub,body.dna-sem-conta .dna-vazio,body.dna-sem-conta .dna-corpo,body.dna-sem-conta .hub-sec{display:none!important}
+.dna-semconta{padding:22px 22px}
+.dna-semconta strong{font-size:18px}
 @media (prefers-reduced-motion:reduce){.cavalo-carregando i{animation-duration:3s}}

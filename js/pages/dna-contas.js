@@ -32,11 +32,14 @@
       sites.map(k => op(k, `${NOME[k]} <small>${esc(cs[k])}</small>`)).join('');
   }
 
+  PlayerDNA.exigirConta(true);
   function aplicar() {
-    if (!AuthSystem.isReady()) return;
+    if (!AuthSystem.isReady() && !Object.keys(DNASync.contas()).length) return;
     const cs = DNASync.contas(), tem = Object.keys(cs).length > 0;
     vinculado = tem;
+    document.body.classList.remove('dna-carregando');
     document.body.classList.toggle('dna-vinculado', tem);
+    document.body.classList.toggle('dna-sem-conta', !tem);
     PlayerDNA.usarContas(tem ? cs : null, DNASync.fonte());
     $('dna-contas').hidden = !tem;
     $('dna-semconta').hidden = tem;
@@ -45,9 +48,11 @@
       if (!sincronizou) { sincronizou = true; DNASync.sincronizar(); }
     } else {
       const logado = !!AuthSystem.currentSession();
-      $('dsc-tit').textContent = logado ? 'Vincule sua conta do Chess.com ou do Lichess' : 'Entre e vincule sua conta do Chess.com ou do Lichess';
-      $('dsc-txt').textContent = 'Assim o DNA passa a usar as suas partidas de lá: as mais recentes entram agora e cada partida nova entra sozinha. Por enquanto, o DNA abaixo usa as partidas que você analisou neste aparelho.';
-      $('dsc-btn').textContent = logado ? 'Vincular minha conta' : 'Entrar ou criar conta';
+      $('dsc-tit').textContent = logado ? 'Vincule o seu Chess.com ou o seu Lichess' : 'O seu DNA fica na sua conta';
+      $('dsc-txt').textContent = logado
+        ? 'O DNA é feito com as partidas do usuário que você cadastrar na sua conta. Vincule o seu Chess.com ou o seu Lichess: as partidas mais recentes entram agora e cada partida nova entra sozinha.'
+        : 'Entre na sua conta do Gambyte (é grátis) e vincule o seu usuário do Chess.com ou do Lichess. O DNA é feito só com as suas partidas de lá, e cada partida nova entra sozinha.';
+      $('dsc-btn').textContent = logado ? 'Vincular meu usuário' : 'Entrar ou criar conta';
     }
     redesenhar();
   }
