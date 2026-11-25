@@ -41,6 +41,7 @@ const GameImport = (() => {
     const el = $('imp-status');
     if (!el) return;
     el.textContent = msg || '';
+    if (tipo === 'carregando' && msg) el.insertAdjacentHTML('afterbegin', '<span class="carregador" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><i></i></span>');
     el.className = 'imp-status' + (tipo ? ' ' + tipo : '');
   }
   function setSite(s) {
@@ -296,7 +297,7 @@ const GameImport = (() => {
     const li = valor.match(/lichess\.org\/(?:embed\/(?:game\/)?)?([A-Za-z0-9]{8})(?:[A-Za-z0-9]{4})?(?:[/?#]|$)/);
     if (li) {
       setSite('lichess');
-      status('Buscando a partida no Lichess…');
+      status('Buscando a partida no Lichess…', 'carregando');
       try { const pgn = await partidaLichess(li[1]); status('Partida carregada. Analisando…', 'ok'); carregar(pgn, usuario); }
       catch (e) { erro(e, 'partida'); }
       return;
@@ -311,7 +312,7 @@ const GameImport = (() => {
     if (!/^[A-Za-z0-9_-]{2,30}$/.test(valor)) { status('Esse nome de usuário não parece válido.', 'error'); return; }
 
     usuario = valor; lembrar();
-    status(`Buscando as últimas partidas de ${valor} no ${NOME_SITE[site]}…`);
+    status(`Buscando as últimas partidas de ${valor} no ${NOME_SITE[site]}…`, 'carregando');
     const btn = $('imp-btn'); if (btn) btn.disabled = true;
     try {
       const todas = site === 'lichess' ? await buscarLichess(valor) : await buscarChessCom(valor);

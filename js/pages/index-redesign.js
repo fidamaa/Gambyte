@@ -132,7 +132,7 @@
       cobertura = document.createElement('div');
       cobertura.className = 'board-carregando';
       cobertura.setAttribute('role', 'status');
-      cobertura.innerHTML = '<span class="cavalo-carregando" aria-hidden="true"><i></i></span><span class="bc-txt"></span>';
+      cobertura.innerHTML = '<span class="carregador" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><i></i></span><span class="bc-txt"></span>';
       wrap.appendChild(cobertura);
     }
     cobertura.querySelector('.bc-txt').textContent = texto || 'Preparando a análise…';

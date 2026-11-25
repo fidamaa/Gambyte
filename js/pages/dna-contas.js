@@ -70,11 +70,11 @@
     if (!box) return;
     const fila = DNASync.fila().length, n = PlayerDNA.ler().length;
     let html = '';
-    if (st.fase === 'buscando') html = '<span class="cavalo-carregando" aria-hidden="true"><i></i></span>Procurando partidas novas nas suas contas…';
-    else if (st.fase === 'preparando') html = '<span class="cavalo-carregando" aria-hidden="true"><i></i></span>Preparando o motor de análise…';
+    if (st.fase === 'buscando') html = '<span class="carregador" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><i></i></span>Procurando partidas novas nas suas contas…';
+    else if (st.fase === 'preparando') html = '<span class="carregador" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><i></i></span>Preparando o motor de análise…';
     else if (st.fase === 'analisando') {
       const pct = st.total ? Math.round(100 * st.feitas / st.total) : 0;
-      html = `<span class="cavalo-carregando" aria-hidden="true"><i></i></span><span>Analisando suas partidas: <b>${Math.min(st.feitas + 1, st.total)} de ${st.total}</b>. O DNA se atualiza a cada partida; a análise continua enquanto esta página estiver aberta.</span><span class="dc-barra"><i style="width:${pct}%"></i></span>`;
+      html = `<span class="carregador" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><i></i></span><span>Analisando suas partidas: <b>${Math.min(st.feitas + 1, st.total)} de ${st.total}</b>. O DNA se atualiza a cada partida; a análise continua enquanto esta página estiver aberta.</span><span class="dc-barra"><i style="width:${pct}%"></i></span>`;
     } else if (st.fase === 'em-dia') html = `<span class="dc-ok" aria-hidden="true"></span>Em dia: ${n} ${n === 1 ? 'partida' : 'partidas'} no seu DNA. As novas entram quando você voltar aqui.`;
     else if (st.fase === 'parado' && fila) html = `${fila} ${fila === 1 ? 'partida espera' : 'partidas esperam'} análise. <button type="button" class="dc-continuar" data-continuar>Continuar</button>`;
     if (st.erro) html += `<span class="dc-erro">${esc(st.erro)}</span>`;

@@ -274,3 +274,40 @@ body[data-site="gambyte"]>.info-nav{view-transition-name:barra}
 @keyframes vt-sai{to{opacity:0}}
 @keyframes vt-entra{from{opacity:0; transform:translateY(10px)}}
 @media (prefers-reduced-motion:reduce){::view-transition-old(root),::view-transition-new(root){animation:none}}
+
+/* ── Carregador: o cavalo dá a volta num quadrado 3×3 sem o centro ──
+   As 8 casas formam um ciclo de saltos em L: (1,1)→(2,3)→(3,1)→(1,2)→
+   (3,3)→(2,1)→(1,3)→(3,2)→(1,1). Cada casa acende em azul quando o
+   cavalo pousa e vai apagando (o rastro). Tamanho pelo --s. */
+.carregador{--s:26px;--c:calc((var(--s) - 4px) / 3);position:relative;display:inline-grid;grid-template-columns:repeat(3,var(--c));grid-template-rows:repeat(3,var(--c));gap:2px;width:var(--s);height:var(--s);flex:none;vertical-align:middle;margin-right:8px}
+.carregador b{border-radius:2px;background:rgba(255,255,255,.07);animation:car-rastro 2.4s linear infinite}
+.carregador b:nth-child(1){grid-area:1/1;animation-delay:-2.4s}
+.carregador b:nth-child(2){grid-area:3/2;animation-delay:-2.1s}
+.carregador b:nth-child(3){grid-area:1/3;animation-delay:-1.8s}
+.carregador b:nth-child(4){grid-area:2/1;animation-delay:-1.5s}
+.carregador b:nth-child(5){grid-area:3/3;animation-delay:-1.2s}
+.carregador b:nth-child(6){grid-area:1/2;animation-delay:-.9s}
+.carregador b:nth-child(7){grid-area:3/1;animation-delay:-.6s}
+.carregador b:nth-child(8){grid-area:2/3;animation-delay:-.3s}
+.carregador i{position:absolute;left:0;top:0;width:var(--c);height:var(--c);background:#a9c8ff;-webkit-mask:url(/pieces/knight-b.svg) center/88% no-repeat;mask:url(/pieces/knight-b.svg) center/88% no-repeat;filter:drop-shadow(0 0 3px rgba(120,170,255,.8));animation:car-cavalo 2.4s cubic-bezier(.45,0,.25,1) infinite}
+@keyframes car-rastro{0%{background:rgba(120,170,255,.8);box-shadow:0 0 6px rgba(120,170,255,.55)}14%{background:rgba(120,170,255,.45);box-shadow:none}50%,100%{background:rgba(255,255,255,.07)}}
+@keyframes car-cavalo{
+  0%,5%{translate:0 0}
+  12.5%,17.5%{translate:calc(1 * (var(--c) + 2px)) calc(2 * (var(--c) + 2px))}
+  25%,30%{translate:calc(2 * (var(--c) + 2px)) 0}
+  37.5%,42.5%{translate:0 calc(1 * (var(--c) + 2px))}
+  50%,55%{translate:calc(2 * (var(--c) + 2px)) calc(2 * (var(--c) + 2px))}
+  62.5%,67.5%{translate:calc(1 * (var(--c) + 2px)) 0}
+  75%,80%{translate:0 calc(2 * (var(--c) + 2px))}
+  87.5%,92.5%{translate:calc(2 * (var(--c) + 2px)) calc(1 * (var(--c) + 2px))}
+  100%{translate:0 0}}
+.hero-btn .carregador{--s:20px;display:none;margin:0}
+.hero-btn.carregando .carregador{display:inline-grid}
+.board-carregando .carregador{--s:66px;margin:0}
+.jg-pensa .carregador{--s:16px;margin:0 2px 0 0}
+.imp-status.carregando{display:flex;align-items:center}
+.imp-status .carregador{--s:18px}
+/* No botão verde: casas e rastro escuros, para aparecer */
+.hero-btn .carregador b{animation-name:car-rastro-escuro}
+.hero-btn .carregador i{background:#04140d;filter:none}
+@keyframes car-rastro-escuro{0%{background:rgba(10,40,110,.75)}14%{background:rgba(10,40,110,.4)}50%,100%{background:rgba(4,20,13,.14)}}
