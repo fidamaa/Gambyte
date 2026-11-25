@@ -14,25 +14,72 @@
     return true;
   }
 
-  if (botao && ids.length) {
+  // Partidas clássicas (js/data/partidas-classicas.js), em ordem sorteada.
+  const classicas = typeof PARTIDAS_CLASSICAS !== 'undefined' ? PARTIDAS_CLASSICAS.slice() : [];
+  for (let i = classicas.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [classicas[i], classicas[j]] = [classicas[j], classicas[i]];
+  }
+  let vez = 0;
+  const classica = () => classicas[vez % classicas.length];
+
+  if (botao && (classicas.length || ids.length)) {
     botao.addEventListener('click', () => {
-      carregar(ids[proximo % ids.length], true);
-      proximo++;
+      if (classicas.length && campo) {
+        const p = classica(); vez++;
+        campo.value = p.pgn;
+        AuthUI.showToast(`Exemplo carregado: ${p.nome} (${p.quem}). Clique em Analisar Partida.`, 'success');
+        mostrarNome(false);
+      } else {
+        carregar(ids[proximo % ids.length], true);
+        proximo++;
+      }
       campo.focus();
     });
   } else if (botao) {
     botao.hidden = true;
   }
 
-  // Botão da primeira tela: carrega a Partida da Ópera e já analisa,
-  // para quem chega ver na hora o que o Gambyte mostra.
+  // Botão "Ver uma análise de exemplo": o nome embaixo dele vai mudando
+  // entre as partidas clássicas; o clique analisa a que está aparecendo.
   const demo = document.getElementById('btn-demo');
-  if (demo && ids.includes('opera')) {
+  const nomeDemo = demo && demo.querySelector('small');
+  const calmo = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function mostrarNome(animar) {
+    if (!nomeDemo || !classicas.length) return;
+    const p = classica();
+    const trocar = () => { nomeDemo.textContent = `${p.nome} · ${p.quem}`; };
+    if (!animar || calmo || !nomeDemo.animate) { trocar(); return; }
+    nomeDemo.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-4px)' }], { duration: 180, easing: 'ease-in' })
+      .finished.then(() => {
+        trocar();
+        nomeDemo.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: 'ease-out' });
+      }).catch(trocar);
+  }
+  if (demo && classicas.length) {
+    mostrarNome(false);
+    // Gira a cada poucos segundos (para enquanto o mouse ou o foco está nele).
+    let parado = false;
+    for (const [ev, v] of [['pointerenter', true], ['pointerleave', false], ['focus', true], ['blur', false]]) demo.addEventListener(ev, () => { parado = v; });
+    setInterval(() => {
+      if (parado || document.hidden || !demo.offsetParent) return;
+      vez++; mostrarNome(true);
+    }, 3500);
+  }
+  if (demo && (classicas.length || ids.includes('opera'))) {
     demo.addEventListener('click', () => {
-      if (!carregar('opera', false)) return;
-      proximo = ids.indexOf('opera') + 1;
+      let titulo = 'a Partida da Ópera (Morphy, 1858)';
+      if (classicas.length && campo) {
+        const p = classica();
+        campo.value = p.pgn;
+        titulo = `${p.nome.replace(/^(A|O) /, m => m.toLowerCase())} (${p.quem})`;
+        vez++; mostrarNome(false);
+      } else {
+        if (!carregar('opera', false)) return;
+        proximo = ids.indexOf('opera') + 1;
+      }
       if (typeof GameImport !== 'undefined') GameImport.mostrarAba('pgn');
-      AuthUI.showToast('Analisando a Partida da Ópera (Morphy, 1858). Acompanhe no tabuleiro.', 'success');
+      AuthUI.showToast(`Analisando ${titulo}. Acompanhe no tabuleiro.`, 'success');
       if (typeof App !== 'undefined' && App.run) App.run();
       else document.getElementById('btn-analyze')?.click();
       document.getElementById('board-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
