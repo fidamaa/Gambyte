@@ -6,7 +6,7 @@
   const $ = id => document.getElementById(id);
   const R = FreePlay.regras;
   const INICIAL = PGNParser.INITIAL_FEN;
-  const NOMES = { 400: 'Iniciante', 800: 'Iniciante+', 1200: 'Intermediário', 1500: 'Intermediário+', 1800: 'Avançado', 2200: 'Mestre', 2500: 'Grão-mestre' };
+  const NOMES = { 400: 'Iniciante', 800: 'Iniciante+', 1200: 'Intermediário', 1500: 'Intermediário+', 1800: 'Avançado', 2200: 'Mestre', 2500: 'Grande mestre' };
   const DESC = {
     400: 'Erra muito, entrega peças e muitas vezes nem vê a sua ameaça. Para quem está aprendendo a mexer as peças.',
     800: 'Já desenvolve as peças, mas ainda deixa material solto e não vê muitas ameaças.',

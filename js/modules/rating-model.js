@@ -196,7 +196,7 @@ const RatingModel = (() => {
   // ── Texto de faixa ──────────────────────────────────────────
   function toRange(rating) {
     if (rating >= 2700) return { label: String(rating), range: 'Nível Super-GM',            emoji: '👑' };
-    if (rating >= 2500) return { label: String(rating), range: 'Nível Grão-Mestre',          emoji: '🏆' };
+    if (rating >= 2500) return { label: String(rating), range: 'Nível Grande Mestre',        emoji: '🏆' };
     if (rating >= 2300) return { label: String(rating), range: 'Nível Mestre Internacional', emoji: '⭐' };
     if (rating >= 2000) return { label: String(rating), range: 'Nível Mestre',               emoji: '🎓' };
     if (rating >= 1800) return { label: String(rating), range: 'Avançado',                   emoji: '🔥' };
