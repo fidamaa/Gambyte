@@ -374,6 +374,12 @@
       if (atual === 'dna') a.setAttribute('aria-current', 'page');
       if (jogar) jogar.after(a); else links.append(a);
     }
+    // Ícone pequeno em cada página da barra (os do "Mais" entram em montarMais).
+    for (const a of links.querySelectorAll(':scope > a')) {
+      const id = idDe(new URL(a.href, location.href).pathname);
+      const p = PAGINAS.find(x => x.id === id);
+      if (p && !p.mais && IC[id] && !a.querySelector('svg')) a.insertAdjacentHTML('afterbegin', svg(id));
+    }
     links.addEventListener('click', noTopoSeForAqui);
     montarMais(links);
     montarGaveta(nav);

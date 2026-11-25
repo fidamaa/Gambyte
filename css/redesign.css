@@ -116,32 +116,37 @@ body:not(.em-analise) .game-strip{display:none}
    Quatro saltos de cavalo num tabuleirinho 4x4: (b1)→(d2)→(c4)→(a3)→(b1).
    Cada salto é um L de verdade (duas casas numa direção, uma na outra),
    com um pulinho no ar e uma assentada ao pousar. */
-.cavalo-carregando{position:relative; display:inline-block; flex:none; width:32px; height:32px; vertical-align:middle; margin-right:8px;
-  border-radius:3px;
-  background:
-    radial-gradient(circle at 37.5% 12.5%, rgba(63,214,154,.35) 0 6%, transparent 7%),
-    radial-gradient(circle at 87.5% 37.5%, rgba(63,214,154,.35) 0 6%, transparent 7%),
-    radial-gradient(circle at 62.5% 87.5%, rgba(63,214,154,.35) 0 6%, transparent 7%),
-    radial-gradient(circle at 12.5% 62.5%, rgba(63,214,154,.35) 0 6%, transparent 7%),
-    repeating-conic-gradient(rgba(255,255,255,.05) 0 25%, transparent 0 50%) 0 0/50% 50%}
-.cavalo-carregando i{position:absolute; left:0; top:0; width:25%; height:25%; display:block; background:var(--accent);
+.cavalo-carregando{position:relative; display:inline-block; flex:none; width:32px; height:32px; vertical-align:middle; margin-right:8px;}
+.cavalo-carregando i{position:absolute; left:0; top:0; width:40%; height:40%; display:block; background:var(--accent);
   -webkit-mask:url(/pieces/knight-b.svg) center/contain no-repeat; mask:url(/pieces/knight-b.svg) center/contain no-repeat;
   animation:cavalo-L 2.4s cubic-bezier(.45,0,.25,1) infinite, cavalo-pulo .6s ease-in-out infinite;
   filter:drop-shadow(0 0 3px rgba(63,214,154,.6))}
 @keyframes cavalo-L{
-  0%,5%{translate:100% 0}      14%{translate:300% 0}       19%,30%{translate:300% 100%}
-  39%{translate:300% 300%}     44%,55%{translate:200% 300%}
-  64%{translate:0 300%}        69%,80%{translate:0 200%}
-  89%{translate:0 0}           94%,100%{translate:100% 0}}
+  0%,5%{translate:50% 0}       14%{translate:150% 0}       19%,30%{translate:150% 50%}
+  39%{translate:150% 150%}     44%,55%{translate:100% 150%}
+  64%{translate:0 150%}        69%,80%{translate:0 100%}
+  89%{translate:0 0}           94%,100%{translate:50% 0}}
 @keyframes cavalo-pulo{0%,18%{scale:1} 48%{scale:1.22} 76%{scale:1.12 .84} 90%,100%{scale:1}}
-.progress-header .cavalo-carregando{width:30px; height:30px}
-.hero-btn .cavalo-carregando{width:26px; height:26px; background:none}
+.progress-header .cavalo-carregando{width:26px; height:26px}
+.hero-btn .cavalo-carregando{width:26px; height:26px}
 .hero-btn .cavalo-carregando i{filter:none}
 .board-carregando .cavalo-carregando{width:96px; height:96px; margin:0}
 @media (prefers-reduced-motion:reduce){.cavalo-carregando i{animation-duration:4.8s,1.2s}}
 
 .progress-header{display:flex; align-items:center}
 .progress-header .progress-title{flex:1}
+/* Na faixa de cima (altura fixa): o cavalo numa coluna à esquerda, do
+   tamanho da caixa; título, barra e números ao lado. Nada fica para fora. */
+.game-strip>.progress-container.visible{display:grid; grid-template-columns:auto 1fr auto auto; grid-template-rows:auto auto auto; column-gap:10px; align-content:center; padding-top:5px; padding-bottom:5px}
+.game-strip .progress-header{display:contents}
+.game-strip .progress-header .cavalo-carregando{grid-row:1/4; grid-column:1; width:36px; height:36px; margin:0; align-self:center}
+.game-strip .progress-title{grid-column:2; grid-row:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.game-strip .progress-phase{grid-column:4; grid-row:1}
+.game-strip .etapas{grid-column:3; grid-row:1; margin:0; gap:4px; font-size:10.5px}
+.game-strip .etapa{padding:2px 7px}
+.game-strip .etapas i{flex-basis:8px}
+.game-strip .progress-bar-track{grid-column:2/5; margin:6px 0 5px}
+.game-strip .progress-stats{grid-column:2/5; margin:0}
 .board-carregando{position:absolute; inset:0; z-index:4; display:grid; place-content:center; justify-items:center; gap:12px; background:rgba(7,9,11,.55); -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px); border-radius:6px; color:#d8e6e1; font-size:14px; opacity:0; animation:hero-aparece .25s forwards}
 .board-carregando[hidden]{display:none}
 

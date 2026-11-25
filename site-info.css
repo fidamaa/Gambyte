@@ -36,6 +36,10 @@ body[data-site="gambyte"]>.info-nav>.info-links{display:flex;flex-wrap:nowrap;al
 .nav-mais-lista a{justify-content:flex-start;width:100%;padding:10px 12px}
 .nav-mais-lista a[aria-current="page"]{background:#3fd69a14;color:#3fd69a}
 .nav-mais-lista a svg,.nav-gaveta-links a svg{width:18px;height:18px;flex:none;opacity:.85}
+.info-links>a>svg{width:17px;height:17px;flex:none;opacity:.7;transition:opacity .18s,color .18s,transform .25s cubic-bezier(.3,1.6,.5,1)}
+.info-links>a:hover>svg{opacity:1;color:#3fd69a;transform:translateY(-1px) scale(1.08)}
+.info-links>a[aria-current="page"]>svg{opacity:1;color:#3fd69a}
+@media(prefers-reduced-motion:reduce){.info-links>a>svg{transition:none}.info-links>a:hover>svg{transform:none}}
 body[data-site="gambyte"]>.info-nav>.info-nav-side{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex:0 0 auto;min-height:40px;min-width:0}
 /* Pro: um botão dourado só, com coroa */
 .nav-pro,body[data-site="gambyte"] .info-nav-side .btn-premium-header{display:inline-flex;align-items:center;gap:0;min-height:38px;padding:8px 15px;border-radius:10px;border:1px solid #8ff0c466;background:linear-gradient(135deg,#6ee7b4,#14a372);color:#04140d!important;font:inherit;font-weight:650;font-size:13.5px;line-height:1;text-decoration:none!important;white-space:nowrap;cursor:pointer;box-shadow:0 3px 14px #14a37233;transition:filter .18s,transform .18s}
