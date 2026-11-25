@@ -66,6 +66,27 @@ const PlayerDNA = (() => {
   const CLS = ['brilliant', 'great', 'best-move', 'excellent', 'good', 'book', 'inaccuracy', 'mistake', 'miss', 'blunder'];
   const _cp = v => Math.abs(v) >= 29000 ? (v > 0 ? 1500 : -1500) : Math.max(-1500, Math.min(1500, v));
 
+  /* ── Traços de estilo de uma partida ────────────────────────────
+     forc: parte dos lances que foram xeque ou captura (jogo forçante);
+     avanco: parte dos lances de peça (não de peão) que foram para o campo
+     do adversário. Pulam os 5 primeiros lances (a abertura sai do livro).
+     Dá para calcular só com os lances, então vale também para as partidas
+     guardadas antes destes traços existirem (pelo PGN salvo). */
+  function tracosSan(sans, cor) {
+    const meus = (sans || []).filter((_, i) => (i % 2 === 0) === (cor === 'w')).slice(5);
+    if (meus.length < 8) return null;
+    const forc = meus.filter(m => /[x+#]/.test(m)).length / meus.length;
+    const pecas = meus.filter(m => /^[NBRQK]/.test(m));
+    const longe = pecas.filter(m => { const d = m.match(/([a-h])([1-8])(?:=[QRBN])?[+#]?$/); return d && (cor === 'w' ? +d[2] >= 5 : +d[2] <= 4); });
+    return { forc: Math.round(forc * 1000) / 1000, avanco: pecas.length >= 5 ? Math.round(longe.length / pecas.length * 1000) / 1000 : null };
+  }
+  function sansDoPgn(pgn) {
+    if (!pgn) return [];
+    const corpo = String(pgn).split(/\r?\n\r?\n/).slice(1).join(' ') || String(pgn);
+    return corpo.replace(/\{[^}]*\}/g, ' ').replace(/\d+\.(\.\.)?/g, ' ').replace(/1-0|0-1|1\/2-1\/2|\*/g, ' ')
+      .split(/\s+/).filter(t => /^([NBRQK]?[a-h]?[1-8]?x?[a-h][1-8](=[QRBN])?|O-O(-O)?)[+#]?$/.test(t));
+  }
+
   function _lado(movesData, cor, stats, nivel, elo, nome) {
     const meus = movesData.filter(m => m && m.color === cor);
     const cont = {};
@@ -93,10 +114,16 @@ const PlayerDNA = (() => {
     };
     let fases = { opening: null, midgame: null, endgame: null };
     try { fases = InsightsEngine.calcPhaseAccuracy(movesData, cor); } catch (e) { /* sem fases */ }
+    // Resistência: precisão nos lances feitos com a posição pior (−1,50 ou
+    // menos, sem estar perdida de vez).
+    const pior = meus.filter(m => m.classification !== 'book' && (m.evalBefore ?? 0) <= -150 && (m.evalBefore ?? 0) > -900);
+    let accPior = null;
+    try { if (pior.length >= 3) accPior = InsightsEngine.calcAccuracy(pior, cor); } catch (e) { /* sem */ }
+    const est = Object.assign({}, tracosSan(movesData.map(m => m && m.san), cor) || {}, { accPior });
     return {
       nome: nome || '', elo: elo || 0,
       acc: stats.accuracy, acpl: stats.acpl, lances: stats.lances || 0, eq: stats.equilibrio || 0,
-      nivel, fases, cont, tat: [chances, achou], pad,
+      nivel, fases, cont, tat: [chances, achou], pad, est,
     };
   }
 
@@ -208,7 +235,8 @@ const PlayerDNA = (() => {
       // repetem no "contra"; os de defesa ("Philidor Defense") aparecem.
       const defesa = /Defen[cs]e|Declined|Counter|Gambit Accepted/i.test(livro);
       const deles = !defesa ? '' : cor === 'w' ? livro : brancas;
-      out.push({ id: x.id, quando, cor, eu, adv, pontos, abertura: livro, minha, deles, variante: x.abVar || '', eco: x.eco || '',
+      const est = (eu && eu.est && eu.est.forc != null) ? eu.est : Object.assign({}, tracosSan(sansDoPgn(x.pgn), cor) || {}, { accPior: eu && eu.est ? eu.est.accPior : null });
+      out.push({ id: x.id, quando, cor, eu, adv, pontos, est, abertura: livro, minha, deles, variante: x.abVar || '', eco: x.eco || '',
         ritmo: x.ritmo, plies: x.plies, inicio: x.inicio || null, saida: x.saida || null, temPgn: !!x.pgn, res: x.res });
     });
     return out.sort((a, b) => a.quando - b.quando);
@@ -308,6 +336,63 @@ const PlayerDNA = (() => {
     return { valor: meio, min: Math.max(100, lo), max: hi, usados, comResultado, curva: G.map((r, i) => [r, pr[i] / tot]) };
   }
 
+  /* ── Estilo de jogo: classificador por protótipos ─────────────────
+     Seis traços de 0 a 100 (agressividade, tática, golpes, segurança,
+     regularidade, jogo calmo, resistência) e um protótipo de cada estilo,
+     definido como um treinador descreveria esse jogador. O estilo é o
+     protótipo mais perto; a porcentagem vem da distância a cada um.
+     Traço sem dado fica de fora da conta. */
+  const ESTILOS = {
+    atacante:   { nome: 'Atacante',   desc: 'Você joga para a frente: muitos xeques, capturas e peças no campo do adversário.',
+                  p: { agress: 85, tatica: 60, golpes: 55, seguranca: 40, regular: 45, calmo: 50, resist: 50 } },
+    tatico:     { nome: 'Tático',     desc: 'Você vive de combinações: acha os lances forçados e os golpes que decidem.',
+                  p: { agress: 62, tatica: 88, golpes: 80, seguranca: 55, regular: 55, calmo: 60, resist: 55 } },
+    solido:     { nome: 'Sólido',     desc: 'Você erra pouco e joga do mesmo jeito em toda partida: é difícil de derrubar.',
+                  p: { agress: 40, tatica: 60, golpes: 30, seguranca: 88, regular: 82, calmo: 72, resist: 60 } },
+    posicional: { nome: 'Posicional', desc: 'Você prefere manobrar e melhorar as peças a forçar o jogo, e acerta os lances calmos.',
+                  p: { agress: 22, tatica: 55, golpes: 35, seguranca: 72, regular: 70, calmo: 88, resist: 55 } },
+    defensor:   { nome: 'Defensor',   desc: 'Você se defende bem: mesmo pior, continua achando bons lances e complica a vida do adversário.',
+                  p: { agress: 38, tatica: 58, golpes: 40, seguranca: 62, regular: 58, calmo: 62, resist: 88 } },
+    irregular:  { nome: 'Irregular',  desc: 'Seu jogo alterna momentos muito bons e erros grandes; o nível muda de uma partida para outra.',
+                  p: { agress: 55, tatica: 40, golpes: 25, seguranca: 22, regular: 20, calmo: 42, resist: 35 } },
+  };
+  const TRACOS = { agress: 'Agressividade', tatica: 'Tática', golpes: 'Golpes', seguranca: 'Segurança', regular: 'Regularidade', calmo: 'Jogo calmo', resist: 'Resistência' };
+  // Os traços que definem um estilo pesam mais (agressividade define o
+  // atacante; resistência, o defensor; jogo calmo, o posicional;
+  // segurança e regularidade, o sólido).
+  const PESO = { agress: 1.5, resist: 1.3, calmo: 1.2, seguranca: 1.2, regular: 1.2 };
+  const lin = (v, a, b) => v == null || isNaN(v) ? null : clamp(Math.round((v - a) / (b - a) * 100), 0, 100);
+  // Números brutos → traços de 0 a 100. Os limites são os de partidas
+  // online comuns (ex.: 25% de lances forçantes é calmo, 50% é muito).
+  function tracosEstilo(b) {
+    const ag = [lin(b.forc, 0.22, 0.50), lin(b.avanco, 0.20, 0.55)].filter(v => v != null);
+    return {
+      agress: ag.length ? Math.round(ag.length === 2 ? ag[0] * 0.6 + ag[1] * 0.4 : ag[0]) : null,
+      tatica: lin(b.taticaPct, 0.35, 0.90),
+      golpes: lin(b.golpesPorPartida, 0, 1.2),
+      seguranca: b.gafes40 == null ? null : 100 - lin(b.gafes40, 0.2, 2.2),
+      regular: b.desvio == null ? null : 100 - lin(b.desvio, 3, 15),
+      calmo: lin(b.precMeio, 68, 94),
+      resist: lin(b.accPior, 55, 88),
+    };
+  }
+  function classificarEstilo(b) {
+    const t = tracosEstilo(b);
+    const usados = Object.keys(TRACOS).filter(k => t[k] != null);
+    if (usados.length < 4) return null;
+    const dist = Object.entries(ESTILOS).map(([k, e]) => {
+      const pesoTotal = usados.reduce((s, x) => s + (PESO[x] || 1), 0);
+      const d = Math.sqrt(usados.reduce((s, x) => s + (PESO[x] || 1) * (t[x] - e.p[x]) ** 2, 0) / pesoTotal);
+      return { k, nome: e.nome, desc: e.desc, d };
+    }).sort((a, b) => a.d - b.d);
+    const pesos = dist.map(x => Math.exp(-x.d / 9));
+    const soma = pesos.reduce((s, v) => s + v, 0);
+    dist.forEach((x, i) => { x.pct = Math.round(100 * pesos[i] / soma); });
+    // Empate (até 8 pontos): o estilo é misto, os dois juntos.
+    const misto = dist[0].pct - dist[1].pct <= 8;
+    return { estilo: dist[0], segundo: misto || dist[1].pct >= 20 ? dist[1] : null, misto, ranking: dist, tracos: t, nomes: TRACOS };
+  }
+
   function calcular(nomes, lista) {
     const ps = partidasDe(nomes, lista);
     const n = ps.length;
@@ -388,6 +473,21 @@ const PlayerDNA = (() => {
       if (p.eu.fases && p.eu.fases.opening != null) a.acc.push(p.eu.fases.opening);
       ab.set(k, a);
     });
+    // Estilo de jogo (a partir de 5 partidas)
+    if (n >= 5) {
+      const comEst = ps.filter(p => p.est && p.est.forc != null);
+      const resist = ps.map(p => p.est && p.est.accPior).filter(v => v != null);
+      res.estilo = classificarEstilo({
+        forc: comEst.length ? media(comEst.map(p => p.est.forc)) : null,
+        avanco: media(comEst.map(p => p.est.avanco).filter(v => v != null)),
+        taticaPct: res.tatica.chances >= 8 ? res.tatica.pct : null,
+        golpesPorPartida: (res.bons.brilliant + res.bons.great) / n,
+        gafes40: res.erros.blunder,
+        desvio: res.desvioPrec,
+        precMeio: res.fases.midgame,
+        accPior: resist.length >= 3 ? media(resist) : null,
+      });
+    }
     res.aberturas = Array.from(ab.values()).sort((a, b) => b.n - a.n).slice(0, 6)
       .map(a => ({ nome: a.nome, cor: a.cor, n: a.n, pontos: a.nPts ? a.pts / a.nPts : null, acc: media(a.acc) }));
     return res;
@@ -414,5 +514,5 @@ const PlayerDNA = (() => {
     return t < 180 ? 'bullet' : t < 480 ? 'blitz' : t < 1500 ? 'rápida' : 'clássica';
   }
 
-  return { registrar, ler, lerTudo, usarContas, exigirConta, sitesAtivos, fonteDe, idsGuardados, apagar, calcular, nomesDisponiveis, meusNomes, definirMeusNomes, rating, evolucaoRating, partidasDe, pgnDe, ritmoDe, MIN_PARTIDAS, num, fmtPct, aberturaBrancas };
+  return { registrar, ler, lerTudo, usarContas, exigirConta, sitesAtivos, fonteDe, idsGuardados, apagar, calcular, nomesDisponiveis, meusNomes, definirMeusNomes, rating, evolucaoRating, partidasDe, pgnDe, ritmoDe, MIN_PARTIDAS, num, fmtPct, aberturaBrancas, classificarEstilo, tracosEstilo, tracosSan, sansDoPgn, ESTILOS };
 })();

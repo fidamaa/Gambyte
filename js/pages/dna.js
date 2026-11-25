@@ -96,14 +96,22 @@
     if (ax.length < 2) { box.innerHTML = ''; return; }
     const forte = ax[0], fraco = ax[ax.length - 1];
     const claro = fraco.v <= forte.v - 8;
-    const [estilo, desc] = claro ? PERFIL[forte.k] : ['Equilibrado', 'Seu jogo não tem um ponto fraco claro: as notas estão próximas.'];
+    let [estilo, desc] = claro ? PERFIL[forte.k] : ['Equilibrado', 'Seu jogo não tem um ponto fraco claro: as notas estão próximas.'];
+    // Estilo de jogo pelo classificador (agressividade, tática, segurança...)
+    const E = d.estilo;
+    if (E) {
+      estilo = E.misto ? `${E.estilo.nome} e ${E.segundo.nome}` : E.estilo.nome;
+      desc = E.estilo.desc;
+    }
+    const estiloLinha = E ? `<p class="di-estilo">${E.ranking.filter(x => x.pct >= 10).slice(0, 3).map(x => `<span>${esc(x.nome)} <b>${x.pct}%</b></span>`).join('')}</p>
+      <ul class="di-tracos" aria-label="Traços do seu estilo">${Object.entries(E.tracos).filter(([k, v]) => v != null && ['agress', 'golpes', 'calmo', 'resist'].includes(k)).map(([k, v]) => `<li><span>${esc(E.nomes[k])}</span><i style="width:${Math.max(4, v)}%"></i><b>${v}</b></li>`).join('')}</ul>` : '';
     const destaques = [];
     if (d.precisao != null) { const r = rotuloPrec(d.precisao); destaques.push(['Precisão', r, d.precisao]); }
     d.radar.filter(e => e.v != null).forEach(e => destaques.push([e.nome, rotuloEixo(e.v), e.v]));
     const passo = PASSO[fraco.k];
     const pts = d.pontos == null ? '' : `<span class="di-chip">Resultados <b>${Math.round(d.pontos * 100)}%</b></span>`;
     box.innerHTML = `<span class="di-rot">Seu perfil · ${d.n} partidas</span>
-      <div class="di-topo"><p class="di-frase">${esc(estilo)}</p><p class="di-desc">${esc(desc)}</p></div>
+      <div class="di-topo"><p class="di-frase">${esc(estilo)}</p><p class="di-desc">${esc(desc)}</p>${estiloLinha}</div>
       <ul class="di-dest" aria-label="Destaques">${destaques.map(([n, r, v]) => `<li class="di-l-${r[1]}"><span class="di-dn">${esc(n)}</span><span class="di-db"><i style="width:${Math.max(4, Math.min(100, v))}%"></i></span><b class="di-nv di-nv-${r[1]}">${r[0]}</b></li>`).join('')}</ul>
       ${fraco.v < 75 && passo ? `<div class="di-passo"><span class="di-passo-rot">Seu próximo passo</span><p>${esc(passo[0])}</p><a href="${passo[1]}">Guia: ${esc(passo[2])}</a></div>`
         : `<div class="di-passo"><span class="di-passo-rot">Seu próximo passo</span><p>Manter o ritmo: todas as notas estão fortes. Analise mais partidas para ver se o nível se confirma.</p></div>`}
