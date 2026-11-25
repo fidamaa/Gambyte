@@ -52,6 +52,27 @@
       MOLA = 'linear(0, .009, .035 2.1%, .141, .281 6.7%, .723 12.9%, .938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, .991, .977 51%, .974 53.8%, .975 57.1%, .997 69.8%, 1.003 76.9%, 1)';
   } catch (e) { /* fica o back */ }
 
+  // Receitas da vinheta (?vinheta=a…e escolhe; sem letra, vale PADRAO).
+  //  a Atual   — torres uma após a outra, nome, vira tabuleiro
+  //  b Batida  — cascata rápida e um pulso de impacto quando a logo fecha
+  //  c Câmera  — começa de perto na torre da direita e a câmera se afasta
+  //  d Rastro  — amassa e estica nas torres, com rastro de luz
+  //  e Direto  — sem a etapa do nome: logo e já vira o tabuleiro
+  var RECEITAS = {
+    a: { tile: 640, casasIni: 180, casasPasso: 26, torIni: 520, torPasso: 125, torBase: 300, torCasa: 135, ordem: [0, 1, 2, 3, 4], nome: true, segura: 640, morph: 900 },
+    b: { tile: 520, casasIni: 120, casasPasso: 16, torIni: 330, torPasso: 62, torBase: 250, torCasa: 90, ordem: [0, 1, 2, 3, 4], batida: true, nome: true, segura: 520, morph: 820 },
+    c: { tile: 0, casasIni: 60, casasPasso: 20, torIni: 120, torPasso: 120, torBase: 320, torCasa: 120, ordem: [4, 3, 1, 0, 2], camera: true, nome: true, segura: 560, morph: 840 },
+    d: { tile: 560, casasIni: 150, casasPasso: 20, torIni: 400, torPasso: 85, torBase: 280, torCasa: 105, ordem: [0, 1, 2, 3, 4], rastro: true, nome: true, segura: 560, morph: 860 },
+    e: { tile: 480, casasIni: 110, casasPasso: 16, torIni: 300, torPasso: 60, torBase: 240, torCasa: 85, ordem: [0, 1, 2, 3, 4], batida: true, nome: false, segura: 260, morph: 820 },
+    // f Final — junta o melhor de cada uma: começa de perto (c), a torre da
+    // direita sobe com rastro e amassa e estica (d), a câmera se afasta
+    // enquanto o gráfico fecha e assenta na batida (b); nome e tabuleiro.
+    f: { tile: 0, casasIni: 40, casasPasso: 18, torIni: 120, torPasso: 105, torBase: 300, torCasa: 115, ordem: [4, 3, 1, 0, 2], camera: true, rastro: true, batida: true, nome: true, segura: 500, morph: 820 },
+  };
+  var PADRAO = 'f';
+  var qual = (location.search.match(/[?&]vinheta=([a-f])/) || [])[1] || PADRAO;
+  var RC = RECEITAS[qual];
+
   function rodarVinheta() {
     var tile = document.getElementById('ab-tile');
     var nome = document.getElementById('ab-nome');
@@ -77,20 +98,31 @@
     window.scrollTo(0, 0);
     // O tile começa centralizado; o nome entra depois ao lado dele
     var gap = parseFloat(getComputedStyle(el.querySelector('.ab-palco')).columnGap) || 30;
-    var desloca = (nome.offsetWidth + gap) / 2;          // o tile começa centralizado
+    var desloca = RC.nome ? (nome.offsetWidth + gap) / 2 : 0;   // o tile começa centralizado
+    if (!RC.nome) nome.style.display = 'none';
     tile.style.translate = desloca + 'px 0';
 
     var T0 = 80;
     // 1. O tile da logo aparece
-    anima(tile, [{ opacity: 0, scale: '.8', rotate: '-6deg' }, { opacity: 1, scale: '1', rotate: '0deg' }],
-      { duration: 640, delay: T0, easing: MOLA, fill: 'both' });
+    if (RC.camera) {
+      // Câmera: começa bem de perto na coluna da direita e se afasta
+      var palco = el.querySelector('.ab-palco');
+      var rt0 = tile.getBoundingClientRect();
+      var ox = rt0.left + rt0.width * .8, oy = rt0.top + rt0.height * .45;
+      palco.style.transformOrigin = ox + 'px ' + oy + 'px';
+      anima(tile, [{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay: T0, fill: 'both' });
+      var palcoCamera = palco;   // a animação da câmera é criada depois das torres
+    } else {
+      anima(tile, [{ opacity: 0, scale: '.8', rotate: '-6deg' }, { opacity: 1, scale: '1', rotate: '0deg' }],
+        { duration: RC.tile, delay: T0, easing: MOLA, fill: 'both' });
+    }
 
     // 2. O tabuleiro surge, em diagonal
     var escuras = [[0, 0], [2, 0], [4, 0], [1, 1], [3, 1], [0, 2], [2, 2], [4, 2], [1, 3], [3, 3], [0, 4], [2, 4], [4, 4]];
     escuras.sort(function (a, b) { return (a[0] - a[1]) - (b[0] - b[1]); });
     escuras.forEach(function (q, i) {
       anima(novo('ab-c', q[0], q[1]), [{ opacity: 0, scale: '.3' }, { opacity: 1, scale: '1' }],
-        { duration: 320, delay: T0 + 180 + i * 26, easing: MOLA, fill: 'both' });
+        { duration: 320, delay: T0 + RC.casasIni + i * RC.casasPasso, easing: MOLA, fill: 'both' });
     });
 
     // 3. O gráfico cresce: em cada coluna uma torre sobe de baixo até o
@@ -114,10 +146,12 @@
       { c: 0, topo: 4 }, { c: 1, topo: 3 }, { c: 2, topo: 4 }, { c: 3, topo: 2 }, { c: 4, topo: 0 },
     ];
     var fimLances = 0;
-    colunas.forEach(function (col, i) {
+    var claros = [];
+    colunas.forEach(function (col) {
+      var i = RC.ordem.indexOf(col.c);             // posição desta coluna na sequência
       var altura = 4 - col.topo + 1;               // casas da barra (1 a 5)
-      var t = T0 + 520 + i * 125;                  // início desta coluna
-      var dur = 300 + 135 * altura;                // barras maiores levam mais tempo
+      var t = T0 + RC.torIni + i * RC.torPasso;    // início desta coluna
+      var dur = RC.torBase + RC.torCasa * altura;  // barras maiores levam mais tempo
       var sobe = -(altura - 1) * 100 - 60;         // sai de um pouco abaixo da casa de baixo
       var p = novo('ab-p', col.c, 4);
       p.style.setProperty('--peca', 'url(/pieces/rook-w.svg)');
@@ -126,6 +160,16 @@
       anima(p, [{ translate: '0 60%' }, { translate: '0 ' + (sobe + 60) + '%' }], { duration: dur, delay: t, easing: sobeCss, fill: 'both' });
       // inclina um pouco na arrancada e endireita no fim
       anima(p, [{ rotate: '0deg' }, { rotate: (i % 2 ? '4deg' : '-4deg'), offset: .3 }, { rotate: '0deg' }], { duration: dur, delay: t, easing: 'ease-out', fill: 'both' });
+      if (RC.rastro && altura > 1) {
+        // amassa na arrancada, estica na velocidade, assenta no fim
+        anima(p, [{ scale: '1.12 .86' }, { scale: '.86 1.34', offset: .22 }, { scale: '.95 1.08', offset: .6 }, { scale: '1 1' }],
+          { duration: dur, delay: t, easing: 'ease-out', fill: 'both' });
+        // rastro de luz que segue a torre e se apaga
+        var risco = novo('ab-risco', col.c, col.topo, true);
+        risco.style.height = (altura * 14.06 - 2.5) + '%';
+        anima(risco, [{ opacity: 0, transform: 'scaleY(0)' }, { opacity: .9, transform: 'scaleY(.8)', offset: .55 }, { opacity: 0, transform: 'scaleY(1)' }],
+          { duration: dur + 260, delay: t + 40, easing: 'ease-out', fill: 'both' });
+      }
       // rastro: cada casa da barra acende quando a torre passa por ela
       for (var r = 4; r > col.topo; r--) {
         var frac = (4 - r + .6) / (altura - 1 + .6);  // fração do caminho até o centro da casa
@@ -137,27 +181,53 @@
       var chega = t + dur * quandoChega(.96);
       anima(p, [{ opacity: 1, scale: '1', filter: 'blur(0)' }, { opacity: 0, scale: '.7', filter: 'blur(3px)' }],
         { duration: 300, delay: chega + 30, easing: 'ease-in', fill: 'forwards' });
-      anima(novo('ab-b cla', col.c, col.topo, true), [{ transform: 'scale(.3)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }],
+      var claro = novo('ab-b cla', col.c, col.topo, true);
+      claros.push(claro);
+      anima(claro, [{ transform: 'scale(.3)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }],
         { duration: 520, delay: chega, easing: MOLA, fill: 'both' });
       anima(novo('ab-luz', col.c, col.topo), [{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'scale(1.5)', offset: .3 }, { opacity: 0, transform: 'scale(2.3)' }],
         { duration: 640, delay: chega - 20, easing: 'ease-out', fill: 'both' });
       fimLances = Math.max(fimLances, chega + 260);
     });
 
-    // 4. Logo pronta: o tile abre espaço e o nome aparece
+    // Câmera: fica de perto enquanto a primeira torre sobe e se afasta até
+    // assentar exatamente na batida (ou no fim das torres).
+    if (RC.camera) {
+      var fimCam = (RC.batida ? fimLances - 120 : fimLances) - T0;
+      anima(palcoCamera, [{ transform: 'scale(3.1)' }, { transform: 'scale(2.9)', offset: .56 }, { transform: 'scale(1)' }],
+        { duration: Math.max(900, fimCam), delay: T0, easing: 'cubic-bezier(.55,0,.15,1)', fill: 'both' });
+    }
+
+    // 4. Logo pronta. Batida: um pulso de impacto (escala, onda de luz e
+    //    os quadrados claros acendendo juntos). Depois, o nome.
     var TN = fimLances + 60;
-    anima(tile, [{ translate: desloca + 'px 0' }, { translate: '0 0' }], { duration: 720, delay: TN, easing: MOLA, fill: 'both' });
-    letras.forEach(function (l, i) {
-      anima(l, [{ opacity: 0, translate: (-desloca / 2) + 'px 0', filter: 'blur(8px)' }, { opacity: 1, translate: '0 0', filter: 'blur(0)' }],
-        { duration: 680, delay: TN + 120 + i * 45, easing: MOLA, fill: 'both' });
-    });
+    if (RC.batida) {
+      var TB = fimLances - 120;
+      anima(tile, [{ transform: 'scale(1)' }, { transform: 'scale(1.075)', offset: .28 }, { transform: 'scale(1)' }],
+        { duration: 560, delay: TB, easing: 'cubic-bezier(.3,0,.2,1)' });
+      var onda = document.createElement('i'); onda.className = 'ab-onda'; tile.appendChild(onda);
+      anima(onda, [{ opacity: .9, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(1.55)' }],
+        { duration: 700, delay: TB + 60, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'forwards' });
+      claros.forEach(function (c) {
+        anima(c, [{ filter: 'brightness(1)' }, { filter: 'brightness(1.7) drop-shadow(0 0 6px #8ff0c4)', offset: .3 }, { filter: 'brightness(1)' }],
+          { duration: 560, delay: TB, easing: 'ease-out' });
+      });
+      TN = TB + 260;
+    }
+    if (RC.nome) {
+      anima(tile, [{ translate: desloca + 'px 0' }, { translate: '0 0' }], { duration: 720, delay: TN, easing: MOLA, fill: 'both' });
+      letras.forEach(function (l, i) {
+        anima(l, [{ opacity: 0, translate: (-desloca / 2) + 'px 0', filter: 'blur(8px)' }, { opacity: 1, translate: '0 0', filter: 'blur(0)' }],
+          { duration: 680, delay: TN + 120 + i * 45, easing: MOLA, fill: 'both' });
+      });
+    }
 
     // 5. A logo vira o tabuleiro da página: cresce até o lugar dele, as
     //    casas 5x5 dão lugar às 8x8 em onda, o fundo verde some e o
     //    tabuleiro de verdade (com as peças) assume no mesmo lugar.
     //    A posição do tabuleiro só é medida agora: no começo da vinheta ele
     //    ainda não estava montado.
-    var TS = TN + 640, DUR = 900;
+    var TS = TN + RC.segura, DUR = RC.morph;
     var saidaFeita = false, saidaAnims = [];
     function saida() {
       if (saidaFeita) return saidaAnims;
@@ -212,6 +282,7 @@
 
     if (teste) {
       todas.forEach(function (a) { a.pause(); a.currentTime = 0; });
+      window.aberturaInfo = { receita: qual, logoPronta: Math.round(fimLances), transformacao: Math.round(TS), fim: Math.round(TS + DUR + 420) };
       window.abertura = function (t) {
         todas.forEach(function (a) { a.currentTime = t; });
         if (t >= TS) {
