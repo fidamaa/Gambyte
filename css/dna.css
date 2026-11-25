@@ -154,3 +154,15 @@
 .ri-l{font-size:13.5px; line-height:1.5; color:var(--text2)}
 .ri-l i{display:inline-block; min-width:128px; margin-right:6px; font-style:normal; font:600 11px/1.5 'Outfit',sans-serif; letter-spacing:.08em; text-transform:uppercase; color:var(--text3)}
 @media (max-width:640px){.ri-l i{display:block; min-width:0}}
+
+/* ── Identidade de jogo ─────────────────────────────────────────── */
+.dna-identidade{margin:0 0 18px; padding:22px 26px; border-radius:20px; border:1px solid var(--linha); background:radial-gradient(ellipse 60% 120% at 0% 0%, rgba(63,214,154,.10), transparent 70%), rgba(12,16,19,.4)}
+.dna-identidade:empty{display:none}
+.di-rot{display:block; font:500 12px/1.2 'Outfit',sans-serif; letter-spacing:.14em; text-transform:uppercase; color:var(--text3)}
+.di-frase{margin:10px 0 14px; font:400 clamp(24px,3vw,34px)/1.18 'DM Serif Display',Georgia,serif; color:#f3f7f5; text-wrap:balance}
+.di-falta{margin:10px 0 0; font-size:15px; color:var(--text2)}
+.di-chips{display:flex; flex-wrap:wrap; gap:8px}
+.di-chip{padding:7px 12px; border-radius:99px; border:1px solid var(--linha); font-size:13px; color:var(--text2)}
+.di-chip b{color:#f3f7f5; font-family:'JetBrains Mono',monospace; font-weight:600; margin-left:4px}
+.di-forte{border-color:rgba(63,214,154,.4)} .di-forte b{color:#8ff0c4}
+.di-fraco{border-color:rgba(229,125,95,.4)} .di-fraco b{color:#f0a48d}

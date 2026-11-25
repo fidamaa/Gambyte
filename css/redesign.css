@@ -347,3 +347,22 @@ html.revelar .info-home.visto{opacity:1; transform:none}
 /* A área do tabuleiro existe desde o primeiro quadro (sem piscar no carregamento) */
 #results-section{display:block}
 @media (max-width:760px){#results-section{display:flex; flex-direction:column; gap:12px}}
+
+/* ── Veredito: a conclusão da partida (nível 1, sempre visível) ── */
+.veredito{display:flex; align-items:center; justify-content:space-between; gap:12px 20px; flex-wrap:wrap; margin:0 0 16px; padding:14px 18px; border-radius:14px; border:1px solid var(--linha); border-left:3px solid var(--accent); background:linear-gradient(90deg,rgba(63,214,154,.07),rgba(63,214,154,0) 60%); animation:pane-entra .4s var(--ease)}
+.veredito[hidden]{display:none}
+.vd-texto{flex:1 1 420px; min-width:0}
+.vd-tit{display:block; font:400 21px/1.2 'DM Serif Display',Georgia,serif; color:#f3f7f5; margin-bottom:4px}
+.vd-texto p{margin:0; font-size:14.5px; line-height:1.6; color:var(--text2)}
+.vd-lance{border:0; background:rgba(63,214,154,.12); color:#b5f5d8; font:600 13px/1 'JetBrains Mono',monospace; padding:4px 7px; border-radius:6px; cursor:pointer; vertical-align:1px}
+.vd-lance:hover{background:rgba(63,214,154,.22); color:#fff}
+.vd-mais{flex:none; border:1px solid rgba(63,214,154,.45); background:none; color:#8ff0c4; font:500 13.5px 'Outfit',sans-serif; padding:9px 14px; border-radius:10px; cursor:pointer; transition:background .2s}
+.vd-mais:hover{background:rgba(63,214,154,.08)}
+@media (max-width:760px){.veredito{margin:0}.vd-tit{font-size:19px}}
+
+/* ── Etapas da análise (rápida → 12 → 16 → 22 no Pro) ─────────── */
+.etapas{display:flex; align-items:center; gap:6px; margin:6px 0 8px; font:600 11px/1 'Outfit',sans-serif; letter-spacing:.04em}
+.etapas i{flex:0 0 14px; height:1px; background:rgba(255,255,255,.12)}
+.etapa{padding:4px 8px; border-radius:99px; color:var(--text3); border:1px solid var(--linha)}
+.etapa.feita{color:#8ff0c4; border-color:rgba(63,214,154,.3)}
+.etapa.agora{color:#04140d; background:var(--accent); border-color:var(--accent); box-shadow:0 0 12px rgba(63,214,154,.45)}

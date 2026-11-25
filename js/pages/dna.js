@@ -60,6 +60,30 @@
     el('line', { x1: 0, x2: 320, y1: 84.5, y2: 84.5, stroke: 'rgba(255,255,255,.08)', 'vector-effect': 'non-scaling-stroke' }, svg);
   }
 
+  /* ── Identidade de jogo ──────────────────────────────────────
+     O estilo em uma frase, a partir do radar. Só com partidas
+     suficientes: com poucas, diz quantas faltam. */
+  const MIN_ESTILO = 5;
+  const FORTE = { abertura: 'Bem preparado na abertura', meio: 'Forte no meio-jogo', final: 'Seguro nos finais', tatica: 'Jogador tático', consistencia: 'Jogador regular', seguranca: 'Jogador cuidadoso' };
+  const FRACO = { abertura: 'que sofre nos primeiros lances', meio: 'que oscila no meio-jogo', final: 'que perde força nos finais', tatica: 'que deixa passar lances táticos', consistencia: 'que varia muito de uma partida para outra', seguranca: 'que ainda entrega material com frequência' };
+  function renderIdentidade(d) {
+    const box = $('dna-identidade');
+    if (!box) return;
+    if (d.n < MIN_ESTILO) {
+      const f = MIN_ESTILO - d.n;
+      box.innerHTML = `<span class="di-rot">Sua identidade de jogo</span><p class="di-falta">O estilo aparece a partir de ${MIN_ESTILO} partidas. ${f === 1 ? 'Falta 1' : 'Faltam ' + f}.</p>`;
+      return;
+    }
+    const ax = d.radar.filter(e => e.v != null).sort((a, b) => b.v - a.v);
+    if (ax.length < 2) { box.innerHTML = ''; return; }
+    const forte = ax[0], fraco = ax[ax.length - 1];
+    const frase = fraco.v <= forte.v - 8 ? `${FORTE[forte.k]}, ${FRACO[fraco.k]}.` : `${FORTE[forte.k]}, sem um ponto fraco claro.`;
+    const pts = d.pontos == null ? '' : `<span class="di-chip">Resultados <b>${Math.round(d.pontos * 100)}%</b></span>`;
+    box.innerHTML = `<span class="di-rot">Sua identidade de jogo · ${d.n} partidas</span>
+      <p class="di-frase">${esc(frase)}</p>
+      <div class="di-chips"><span class="di-chip di-forte">Ponto forte <b>${esc(forte.nome)} ${forte.v}</b></span>${fraco.v <= forte.v - 8 ? `<span class="di-chip di-fraco">Dificuldade <b>${esc(fraco.nome)} ${fraco.v}</b></span>` : ''}${pts}</div>`;
+  }
+
   /* ── Radar ───────────────────────────────────────────────── */
   function renderRadar(d, comp) {
     const svg = $('dna-radar'); svg.innerHTML = '';
@@ -210,6 +234,7 @@
       comp = todas;
     }
     _atual = todas;
+    renderIdentidade(todas);
     renderRating(todas);
     renderRadar(mostrado, comp);
     $('dna-prec').textContent = pct(todas.precisao);

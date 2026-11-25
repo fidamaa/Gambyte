@@ -200,6 +200,71 @@
     if (r && r.getAttribute('aria-selected') !== 'true') r.classList.add('novo');
   });
 
+  /* ── Veredito: a conclusão da partida em poucas linhas ──────────
+     Quem jogou melhor, onde a partida virou e o melhor momento; o
+     resto (fases, treino, leitura do gráfico) fica na aba Resumo. */
+  let lancesAtuais = null, parsedAtual = null;
+  window.addEventListener('gambyte:lances', e => { const d = e.detail || {}; lancesAtuais = d.movesData; parsedAtual = d.parsed; });
+  function lanceBtn(m) { return `<button type="button" class="vd-lance" data-ir-lance="${m.index}">${esc(rotulo(m))}</button>`; }
+  function renderVeredito() {
+    const box = $('veredito');
+    if (!box) return;
+    const moves = lancesAtuais, p = parsedAtual;
+    if (!temPartida || !moves || !moves.some(m => m && m.classification) || typeof InsightsEngine === 'undefined') { box.hidden = true; return; }
+    const h = (p && p.headers) || {};
+    const nome = c => (c === 'white' ? h.White : h.Black) || (c === 'white' ? 'Brancas' : 'Pretas');
+    const aW = InsightsEngine.calcAccuracy(moves, 'white'), aB = InsightsEngine.calcAccuracy(moves, 'black');
+    const pc = v => v == null ? '—' : String(v).replace('.', ',') + '%';
+    const r = h.Result;
+    const titulo = r === '1-0' ? `Vitória de ${nome('white')}` : r === '0-1' ? `Vitória de ${nome('black')}` : r === '1/2-1/2' ? 'Empate' : 'Partida analisada';
+    const melhorLado = aW != null && aB != null && Math.abs(aW - aB) >= 1 ? (aW > aB ? 'white' : 'black') : null;
+    let linha1 = melhorLado
+      ? `${esc(nome(melhorLado))} jogou melhor: ${pc(melhorLado === 'white' ? aW : aB)} de precisão, contra ${pc(melhorLado === 'white' ? aB : aW)}.`
+      : `Os dois lados jogaram parecido: ${pc(aW)} e ${pc(aB)} de precisão.`;
+    let linha2 = '';
+    // O lance que mais pesou: entre gafes, erros e chances perdidas primeiro;
+    // só sem nenhum deles vale a maior imprecisão.
+    const graves = moves.filter(m => m && ['blunder', 'mistake', 'miss'].includes(m.classification));
+    const perda = m => InsightsEngine.moveLoss(m);
+    const pior = (graves.length ? graves : moves.filter(m => m && m.classification === 'inaccuracy')).sort((a, b) => perda(b) - perda(a))[0];
+    if (pior) {
+      const m = pior;
+      linha2 = `O lance que mais pesou foi ${lanceBtn(m)}: ${esc((InsightsEngine.NOMES[m.classification] || '').toLowerCase())} de ${esc(nome(m.color))}.`;
+    } else linha2 = 'Nenhum lance isolado decidiu: não houve erro com perda relevante.';
+    const bom = moves.find(m => m && (m.classification === 'brilliant' || m.classification === 'great'));
+    const linha3 = bom ? `Melhor momento: ${lanceBtn(bom)}, ${esc((InsightsEngine.NOMES[bom.classification] || '').toLowerCase())} de ${esc(nome(bom.color))}.` : '';
+    box.innerHTML = `<div class="vd-texto"><strong class="vd-tit">${esc(titulo)}</strong><p>${linha1} ${linha2}${linha3 ? ' ' + linha3 : ''}</p></div>
+      <button type="button" class="vd-mais" data-vd-resumo>Ver o resumo completo</button>`;
+    box.hidden = false;
+  }
+  $('veredito')?.addEventListener('click', e => {
+    const l = e.target.closest('[data-ir-lance]');
+    if (l) { document.querySelector(`.move-item[data-index="${l.dataset.irLance}"]`)?.click(); $('board-wrapper')?.scrollIntoView({ behavior: reduzir ? 'auto' : 'smooth', block: 'center' }); return; }
+    if (e.target.closest('[data-vd-resumo]')) { mostrarAbaLateral('resumo', true); $('side-panel')?.scrollIntoView({ behavior: reduzir ? 'auto' : 'smooth', block: 'start' }); }
+  });
+  window.addEventListener('gambyte:analise-concluida', () => setTimeout(renderVeredito, 60));
+  window.addEventListener('gambyte:partida', () => { const v = $('veredito'); if (v) { v.hidden = true; v.innerHTML = ''; } });
+
+  /* ── Etapas da análise: rápida → 12 → 16 (→ 22 no Pro) ─────────── */
+  function etapasDe() {
+    const pro = $('pro-deep-toggle')?.checked;
+    return pro ? [[8, 'Rápida'], [14, '14'], [18, '18'], [22, '22']] : [[8, 'Rápida'], [12, '12'], [16, '16']];
+  }
+  window.addEventListener('gambyte:progresso', e => {
+    const d = e.detail || {}, cont = $('progress-container');
+    if (!cont) return;
+    let box = cont.querySelector('.etapas');
+    if (!box) {
+      box = document.createElement('div');
+      box.className = 'etapas';
+      box.setAttribute('aria-label', 'Etapas da análise');
+      cont.querySelector('.progress-header')?.after(box);
+    }
+    const lista = etapasDe();
+    const atual = d.phase === 1 ? 0 : Math.max(0, lista.findIndex(x => x[0] >= d.depth));
+    box.innerHTML = lista.map((x, i) => `<span class="etapa${i < atual ? ' feita' : i === atual ? ' agora' : ''}">${x[1]}</span>`).join('<i aria-hidden="true"></i>');
+  });
+
   /* ── Momentos-chave ──────────────────────────────────────────── */
   const COR = { blunder: 'var(--blunder)', mistake: 'var(--mistake)', miss: 'var(--miss)', inaccuracy: 'var(--inaccuracy)', brilliant: 'var(--brilliant)', great: 'var(--great)' };
   const NOME = { blunder: 'Gafe', mistake: 'Erro', miss: 'Chance perdida', inaccuracy: 'Imprecisão', brilliant: 'Brilhante', great: 'Ótimo' };

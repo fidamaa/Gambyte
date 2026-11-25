@@ -859,6 +859,7 @@ const UIController = (() => {
       pct = 35 + 65 * (k + frac) / n;
     }
     els.progressFill.style.width = pct.toFixed(1) + '%';
+    _avisar('gambyte:progresso', { phase, depth, deep: !!deep });
     els.progressTitle.textContent = phase === 1
       ? `Leitura rápida · profundidade ${depth}`
       : deep ? `Análise Profunda · profundidade ${depth}` : `Refinamento · profundidade ${depth}`;
