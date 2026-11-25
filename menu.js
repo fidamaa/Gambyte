@@ -102,7 +102,7 @@
     btn.addEventListener('click', e => { e.stopPropagation(); abrir(!caixa.classList.contains('aberta')); });
     document.addEventListener('click', e => { if (!caixa.contains(e.target)) abrir(false); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && caixa.classList.contains('aberta')) { abrir(false); btn.focus(); } });
-    lista.insertAdjacentHTML('beforeend', `<button type="button" class="nav-mais-app" data-instalar>${svg('baixar')}Baixar o app</button>`);
+    if (celular()) lista.insertAdjacentHTML('beforeend', `<button type="button" class="nav-mais-app" data-instalar>${svg('baixar')}Baixar o app</button>`);
     lista.addEventListener('click', () => abrir(false));
   }
 
@@ -201,6 +201,8 @@
   /* ── Baixar o app (o site instalado como app) ── */
   let pedidoInstalar = null;
   const instalado = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  // O app é coisa de celular: no computador, nada de botão nem aviso.
+  const celular = () => matchMedia('(max-width: 900px), (hover: none) and (pointer: coarse)').matches;
   addEventListener('beforeinstallprompt', e => { e.preventDefault(); pedidoInstalar = e; agendarFaixa(); });
   addEventListener('appinstalled', () => {
     pedidoInstalar = null;
@@ -298,6 +300,7 @@
   // Celular: uma vez por visita, alguns segundos depois de abrir, e só onde
   // a instalação funciona (navegador liberou ou é iPhone/iPad).
   function agendarFaixa() {
+    if (!celular()) return;
     if (faixaAgendada || instalado() || !matchMedia('(max-width: 900px)').matches) return;
     if (!pedidoInstalar && aparelho() !== 'ios') return;
     if (Date.now() - lembrar('gambyte_app_faixa') < 14 * DIA) return;
@@ -327,10 +330,10 @@
     if (instalado()) document.documentElement.classList.add('app-instalado');
     // Rodapé: mais um lugar para achar o app.
     const rodape = document.querySelector('.info-footer nav');
-    if (rodape && !rodape.querySelector('[data-instalar]')) rodape.insertAdjacentHTML('beforeend', '<button type="button" class="rodape-app" data-instalar>Baixar o app</button>');
+    if (celular() && rodape && !rodape.querySelector('[data-instalar]')) rodape.insertAdjacentHTML('beforeend', '<button type="button" class="rodape-app" data-instalar>Baixar o app</button>');
     // PC: botão de baixar ao lado do Pro, na barra de cima.
     const nav = document.querySelector('body > .info-nav'), lado = nav && nav.querySelector('.info-nav-side');
-    if (lado && !nav.querySelector('.nav-app-btn')) lado.insertAdjacentHTML('beforebegin', `<button type="button" class="nav-app-btn" data-instalar title="Baixar o app do Gambyte">${svg('baixar')}<span>Baixar app</span></button>`);
+    if (celular() && lado && !nav.querySelector('.nav-app-btn')) lado.insertAdjacentHTML('beforebegin', `<button type="button" class="nav-app-btn" data-instalar title="Baixar o app do Gambyte">${svg('baixar')}<span>Baixar app</span></button>`);
     agendarFaixa();
     document.addEventListener('click', e => { if (e.target.closest('[data-instalar]')) { e.preventDefault(); instalar(); } });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && modalApp) fecharComoInstalar(); });

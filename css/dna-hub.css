@@ -127,9 +127,6 @@
 .dc-ok{width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 10px var(--accent)}
 .dc-erro{flex-basis:100%; color:#f0a48d}
 .dc-continuar{border:1px solid rgba(63,214,154,.45); background:none; color:#8ff0c4; border-radius:8px; padding:5px 10px; font:500 13px 'Outfit',sans-serif; cursor:pointer}
-.cavalo-carregando{display:inline-block; width:20px; height:20px; flex:none; perspective:80px}
-.cavalo-carregando i{display:block; width:100%; height:100%; background:var(--accent); -webkit-mask:url(/pieces/knight-b.svg) center/contain no-repeat; mask:url(/pieces/knight-b.svg) center/contain no-repeat; animation:cavalo-vira 1.5s cubic-bezier(.65,0,.35,1) infinite}
-@keyframes cavalo-vira{0%,28%{transform:rotateY(0)} 39%{transform:rotateY(90deg) translateY(-3px)} 50%,78%{transform:rotateY(180deg)} 89%{transform:rotateY(270deg) translateY(-3px)} 100%{transform:rotateY(360deg)}}
 .dna-semconta{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px 20px; margin-top:22px; padding:16px 18px; border-radius:14px; border:1px solid rgba(63,214,154,.3); background:rgba(63,214,154,.05)}
 .dna-semconta strong{display:block; color:#f3f7f5; font-size:15px; margin-bottom:3px}
 .dna-semconta span{font-size:13.5px; line-height:1.5; color:var(--text2)}
@@ -141,4 +138,30 @@ body.dna-carregando .dna-hub,body.dna-carregando .dna-vazio,body.dna-carregando 
 body.dna-sem-conta .dna-hub,body.dna-sem-conta .dna-vazio,body.dna-sem-conta .dna-corpo,body.dna-sem-conta .hub-sec{display:none!important}
 .dna-semconta{padding:22px 22px}
 .dna-semconta strong{font-size:18px}
-@media (prefers-reduced-motion:reduce){.cavalo-carregando i{animation-duration:3s}}
+
+/* ── Carregando: o cavalo anda em L e dá a volta ────────────────
+   Quatro saltos de cavalo num tabuleirinho 4x4: (b1)→(d2)→(c4)→(a3)→(b1).
+   Cada salto é um L de verdade (duas casas numa direção, uma na outra),
+   com um pulinho no ar e uma assentada ao pousar. */
+.cavalo-carregando{position:relative; display:inline-block; flex:none; width:32px; height:32px; vertical-align:middle; margin-right:8px;
+  border-radius:3px;
+  background:
+    radial-gradient(circle at 37.5% 12.5%, rgba(63,214,154,.35) 0 6%, transparent 7%),
+    radial-gradient(circle at 87.5% 37.5%, rgba(63,214,154,.35) 0 6%, transparent 7%),
+    radial-gradient(circle at 62.5% 87.5%, rgba(63,214,154,.35) 0 6%, transparent 7%),
+    radial-gradient(circle at 12.5% 62.5%, rgba(63,214,154,.35) 0 6%, transparent 7%),
+    repeating-conic-gradient(rgba(255,255,255,.05) 0 25%, transparent 0 50%) 0 0/50% 50%}
+.cavalo-carregando i{position:absolute; left:0; top:0; width:25%; height:25%; display:block; background:var(--accent);
+  -webkit-mask:url(/pieces/knight-b.svg) center/contain no-repeat; mask:url(/pieces/knight-b.svg) center/contain no-repeat;
+  animation:cavalo-L 2.4s cubic-bezier(.45,0,.25,1) infinite, cavalo-pulo .6s ease-in-out infinite;
+  filter:drop-shadow(0 0 3px rgba(63,214,154,.6))}
+@keyframes cavalo-L{
+  0%,5%{translate:100% 0}      14%{translate:300% 0}       19%,30%{translate:300% 100%}
+  39%{translate:300% 300%}     44%,55%{translate:200% 300%}
+  64%{translate:0 300%}        69%,80%{translate:0 200%}
+  89%{translate:0 0}           94%,100%{translate:100% 0}}
+@keyframes cavalo-pulo{0%,18%{scale:1} 48%{scale:1.22} 76%{scale:1.12 .84} 90%,100%{scale:1}}
+.hero-btn .cavalo-carregando{width:26px; height:26px; background:none}
+.hero-btn .cavalo-carregando i{filter:none}
+.board-carregando .cavalo-carregando{width:96px; height:96px; margin:0}
+@media (prefers-reduced-motion:reduce){.cavalo-carregando i{animation-duration:4.8s,1.2s}}
