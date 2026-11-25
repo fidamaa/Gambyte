@@ -7,7 +7,8 @@
    - Busca as partidas mais recentes de cada conta vinculada.
    - Tudo o que ainda não está no DNA entra numa fila (guardada no
      aparelho, para continuar de onde parou).
-   - Analisa uma partida por vez com o mesmo motor e a mesma análise da
+   - Analisa uma partida por vez, com vários motores rápidos em paralelo
+     (um por núcleo livre, até 3; 2 no celular), com a mesma análise da
      página inicial (motor rápido, profundidade 16) e registra o resumo
      no DNA (PlayerDNA.registrar, com a fonte e o id da partida).
    - Toda vez que a página abre, procura partidas novas.
@@ -95,7 +96,13 @@ const DNASync = (() => {
     avisar({ fase: q.length ? 'preparando' : 'em-dia', feitas: 0, total });
     if (q.length) {
       try {
-        if (!motorPronto) motorPronto = StockfishManager.init({ soRapido: true });
+        // Vários motores rápidos em paralelo: as posições de cada passada já
+        // entram todas na fila, então cada núcleo livre adianta uma. No
+        // celular no máximo 2, para não esquentar.
+        const nucleos = navigator.hardwareConcurrency || 2;
+        const celular = matchMedia('(hover: none) and (pointer: coarse)').matches;
+        const motores = Math.min(celular ? 2 : 3, Math.max(1, nucleos - 1));
+        if (!motorPronto) motorPronto = StockfishManager.init({ soRapido: true, motores });
         await motorPronto;
       } catch (e) { rodando = false; avisar({ fase: 'parado', erro: 'Não foi possível carregar o motor de análise.' }); return; }
     }

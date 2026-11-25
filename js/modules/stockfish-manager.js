@@ -42,7 +42,7 @@ const StockfishManager = (() => {
   // Um motor só por vez (o completo manda; o rápido é o reserva).
   // Diagnóstico: ?motores=2 testa dois em paralelo.
   function _quantos() { return parseInt(param('motores'), 10) === 2 ? 2 : 1; }
-  const ALVO = _quantos();
+  let ALVO = _quantos();   // init({ motores }) pode mudar (DNA: vários Lite em paralelo)
 
   // ── Motores (slots) ─────────────────────────────────────────
   // slot = { w, kind, busy, item, lines, onUpdate, finish }
@@ -217,7 +217,10 @@ const StockfishManager = (() => {
 
   // opts.soRapido: só o Lite, sem baixar o completo (Jogar contra o bot: o
   // Lite já passa do nível mais alto do bot, e jogar não gasta 108 MB).
+  // opts.motores: quantos motores em paralelo (o DNA analisa várias
+  // partidas em fila e usa os núcleos livres do aparelho). ?motores=2 vence.
   async function init(opts = {}) {
+    if (opts.motores && !param('motores') && !slots.length) ALVO = Math.max(1, Math.min(4, opts.motores | 0));
     // Diagnóstico: ?motor=lite ou ?motor=full força um dos dois.
     const forcado = param('motor') || (opts.soRapido ? 'lite' : null);
     if (forcado === 'lite' || forcado === 'full') {
