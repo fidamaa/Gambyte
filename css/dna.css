@@ -112,6 +112,8 @@
 .da-linha{display:grid; grid-template-columns:minmax(0,1fr) 46px 64px 58px; gap:10px; align-items:center; padding:10px 0; border-top:1px solid var(--linha); font-size:14px}
 .da-linha:first-child{border-top:0}
 .da-nome{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text)}
+.da-cor{display:inline-block; width:9px; height:9px; margin-right:8px; border-radius:2px; border:1px solid rgba(255,255,255,.4); vertical-align:0}
+.da-cor-w{background:#eef3f0}.da-cor-b{background:#111}
 .da-linha span{font-family:'JetBrains Mono',monospace; color:var(--text2); text-align:right; font-size:13px}
 .da-cab{font:500 11px/1 'Outfit',sans-serif!important; letter-spacing:.1em; text-transform:uppercase; color:var(--text3)!important}
 .dna-vazio-txt{font-size:14px; color:var(--text3)}

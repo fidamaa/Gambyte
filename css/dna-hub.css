@@ -62,6 +62,7 @@
 .ex-ab-freq{height:4px; border-radius:2px; background:rgba(255,255,255,.06); overflow:hidden}
 .ex-ab-freq i{display:block; height:100%; background:var(--accent); border-radius:2px}
 .ex-ab-num{font:500 12px 'JetBrains Mono',monospace; color:var(--text3)}
+.ex-ab-contra{font-size:12px; line-height:1.35; color:var(--text3)}
 .ex-palco{padding:22px; border:1px solid var(--linha); border-radius:18px; background:rgba(12,16,19,.45); min-width:0}
 .ex-topo{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:16px}
 .ex-topo h2{font:400 26px/1.15 'DM Serif Display',Georgia,serif; color:#f3f7f5; margin:6px 0 0}

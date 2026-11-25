@@ -147,7 +147,7 @@
     }
     // aberturas
     const ab = new Map();
-    ps.forEach(p => { if (!p.abertura || p.pontos == null) return; const a = ab.get(p.abertura) || { n: 0, s: 0 }; a.n++; a.s += p.pontos; ab.set(p.abertura, a); });
+    ps.forEach(p => { if (!p.minha || p.pontos == null) return; const a = ab.get(p.minha) || { n: 0, s: 0 }; a.n++; a.s += p.pontos; ab.set(p.minha, a); });
     const abs = Array.from(ab, ([nome, a]) => ({ nome, n: a.n, s: a.s / a.n })).filter(a => a.n >= 3);
     const pior = abs.slice().sort((a, c) => a.s - c.s)[0], melhor = abs.slice().sort((a, c) => c.s - a.s)[0];
     if (pior && pior.s <= .35) out.push({ t: 'atencao', h: `Dificuldade na ${pior.nome}`, d: `${Math.round(pior.s * 100)}% dos pontos em ${pior.n} partidas. Veja onde você sai da teoria na aba Aberturas.` });
@@ -192,7 +192,7 @@
         <button type="button" class="hl-btn" data-partida="${p.id}" aria-expanded="${ab}">
           <span class="hl-data">${isNaN(d) ? '' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
           <span class="hl-cor hl-${p.cor}" title="${p.cor === 'w' ? 'Você de brancas' : 'Você de pretas'}"></span>
-          <span class="hl-adv">${esc(p.adv.nome)}${p.adv.elo ? ` <small>${p.adv.elo}</small>` : ''}<small class="hl-ab">${esc(p.abertura || '')}</small></span>
+          <span class="hl-adv">${esc(p.adv.nome)}${p.adv.elo ? ` <small>${p.adv.elo}</small>` : ''}<small class="hl-ab">${esc(p.minha || '')}${p.deles && p.deles !== p.minha ? ` · contra ${esc(p.deles)}` : ''}</small></span>
           <span class="hl-res hl-res-${res[0]}">${res[1]}</span>
           <span class="hl-num">${pct(p.eu.acc)}</span>
           <span class="hl-num hl-niv">${p.eu.nivel || '—'}</span>
@@ -209,7 +209,7 @@
 
   $('h-lista').addEventListener('click', e => {
     const v = e.target.closest('[data-ver-abertura]');
-    if (v) { const p = partidas().find(x => String(x.id) === v.dataset.verAbertura); if (p) { exCor = p.cor; exSel = p.abertura; exCaminho = (p.inicio || []).slice(0, p.saida ? p.saida.ply + 1 : 8); mostrar('aberturas', true); } return; }
+    if (v) { const p = partidas().find(x => String(x.id) === v.dataset.verAbertura); if (p) { exCor = p.cor; exSel = p.minha; exCaminho = (p.inicio || []).slice(0, p.saida ? p.saida.ply + 1 : 8); mostrar('aberturas', true); } return; }
     const b = e.target.closest('[data-partida]');
     if (!b) return;
     aberta = aberta === +b.dataset.partida ? null : +b.dataset.partida;
@@ -259,13 +259,14 @@
 
   function aberturasDe(ps) {
     const m = new Map();
-    ps.filter(p => p.cor === exCor && p.abertura).forEach(p => {
-      const a = m.get(p.abertura) || { nome: p.abertura, eco: p.eco, n: 0, pts: 0, nPts: 0, acc: [], comLances: 0 };
+    ps.filter(p => p.cor === exCor && p.minha).forEach(p => {
+      const a = m.get(p.minha) || { nome: p.minha, eco: p.eco, n: 0, pts: 0, nPts: 0, acc: [], comLances: 0, contra: new Map() };
+      if (p.deles) a.contra.set(p.deles, (a.contra.get(p.deles) || 0) + 1);
       a.n++; if (p.pontos != null) { a.pts += p.pontos; a.nPts++; }
       if (p.eu.fases && p.eu.fases.opening != null) a.acc.push(p.eu.fases.opening);
       if (p.inicio) a.comLances++;
       if (!a.eco && p.eco) a.eco = p.eco;
-      m.set(p.abertura, a);
+      m.set(p.minha, a);
     });
     return Array.from(m.values()).sort((a, b) => b.n - a.n);
   }
@@ -294,14 +295,27 @@
         <span class="ex-ab-nome">${esc(a.nome)}</span>
         <span class="ex-ab-freq"><i style="width:${(100 * a.n / mx).toFixed(0)}%"></i></span>
         <span class="ex-ab-num">${a.n} ${a.n === 1 ? 'jogo' : 'jogos'} · ${p == null ? '—' : p + '% pts'}${acc == null ? '' : ' · ' + acc + '%'}</span>
+        ${contraTxt(a)}
       </button></li>`;
     }).join('') : `<li class="dna-sub">Nenhuma partida de ${exCor === 'w' ? 'brancas' : 'pretas'} com a abertura reconhecida.</li>`;
   }
 
+  // "contra Philidor 2, Siciliana 1": o que o adversário jogou nessas partidas.
+  function contraTxt(a) {
+    const l = Array.from(a.contra || [], ([n, q]) => ({ n, q })).filter(x => x.n !== a.nome).sort((x, y) => y.q - x.q);
+    if (!l.length) return '';
+    const txt = l.slice(0, 3).map(x => `${x.n}${x.q > 1 ? ' ' + x.q : ''}`).join(', ') + (l.length > 3 ? '…' : '');
+    return `<span class="ex-ab-contra">contra ${esc(txt)}</span>`;
+  }
+
   function renderPalco() {
-    const ps = partidas().filter(p => p.cor === exCor && p.abertura === exSel);
+    const ps = partidas().filter(p => p.cor === exCor && p.minha === exSel);
     $('ex-nome').textContent = exSel || 'Nenhuma abertura';
-    $('ex-eco').textContent = ps[0] && ps[0].eco ? `${ps[0].eco} · ${ps.length} ${ps.length === 1 ? 'partida sua' : 'partidas suas'}` : `${ps.length} ${ps.length === 1 ? 'partida sua' : 'partidas suas'}`;
+    const qtd = `${ps.length} ${ps.length === 1 ? 'partida sua' : 'partidas suas'}`;
+    const ecos = [...new Set(ps.map(p => p.eco).filter(Boolean))];
+    $('ex-eco').textContent = ecos.length === 1 ? `${ecos[0]} · ${qtd}` : qtd;
+    // Linha principal: a do livro com esse nome (as aberturas de brancas
+    // pelos seus lances não têm uma; o tabuleiro começa do início).
     const principal = linhaPrincipal(exSel);
     const comLances = ps.filter(p => p.inicio);
     if (exCaminho == null) {

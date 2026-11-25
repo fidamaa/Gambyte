@@ -235,7 +235,7 @@
     const box = $('dna-aberturas');
     if (!d.aberturas.length) { box.innerHTML = '<p class="dna-vazio-txt">As aberturas aparecem quando a partida é reconhecida pelo livro de aberturas.</p>'; return; }
     box.innerHTML = `<div class="da-linha"><span class="da-nome da-cab" style="text-align:left">Abertura</span><span class="da-cab">Jogos</span><span class="da-cab">Pontos</span><span class="da-cab">Prec.</span></div>` +
-      d.aberturas.map(a => `<div class="da-linha"><span class="da-nome" title="${esc(a.nome)}">${esc(a.nome)}</span><span>${a.n}</span><span>${a.pontos == null ? '—' : Math.round(a.pontos * 100) + '%'}</span><span>${a.acc == null ? '—' : Math.round(a.acc) + '%'}</span></div>`).join('');
+      d.aberturas.map(a => `<div class="da-linha"><span class="da-nome" title="${esc(a.nome)}"><i class="da-cor da-cor-${a.cor}" title="${a.cor === 'w' ? 'de brancas' : 'de pretas'}"></i>${esc(a.nome)}</span><span>${a.n}</span><span>${a.pontos == null ? '—' : Math.round(a.pontos * 100) + '%'}</span><span>${a.acc == null ? '—' : Math.round(a.acc) + '%'}</span></div>`).join('');
   }
 
   /* ── Tudo ────────────────────────────────────────────────── */

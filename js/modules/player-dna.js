@@ -199,10 +199,68 @@ const PlayerDNA = (() => {
       const r = x.res;
       const pontos = r === '1/2-1/2' ? 0.5 : r === '1-0' ? (cor === 'w' ? 1 : 0) : r === '0-1' ? (cor === 'b' ? 1 : 0) : null;
       const quando = Date.parse((x.data || '').replace(/\./g, '-')) || Date.parse(x.quando) || x.id;
-      out.push({ id: x.id, quando, cor, eu, adv, pontos, abertura: x.abNome || x.abertura, variante: x.abVar || '', eco: x.eco || '',
+      // minha: a abertura do seu lado (de brancas, pelos seus lances; de
+      // pretas, a defesa do livro). deles: a do adversário.
+      const livro = x.abNome || x.abertura || '';
+      const brancas = aberturaBrancas(x.inicio);
+      const minha = cor === 'w' ? (brancas || livro) : livro;
+      // Nomes do livro que já são dos dois lados ("Four Knights Game") não
+      // repetem no "contra"; os de defesa ("Philidor Defense") aparecem.
+      const defesa = /Defen[cs]e|Declined|Counter|Gambit Accepted/i.test(livro);
+      const deles = !defesa ? '' : cor === 'w' ? livro : brancas;
+      out.push({ id: x.id, quando, cor, eu, adv, pontos, abertura: livro, minha, deles, variante: x.abVar || '', eco: x.eco || '',
         ritmo: x.ritmo, plies: x.plies, inicio: x.inicio || null, saida: x.saida || null, temPgn: !!x.pgn, res: x.res });
     });
     return out.sort((a, b) => a.quando - b.quando);
+  }
+
+  // A abertura de quem joga de brancas, pelos lances DELAS (o livro ECO dá
+  // nome à posição, que quase sempre é a defesa das pretas: Philidor,
+  // Siciliana...). Ex.: 1. e4 e5 2. Cf3 d6 3. d4 é Philidor no livro, mas do
+  // lado das brancas é o esquema da Escocesa (e4, Cf3, d4).
+  function aberturaBrancas(inicio) {
+    if (!inicio || !inicio.length) return '';
+    const W = inicio.filter((_, i) => i % 2 === 0).slice(0, 5).map(m => m.replace(/[+#?!]/g, ''));
+    const B = inicio.filter((_, i) => i % 2 === 1).slice(0, 5).map(m => m.replace(/[+#?!]/g, ''));
+    const tem = (m, ate = 4) => W.slice(0, ate).includes(m);
+    const [w1, w2, w3] = W;
+    if (w1 === 'e4') {
+      if (B[0] === 'e5') {
+        if (w2 === 'f4') return 'Gambito do Rei';
+        if (w2 === 'Nf3') {
+          if (w3 === 'Bb5') return 'Espanhola';
+          if (w3 === 'Bc4') return 'Italiana';
+          if (w3 === 'd4') return 'Escocesa';
+          if (w3 === 'c3') return 'Ponziani';
+          if (w3 === 'Nc3') return B[1] === 'Nc6' && B[2] === 'Nf6' ? 'Quatro Cavalos' : 'Três Cavalos';
+          return 'Abertura do Cavalo do Rei';
+        }
+        if (w2 === 'Nc3') return 'Vienense';
+        if (w2 === 'Bc4') return 'Abertura do Bispo';
+        if (w2 === 'd4') return 'Abertura do Centro';
+        if (w2 === 'Qh5' || w2 === 'Qf3') return 'Ataque precoce da dama';
+        if (w2 === 'Ke2') return 'Bongcloud';
+        return 'Peão do Rei (1. e4 e5)';
+      }
+      if (B[0] === 'c5') {
+        if (w2 === 'Nf3' && w3 === 'd4') return 'Siciliana Aberta';
+        if (w2 === 'c3') return 'Siciliana Alapin';
+        if (w2 === 'Nc3') return 'Siciliana Fechada';
+        if (w2 === 'f4') return 'Siciliana Grand Prix';
+        return 'Anti-Siciliana';
+      }
+      return 'Peão do Rei (1. e4)';
+    }
+    if (w1 === 'd4') {
+      if (tem('Bf4')) return 'Sistema Londres';
+      if (w2 === 'c4') return B[0] === 'd5' ? 'Gambito da Dama' : 'Peão da Dama com c4';
+      if (w2 === 'Bg5') return B[0] === 'Nf6' ? 'Trompowsky' : 'Peão da Dama (1. d4)';
+      if (tem('e3') && tem('Bd3')) return 'Sistema Colle';
+      if (w2 === 'e4' && B[0] === 'd5') return 'Gambito Blackmar-Diemer';
+      return 'Peão da Dama (1. d4)';
+    }
+    const OUTRAS = { c4: 'Inglesa', Nf3: 'Réti', f4: 'Bird', b3: 'Larsen', g3: 'Fianqueto do Rei (1. g3)', e3: 'Van\'t Kruijs (1. e3)', Nc3: 'Dunst (1. Cc3)', b4: 'Polonesa (1. b4)' };
+    return OUTRAS[w1] || `1. ${w1}`;
   }
 
   // Distribuição do rating numa grade (100…3200 de 10 em 10).
@@ -323,14 +381,15 @@ const PlayerDNA = (() => {
     // Aberturas mais jogadas
     const ab = new Map();
     ps.forEach(p => {
-      const nm = (p.abertura || '').trim(); if (!nm) return;
-      const a = ab.get(nm) || { nome: nm, n: 0, pts: 0, nPts: 0, acc: [] };
+      const nm = (p.minha || '').trim(); if (!nm) return;
+      const k = p.cor + '|' + nm;
+      const a = ab.get(k) || { nome: nm, cor: p.cor, n: 0, pts: 0, nPts: 0, acc: [] };
       a.n++; if (p.pontos != null) { a.pts += p.pontos; a.nPts++; }
       if (p.eu.fases && p.eu.fases.opening != null) a.acc.push(p.eu.fases.opening);
-      ab.set(nm, a);
+      ab.set(k, a);
     });
     res.aberturas = Array.from(ab.values()).sort((a, b) => b.n - a.n).slice(0, 6)
-      .map(a => ({ nome: a.nome, n: a.n, pontos: a.nPts ? a.pts / a.nPts : null, acc: media(a.acc) }));
+      .map(a => ({ nome: a.nome, cor: a.cor, n: a.n, pontos: a.nPts ? a.pts / a.nPts : null, acc: media(a.acc) }));
     return res;
   }
 
@@ -355,5 +414,5 @@ const PlayerDNA = (() => {
     return t < 180 ? 'bullet' : t < 480 ? 'blitz' : t < 1500 ? 'rápida' : 'clássica';
   }
 
-  return { registrar, ler, lerTudo, usarContas, exigirConta, sitesAtivos, fonteDe, idsGuardados, apagar, calcular, nomesDisponiveis, meusNomes, definirMeusNomes, rating, evolucaoRating, partidasDe, pgnDe, ritmoDe, MIN_PARTIDAS, num, fmtPct };
+  return { registrar, ler, lerTudo, usarContas, exigirConta, sitesAtivos, fonteDe, idsGuardados, apagar, calcular, nomesDisponiveis, meusNomes, definirMeusNomes, rating, evolucaoRating, partidasDe, pgnDe, ritmoDe, MIN_PARTIDAS, num, fmtPct, aberturaBrancas };
 })();
