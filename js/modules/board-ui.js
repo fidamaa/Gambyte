@@ -44,10 +44,12 @@ const BoardUI = (() => {
 
   // ── Theme / colors ─────────────────────────────────────────────
   const THEME = {
-    light:    '#f0d9b5',
-    dark:     '#b58863',
-    hlFrom:   'rgba(20,170,90,0.45)',
-    hlTo:     'rgba(20,170,90,0.55)',
+    // Casas em pedra clara e verde-acinzentado: combinam com o acento
+    // esmeralda sem disputar com as setas e as etiquetas dos lances.
+    light:    '#e4e9e3',
+    dark:     '#6f8c80',
+    hlFrom:   'rgba(236,214,92,0.45)',
+    hlTo:     'rgba(236,214,92,0.58)',
     hlSelect: 'rgba(20,110,50,0.50)',
     dot:      'rgba(0,0,0,0.18)',   // legal move dot (casa vazia)
     capture:  'rgba(220,55,55,0.55)', // casa de captura — destaque vermelho, não mais ponto

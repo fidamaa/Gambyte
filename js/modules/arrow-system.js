@@ -25,7 +25,8 @@ const ArrowSystem = (() => {
     verde:    'rgb(159,207,63)',
     vermelho: 'rgb(248,85,63)',
     azul:     'rgb(72,193,249)',
-    motor:    'rgb(110,190,90)',
+    motor:    'rgb(63,214,154)',
+    alternativa: 'rgb(120,170,235)',
   };
   const MARCAS = {
     padrao:   'rgba(235,97,80,0.80)',
@@ -37,6 +38,8 @@ const ArrowSystem = (() => {
   let manualArrows = [];   // { from, to, cor }
   let marks = [];          // { sq, cor }
   let engineArrow  = null; // { from, to }
+  let altArrows    = [];   // [{ from, to }] 2ª e 3ª linhas do motor
+  let showAlts     = false;
   let showEngine   = true;
   let preview = null;      // seta sendo arrastada agora
   let dragFrom = null, dragCor = 'padrao';
@@ -110,6 +113,12 @@ const ArrowSystem = (() => {
     _scheduleRedraw();
   }
 
+  function setAltArrows(lista) {
+    altArrows = (lista || []).filter(a => a && a.from && a.to);
+    _scheduleRedraw();
+  }
+  function setShowAlts(val) { showAlts = !!val; _scheduleRedraw(); }
+
   function setShowEngine(val) {
     showEngine = val;
     _scheduleRedraw();
@@ -147,7 +156,13 @@ const ArrowSystem = (() => {
       lctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
-    if (showEngine && engineArrow) drawArrow(engineArrow.from, engineArrow.to, CORES.motor, 0.82);
+    if (showEngine && showAlts) {
+      altArrows.forEach((a, k) => {
+        if (engineArrow && a.from === engineArrow.from && a.to === engineArrow.to) return;
+        drawArrow(a.from, a.to, CORES.alternativa, k === 0 ? 0.62 : 0.42, 0.72);
+      });
+    }
+    if (showEngine && engineArrow) drawArrow(engineArrow.from, engineArrow.to, CORES.motor, 0.86);
     for (const a of manualArrows) drawArrow(a.from, a.to, CORES[a.cor] || CORES.padrao, 0.82);
     if (preview) drawArrow(preview.from, preview.to, CORES[preview.cor] || CORES.padrao, 0.82);
   }
@@ -170,9 +185,9 @@ const ArrowSystem = (() => {
     return [p1, bend, p2];
   }
 
-  function drawArrow(from, to, color, alpha) {
+  function drawArrow(from, to, color, alpha, escala = 1) {
     if (!lctx) return;
-    const sz = sqSizeFn();
+    const sz = sqSizeFn() * escala;
     const pts = _pathPoints(from, to);
 
     const bodyW   = sz * 0.24;
@@ -228,5 +243,5 @@ const ArrowSystem = (() => {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  return { init, setEngineArrow, setShowEngine, clearManual, redraw, getMarks };
+  return { init, setEngineArrow, setShowEngine, setAltArrows, setShowAlts, clearManual, redraw, getMarks };
 })();

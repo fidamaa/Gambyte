@@ -13,6 +13,21 @@ const EngineSuggestion = (() => {
     return { from: uci.slice(0, 2), to: uci.slice(2, 4) };
   }
 
+  function _casas(uci) {
+    const p = parseUCI(uci);
+    if (!p) return null;
+    let { from, to } = p;
+    if ((from === 'e1' && to === 'h1') || (from === 'e8' && to === 'h8')) to = to[1] === '1' ? 'g1' : 'g8';
+    if ((from === 'e1' && to === 'a1') || (from === 'e8' && to === 'a8')) to = to[1] === '1' ? 'c1' : 'c8';
+    return { from, to };
+  }
+
+  // Setas finas da 2ª e da 3ª linha do motor (quando a chave "Alternativas" está ligada).
+  function updateAlts(lista) {
+    if (typeof ArrowSystem.setAltArrows !== 'function') return;
+    ArrowSystem.setAltArrows((lista || []).slice(1, 3).map(a => _casas(a && a.uci)).filter(Boolean));
+  }
+
   function updateArrow(bestMoveUCI) {
     const parsed = parseUCI(bestMoveUCI);
     if (parsed) {
@@ -27,5 +42,5 @@ const EngineSuggestion = (() => {
     }
   }
 
-  return { updateArrow, parseUCI };
+  return { updateArrow, updateAlts, parseUCI };
 })();

@@ -15,12 +15,12 @@ body.jg-jogando .jg-intro{display:none}
 .jg-jogador{display:flex;align-items:center;gap:11px;min-height:46px;padding:0 4px 0 18px}
 .jg-av{width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2)}
 .jg-av svg{width:22px;height:22px}
-.jg-av-bot{border-color:#7a6233;background:#ecbd6e14;overflow:hidden}
+.jg-av-bot{border-color:#1f6b4f;background:#3fd69a14;overflow:hidden}
 .jg-av-bot img{width:26px;height:26px;display:block;border-radius:6px}
 .jg-quem{display:flex;flex-direction:column;line-height:1.25;min-width:0}
 .jg-quem strong{font-weight:600;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .jg-quem small{font-size:12.5px;color:var(--text2)}
-.jg-pensa{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:12.5px;color:var(--accent);padding:5px 10px;border-radius:999px;background:#ecbd6e14}
+.jg-pensa{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:12.5px;color:var(--accent);padding:5px 10px;border-radius:999px;background:#3fd69a14}
 .jg-pensa[hidden]{display:none}
 .jg-pensa span{margin-left:4px}
 .jg-pensa i{width:5px;height:5px;border-radius:50%;background:currentColor;animation:jg-pulso 1.1s infinite ease-in-out}
@@ -40,9 +40,9 @@ body.jg-jogando .jg-intro{display:none}
 .jg-niveis b{font-family:'JetBrains Mono',monospace;font-size:15.5px;font-weight:600}
 .jg-niveis span{font-size:10.5px;color:var(--text2);line-height:1.2;text-align:center}
 .jg-niveis button:hover,.jg-cores button:hover{border-color:var(--text3)}
-.jg-niveis button[aria-checked="true"],.jg-cores button[aria-checked="true"]{border-color:var(--accent);background:#ecbd6e1c;box-shadow:inset 0 0 0 1px var(--accent)}
+.jg-niveis button[aria-checked="true"],.jg-cores button[aria-checked="true"]{border-color:var(--accent);background:#3fd69a1c;box-shadow:inset 0 0 0 1px var(--accent)}
 .jg-niveis button[aria-checked="true"] b{color:var(--accent)}
-.jg-niveis button:focus-visible,.jg-cores button:focus-visible,.jg-acoes button:focus-visible,.jg-fim button:focus-visible{outline:2px solid #f6d391;outline-offset:2px}
+.jg-niveis button:focus-visible,.jg-cores button:focus-visible,.jg-acoes button:focus-visible,.jg-fim button:focus-visible{outline:2px solid #8ff0c4;outline-offset:2px}
 .jg-desc{margin:2px 0 0;font-size:14px;line-height:1.5;color:var(--text2);min-height:42px}
 .jg-cores{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
 .jg-cores button{display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 6px;min-height:46px;font-size:14.5px}
@@ -64,15 +64,15 @@ body.jg-jogando .jg-intro{display:none}
 .jg-n{color:var(--text3);align-self:center}
 .jg-l{font:inherit;color:var(--text);background:none;border:0;border-radius:5px;padding:2px 6px;margin:-2px 0;text-align:left;cursor:pointer;justify-self:start}
 .jg-l:hover{background:#ffffff12}
-.jg-l.atual{color:#1b1a14;background:var(--accent);font-weight:600}
-.jg-l:focus-visible{outline:2px solid #f6d391;outline-offset:1px}
+.jg-l.atual{color:#0a1410;background:var(--accent);font-weight:600}
+.jg-l:focus-visible{outline:2px solid #8ff0c4;outline-offset:1px}
 .jg-lances-topo{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .jg-nav{display:flex;gap:4px}
 .jg-nav button{width:38px;height:32px;display:grid;place-items:center;padding:0;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);cursor:pointer}
 .jg-nav button svg{width:18px;height:18px}
 .jg-nav button:hover:not(:disabled){border-color:var(--text3)}
 .jg-nav button:disabled{opacity:.35;cursor:default}
-.jg-nav button:focus-visible{outline:2px solid #f6d391;outline-offset:2px}
+.jg-nav button:focus-visible{outline:2px solid #8ff0c4;outline-offset:2px}
 .jg-lances .jg-vazio{display:block;font-family:'Outfit',sans-serif;color:var(--text3);padding:10px}
 .jg-acoes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
 .jg-acoes[hidden]{display:none}
@@ -81,9 +81,9 @@ body.jg-jogando .jg-intro{display:none}
 .jg-desistir.confirmar{background:#e05c5c22;border-color:var(--red);color:#ffb3b3}
 
 /* Fim da partida */
-.jg-fim{display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:13px;border:1px solid #7a6233;background:linear-gradient(135deg,#231d13,#161b26)}
+.jg-fim{display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:13px;border:1px solid #1f6b4f;background:linear-gradient(135deg,#231d13,#0f1518)}
 .jg-fim[hidden]{display:none}
-.jg-fim>strong{font-family:'DM Serif Display',Georgia,serif;font-weight:400;font-size:27px;line-height:1.1;color:var(--gold-1,#f4cc80)}
+.jg-fim>strong{font-family:'DM Serif Display',Georgia,serif;font-weight:400;font-size:27px;line-height:1.1;color:var(--gold-1,#6ee7b4)}
 .jg-fim[data-resultado="derrota"]>strong{color:var(--text)}
 .jg-fim>span{color:var(--text2);font-size:14.5px;margin-top:-4px}
 .jg-fim .btn-primary{min-height:48px;font-size:16px;border-radius:12px;cursor:pointer;font-family:inherit;margin-top:4px}

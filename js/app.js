@@ -139,7 +139,7 @@ const App = (() => {
     // os jogadores e o tabuleiro.
     // (espera a barra de progresso aparecer, senão a rolagem para antes).
     if (window.matchMedia && matchMedia('(max-width:760px)').matches) {
-      const jogadores = () => document.querySelector('#results-section .players-row');
+      const jogadores = () => document.getElementById('analise') || document.querySelector('#results-section .players-row');
       setTimeout(() => jogadores()?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 400);
       // A caixa de cima encolhe um pouco quando a análise começa: confere de novo.
       setTimeout(() => {
@@ -211,6 +211,8 @@ const App = (() => {
             : 'Análise Profunda concluída: as avaliações já estavam estáveis antes da profundidade 22.', 'success');
         }
         GameHistory.save(parsedGame, allMoves, pgn);
+        // DNA geral: resumo compacto da partida, só neste aparelho.
+        try { if (typeof PlayerDNA !== 'undefined') PlayerDNA.registrar(parsedGame, allMoves); } catch (e) { console.warn('DNA', e); }
         window.dispatchEvent(new CustomEvent('gambyte:analise-concluida'));
       }
     });
@@ -228,57 +230,26 @@ const App = (() => {
   // termina a coluna do tabuleiro (no fim do gráfico de vantagem); a lista
   // de lances rola por dentro. No celular as colunas empilham e nada muda.
   function setupAlinhamento() {
+    // O painel em abas ao lado do tabuleiro tem a mesma altura da coluna do
+    // tabuleiro (até o fim do gráfico); a aba aberta rola por dentro. No
+    // celular as colunas empilham e o painel cresce com o conteúdo.
     const board = document.querySelector('.board-panel');
-    const mid = document.querySelector('.middle-panel');
-    if (!board || !mid) return;
-    const sum = document.querySelector('.summary-panel');
-    const alinhar = (el) => {
-      if (!el) return;
-      const topoB = board.getBoundingClientRect().top;
-      const mesmaLinha = window.innerWidth > 760 && Math.abs(el.getBoundingClientRect().top - topoB) < 4;
-      el.style.height = mesmaLinha ? board.offsetHeight + 'px' : '';
-      el.classList.toggle('alinhado', mesmaLinha);
-    };
-    // Coluna da direita: se o conteúdo passar da altura, primeiro a lista de
-    // partidas encolhe (rola por dentro), depois o painel de resumo.
-    const lista = document.getElementById('imp-list');
-    const resumo = document.getElementById('insights-section');
-    const ajustarDireita = () => {
-      if (!sum || !lista || !resumo) return;
-      lista.style.maxHeight = ''; resumo.style.maxHeight = '';
-      // Aba da foto aberta: o cartão de destaque do resumo é redundante e,
-      // se ainda faltar espaço, a chamada da aba fica mais curta. (Estilo e
-      // data-*, que o MutationObserver abaixo não observa.)
-      const seFoto = sum.querySelector('.se-foto'), fotoBox = document.getElementById('foto-box');
-      if (seFoto) seFoto.style.display = '';
-      if (fotoBox) delete fotoBox.dataset.compacta;
-      if (!sum.classList.contains('alinhado')) return;
-      let excesso = sum.scrollHeight - sum.clientHeight;
-      if (excesso <= 0) return;
-      if (fotoBox && !fotoBox.hidden) {
-        if (seFoto && seFoto.offsetHeight) { excesso -= seFoto.offsetHeight + 12; seFoto.style.display = 'none'; }
-        if (excesso > 0) { fotoBox.dataset.compacta = '1'; excesso = sum.scrollHeight - sum.clientHeight; }
-        if (excesso <= 0) return;
-      }
-      if (lista.offsetHeight > 0) {
-        const alvo = Math.max(120, lista.offsetHeight - excesso);
-        excesso -= lista.offsetHeight - alvo;
-        lista.style.maxHeight = alvo + 'px';
-      }
-      if (excesso > 0 && resumo.offsetHeight > 0) {
-        resumo.style.maxHeight = Math.max(240, resumo.offsetHeight - excesso) + 'px';
-      }
-    };
+    const lado = document.querySelector('.side-panel');
+    if (!board || !lado) return;
     let pendente = false;
     const sync = () => {
       if (pendente) return;
       pendente = true;
-      requestAnimationFrame(() => { pendente = false; alinhar(mid); alinhar(sum); ajustarDireita(); });
+      requestAnimationFrame(() => {
+        pendente = false;
+        const mesmaLinha = window.innerWidth > 760 && Math.abs(lado.getBoundingClientRect().top - board.getBoundingClientRect().top) < 4;
+        const chart = board.querySelector('.chart-section');
+        const fim = chart ? chart.getBoundingClientRect().bottom - board.getBoundingClientRect().top : board.offsetHeight;
+        lado.style.height = mesmaLinha ? Math.max(420, Math.min(fim, window.innerHeight - 110)) + 'px' : '';
+        lado.classList.toggle('alinhado', mesmaLinha);
+      });
     };
     if (window.ResizeObserver) new ResizeObserver(sync).observe(board);
-    if (sum && window.MutationObserver) {
-      new MutationObserver(sync).observe(sum, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'class'] });
-    }
     window.addEventListener('resize', sync);
     sync();
   }

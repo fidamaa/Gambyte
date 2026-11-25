@@ -22,11 +22,11 @@ const ChartRenderer = (() => {
   const MARCAR = new Set(['brilliant', 'great', 'inaccuracy', 'mistake', 'miss', 'blunder']);
 
   const C = {
-    escuro:  '#2a2e3a',   // lado das pretas
-    claro:   '#e9e7e1',   // lado das brancas
-    meio:    'rgba(120,128,150,.55)',
-    linha:   '#ecbd6e',
-    rotulo:  '#7c86a3',
+    escuro:  '#141c1f',   // lado das pretas
+    claro:   '#e3e9e5',   // lado das brancas
+    meio:    'rgba(140,160,152,.45)',
+    linha:   '#3fd69a',
+    rotulo:  '#7a8a86',
   };
 
   let _lastW = 0, _lastH = 0;
@@ -63,7 +63,8 @@ const ChartRenderer = (() => {
       if (i === _hover || !_estado) return;
       _hover = i;
       const m = _estado.moves[i];
-      canvas.title = m ? `${Math.floor(m.index / 2) + 1}${m.color === 'white' ? '.' : '...'} ${m.san || ''}  ${fmt(_estado.evals[i])}` : '';
+      // A etiqueta é desenhada no próprio gráfico; o rótulo serve aos leitores de tela.
+      canvas.setAttribute('aria-label', m ? `Lance ${Math.floor(m.index / 2) + 1}${m.color === 'white' ? '' : ' das pretas'}: ${m.san || ''}, avaliação ${fmt(_estado.evals[i])}. Clique para ir ao lance.` : 'Gráfico de vantagem');
       desenhar(canvas);
     });
     canvas.addEventListener('mouseleave', () => { _hover = -1; if (_estado) desenhar(canvas); });
@@ -123,8 +124,19 @@ const ChartRenderer = (() => {
     for (let i = 0; i < n; i++) ctx.lineTo(x(i), y(evals[i]));
     ctx.lineTo(pad.l + pw, pad.t + ph);
     ctx.closePath();
-    ctx.fillStyle = C.claro;
+    const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + ph);
+    grad.addColorStop(0, '#f1f5f2'); grad.addColorStop(1, '#c9d4ce');
+    ctx.fillStyle = grad;
     ctx.fill();
+
+    // Fronteira (a avaliação) em esmeralda, fina
+    ctx.beginPath();
+    ctx.moveTo(pad.l, midY);
+    for (let i = 0; i < n; i++) ctx.lineTo(x(i), y(evals[i]));
+    ctx.strokeStyle = 'rgba(20,163,114,.95)';
+    ctx.lineWidth = 1.6;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
 
     // Linha de igualdade
     ctx.strokeStyle = C.meio;
@@ -135,7 +147,7 @@ const ChartRenderer = (() => {
 
     // Lance sob o mouse: guia vertical suave
     if (_hover >= 0 && _hover < n) {
-      ctx.fillStyle = 'rgba(236,189,110,.18)';
+      ctx.fillStyle = 'rgba(63,214,154,.18)';
       ctx.fillRect(x(_hover) - 1, pad.t, 2, ph);
     }
 
@@ -143,7 +155,7 @@ const ChartRenderer = (() => {
     let ai = -1;
     if (activeIdx !== undefined && activeIdx >= 0) ai = moves.findIndex(m => (m.index ?? m.moveIndex) === activeIdx);
     if (ai >= 0) {
-      ctx.fillStyle = 'rgba(236,189,110,.55)';
+      ctx.fillStyle = 'rgba(63,214,154,.55)';
       ctx.fillRect(x(ai) - 1, pad.t, 2, ph);
     }
 
@@ -162,6 +174,27 @@ const ChartRenderer = (() => {
       ctx.stroke();
     }
     ctx.restore();
+
+    // Etiqueta do lance sob o mouse: número, lance e avaliação
+    if (_hover >= 0 && _hover < n && moves[_hover]) {
+      const m = moves[_hover];
+      const txt = `${Math.floor((m.index ?? m.moveIndex) / 2) + 1}${m.color === 'white' ? '.' : '...'} ${m.san || ''}  ${fmt(evals[_hover])}`;
+      ctx.font = '600 11.5px "JetBrains Mono", monospace';
+      const tw = ctx.measureText(txt).width + 16, th = 22;
+      let tx = x(_hover) - tw / 2; tx = Math.max(2, Math.min(W - tw - 2, tx));
+      const py = y(evals[_hover]);
+      const ty = py - th - 10 < 2 ? py + 10 : py - th - 10;
+      ctx.fillStyle = 'rgba(8,12,14,.92)';
+      ctx.strokeStyle = 'rgba(63,214,154,.55)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(tx, ty, tw, th, 6) : ctx.rect(tx, ty, tw, th);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#e9efed';
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(txt, tx + 8, ty + th / 2 + .5);
+      ctx.textBaseline = 'alphabetic';
+    }
 
     // Números dos lances
     ctx.fillStyle = C.rotulo;

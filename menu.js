@@ -11,6 +11,7 @@
     'como-usar': '<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
     guia: '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14"/><path d="M15 6v14"/>',
     sobre: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+    dna: '<path d="M12 2.5 21 9l-3.4 10.5H6.4L3 9z"/><path d="M12 8.2 15.6 10.8 14.2 15H9.8L8.4 10.8z"/>',
     contato: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>',
     fechar: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
     seta: '<path d="m6 9 6 6 6-6"/>',
@@ -24,9 +25,10 @@
   const PAGINAS = [
     { id: 'analisar', href: '/', nome: 'Analisar partida', aba: 'Analisar' },
     { id: 'jogar', href: '/jogar', nome: 'Jogar contra o bot', aba: 'Jogar' },
+    { id: 'dna', href: '/dna', nome: 'Seu DNA no xadrez', aba: 'DNA' },
     { id: 'aprender', href: '/aprender/', nome: 'Aprender xadrez', aba: 'Aprender' },
-    { id: 'como-usar', href: '/como-usar', nome: 'Como usar', aba: 'Como usar', mais: true },
-    { id: 'guia', href: '/guia', nome: 'Guia de análise', aba: 'Guia' },
+    { id: 'como-usar', href: '/como-usar', nome: 'Como usar', mais: true },
+    { id: 'guia', href: '/guia', nome: 'Guia de análise', aba: 'Guia', mais: true },
     { id: 'sobre', href: '/sobre', nome: 'Sobre', mais: true },
     { id: 'contato', href: '/contato', nome: 'Contato', mais: true },
   ];
@@ -360,6 +362,14 @@
       a.href = '/jogar'; a.innerHTML = 'Jogar<span class="nav-longo"> contra o bot</span>';
       if (atual === 'jogar') a.setAttribute('aria-current', 'page');
       if (primeiro) primeiro.after(a); else links.prepend(a);
+    }
+    // "Seu DNA" (retrato de todas as partidas analisadas) depois de "Jogar".
+    if (!links.querySelector('a[href="/dna"],a[href="dna"],a[href="../dna"]')) {
+      const jogar = links.querySelector('a[href="/jogar"],a[href="jogar"],a[href="../jogar"]');
+      const a = document.createElement('a');
+      a.href = '/dna'; a.innerHTML = 'Seu DNA';
+      if (atual === 'dna') a.setAttribute('aria-current', 'page');
+      if (jogar) jogar.after(a); else links.append(a);
     }
     links.addEventListener('click', noTopoSeForAqui);
     montarMais(links);

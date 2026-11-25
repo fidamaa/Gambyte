@@ -10,16 +10,16 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:      #0d0f14;
-  --bg2:     #13161e;
-  --bg3:     #1a1e2a;
-  --border:  #252a38;
-  --border2: #2e3448;
-  --text:    #e8eaf0;
-  --text2:   #a6afc5;
-  --text3:   #7c86a3;
-  --accent:  #ecbd6e;
-  --accent2: #d39a45;
+  --bg:      #07090b;
+  --bg2:     #0c1013;
+  --bg3:     #11171b;
+  --border:  #1b2529;
+  --border2: #26333a;
+  --text:    #e9efed;
+  --text2:   #a4b3ae;
+  --text3:   #7a8a86;
+  --accent:  #3fd69a;
+  --accent2: #14a372;
   --green:   #5bc97a;
   --red:     #e05c5c;
   --radius:  8px;
@@ -41,7 +41,7 @@ body::before {
   content: '';
   position: fixed; inset: 0;
   background:
-    radial-gradient(ellipse 70% 60% at 15% 10%, rgba(236,189,110,0.08) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 15% 10%, rgba(63,214,154,0.08) 0%, transparent 55%),
     radial-gradient(ellipse 60% 50% at 85% 90%, rgba(91,143,224,0.07) 0%, transparent 55%),
     radial-gradient(ellipse 40% 40% at 50% 50%, rgba(155,125,224,0.04) 0%, transparent 60%);
   pointer-events: none;
@@ -158,7 +158,7 @@ body::before {
 }
 .form-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(236,189,110,.1);
+  box-shadow: 0 0 0 3px rgba(63,214,154,.1);
 }
 .form-input::placeholder { color: var(--text3); }
 
@@ -195,7 +195,7 @@ body::before {
   width: 100%; padding: 13px;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   border: none; border-radius: var(--radius);
-  color: #0d0f14; font-family: 'Outfit', sans-serif;
+  color: #07090b; font-family: 'Outfit', sans-serif;
   font-size: 15px; font-weight: 700; letter-spacing: .3px;
   cursor: pointer; transition: opacity .2s, transform .1s;
   margin-top: 4px;
@@ -222,17 +222,17 @@ body::before {
 /* ── Premium promo ── */
 .premium-promo {
   margin-top: 20px;
-  background: linear-gradient(135deg, rgba(236,189,110,.07), rgba(211,154,69,.03));
-  border: 1px solid rgba(236,189,110,.2);
+  background: linear-gradient(135deg, rgba(63,214,154,.07), rgba(20,163,114,.03));
+  border: 1px solid rgba(63,214,154,.2);
   border-radius: var(--radius);
   padding: 14px;
   display: flex; align-items: center; gap: 12px;
   cursor: pointer; transition: border-color .2s;
 }
-.premium-promo:hover { border-color: rgba(236,189,110,.45); }
+.premium-promo:hover { border-color: rgba(63,214,154,.45); }
 .premium-promo-icon { font-size: 24px; flex-shrink: 0; }
 .premium-promo-text { flex: 1; }
-.premium-promo-title { font-size: 13px; font-weight: 600; color: #ecbd6e; margin-bottom: 2px; }
+.premium-promo-title { font-size: 13px; font-weight: 600; color: #3fd69a; margin-bottom: 2px; }
 .premium-promo-desc  { font-size: 11px; color: var(--text2); }
 .premium-promo-arrow { color: var(--text3); font-size: 16px; }
 
@@ -247,9 +247,9 @@ body::before {
   width: 72px; height: 72px; border-radius: 50%;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   display: inline-flex; align-items: center; justify-content: center;
-  font-size: 28px; font-weight: 700; color: #0d0f14;
+  font-size: 28px; font-weight: 700; color: #07090b;
   margin-bottom: 14px;
-  box-shadow: 0 8px 24px rgba(236,189,110,.25);
+  box-shadow: 0 8px 24px rgba(63,214,154,.25);
 }
 .logged-in-name { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
 .logged-in-email { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
@@ -259,13 +259,13 @@ body::before {
   margin-bottom: 20px;
 }
 .logged-in-badge.free    { background: rgba(136,144,168,.1); color: var(--text2); border: 1px solid var(--border2); }
-.logged-in-badge.premium { background: rgba(236,189,110,.15); color: #ecbd6e; border: 1px solid rgba(236,189,110,.4); }
+.logged-in-badge.premium { background: rgba(63,214,154,.15); color: #3fd69a; border: 1px solid rgba(63,214,154,.4); }
 
 .btn-back-analyze {
   display: block; width: 100%; padding: 12px;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   border: none; border-radius: var(--radius);
-  color: #0d0f14; font-family: 'Outfit', sans-serif;
+  color: #07090b; font-family: 'Outfit', sans-serif;
   font-size: 14px; font-weight: 700; cursor: pointer;
   text-decoration: none; text-align: center; margin-bottom: 10px;
   transition: opacity .2s;
@@ -319,16 +319,16 @@ body::before {
 /* Contas de xadrez vinculadas */
 .linked-accounts { text-align:left; margin:18px 0 6px; padding:16px; border:1px solid var(--border); border-radius:var(--radius-lg); background:var(--bg3); }
 .linked-accounts[hidden] { display:none; }
-.lk-title { font-size:13px; letter-spacing:.8px; text-transform:uppercase; color:#b4bdd0; font-weight:600; margin-bottom:6px; }
+.lk-title { font-size:13px; letter-spacing:.8px; text-transform:uppercase; color:#b3c2bd; font-weight:600; margin-bottom:6px; }
 .lk-desc { font-size:12.5px; line-height:1.55; color:var(--text2); margin-bottom:12px; }
 .lk-row { padding:10px 0; border-top:1px solid var(--border); }
 .lk-label { display:block; font-size:12px; font-weight:600; color:var(--text); margin-bottom:6px; }
 .lk-row.is-linked .lk-label::after { content:'Vinculado'; margin-left:8px; font-size:10.5px; font-weight:700; color:var(--green); border:1px solid rgba(91,201,122,.4); border-radius:99px; padding:1px 7px; }
 .lk-field { display:flex; gap:8px; }
 .lk-input { flex:1; min-width:0; }
-.lk-btn { flex:none; padding:0 16px; border-radius:var(--radius); border:1px solid #f6d391; background:linear-gradient(135deg,#f4cc80,#d39a45); color:#1b1a14; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+.lk-btn { flex:none; padding:0 16px; border-radius:var(--radius); border:1px solid #8ff0c4; background:linear-gradient(135deg,#6ee7b4,#14a372); color:#0a1410; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; }
 .lk-btn:disabled { opacity:.6; cursor:wait; }
-.lk-btn:focus-visible, .lk-remove:focus-visible, .lk-link:focus-visible { outline:2px solid #f6d391; outline-offset:2px; }
+.lk-btn:focus-visible, .lk-remove:focus-visible, .lk-link:focus-visible { outline:2px solid #8ff0c4; outline-offset:2px; }
 .lk-actions { display:flex; gap:14px; margin-top:7px; font-size:12.5px; }
 .lk-actions:empty { display:none; }
 .lk-link { color:var(--accent); text-decoration:none; font-weight:600; }
@@ -341,7 +341,7 @@ body::before {
 .lk-status.ok { color:var(--green); }
 .lk-status.error { color:#ef9a9a; }
 </style>
-<link rel="stylesheet" href="site-info.css?v=10"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0d0f14"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="Gambyte">
+<link rel="stylesheet" href="site-info.css?v=11"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#07090b"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="Gambyte">
 
 <style>.form-input-row .form-input{padding-right:80px}.toggle-pw{font-size:12px;width:68px}</style>
 <style>body.auth-page{display:block;overflow:auto}.auth-page .auth-container{margin:40px auto}.auth-page>.info-footer{position:relative;z-index:1}</style><script src="/menu.js" defer></script>

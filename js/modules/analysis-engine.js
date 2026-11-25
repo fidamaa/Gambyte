@@ -50,6 +50,18 @@ const AnalysisEngine = (() => {
     return -1;
   }
 
+  // Primeiro lance de cada linha MultiPV, com a avaliação dela (para as
+  // setas de alternativas). Não participa da classificação.
+  function primeirosLances(res) {
+    if (!res || !res.pvLines) return [];
+    const out = [];
+    res.pvLines.forEach((pv, k) => {
+      const uci = pv && pv.split(' ')[0];
+      if (uci && uci.length >= 4) out.push({ uci, ev: res.evals ? res.evals[k] : null });
+    });
+    return out;
+  }
+
   let onProgress = null;
   let onMoveUpdate = null;
   let onComplete = null;
@@ -346,6 +358,8 @@ const AnalysisEngine = (() => {
       movesData[i].bestMoveUCI   = beforeResult.bestMove;
       movesData[i].playedMoveUCI = playedMoveUCI;
       movesData[i].multiPVEvals  = multiPV;
+      // Só para mostrar setas das alternativas no tabuleiro (não entra em conta nenhuma).
+      movesData[i].altUCI        = primeirosLances(beforeResult);
       movesData[i].mateNs        = beforeResult.mateNs || null;
       movesData[i].immediateCaptureValue = immediateCaptureValue;
 
@@ -495,6 +509,8 @@ const AnalysisEngine = (() => {
         if (kJog2 >= 0) m.evalAfter = bRes.evals[kJog2];
         m.bestMoveUCI  = bRes.bestMove ?? m.bestMoveUCI;
         if (!deep) {
+          const alt = primeirosLances(bRes);
+          if (alt.length > 1) m.altUCI = alt;
           m.multiPVEvals = bRes.evals;
           m.mateNs       = bRes.mateNs || m.mateNs;
         } else if (bRes.mateNs) {

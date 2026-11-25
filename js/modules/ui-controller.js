@@ -71,10 +71,10 @@ const UIController = (() => {
     const panel = document.querySelector('.board-panel');
     const width = panel && panel.clientWidth ? panel.clientWidth : Math.min(window.innerWidth - 32, 560);
     const available = Math.max(160, width - 48);
-    // No computador, o tabuleiro inteiro precisa caber na tela ao abrir a página.
-    const topo = panel ? panel.getBoundingClientRect().top + window.scrollY : 300;
-    const alturaUtil = window.innerWidth > 760 ? Math.max(320, window.innerHeight - topo - 28) : 9999;
-    return Math.floor(Math.min(560, available, alturaUtil) / 8) * 8;
+    // No computador, o tabuleiro inteiro cabe na tela quando a página rola
+    // até a análise (a abertura fica acima; descontamos barra e placar).
+    const alturaUtil = window.innerWidth > 760 ? Math.max(320, window.innerHeight - 170) : 9999;
+    return Math.floor(Math.min(720, available, alturaUtil) / 8) * 8;
   }
 
   function resizeBoard() {
@@ -394,6 +394,7 @@ const UIController = (() => {
       } else {
         EngineSuggestion.updateArrow(null);
       }
+      if (EngineSuggestion.updateAlts) EngineSuggestion.updateAlts(md && md.altUCI);
       // ── module: evaluation-bar.js ── sync eval bar
       EvalBar.updateFromMoveData(md || null);
     } else if (idx < 0) {
@@ -458,6 +459,20 @@ const UIController = (() => {
     } else {
       _showClassOverlay(null, null);
     }
+    // Avisa o resto da página (info do lance, momentos-chave) qual lance está na tela.
+    _avisar('gambyte:lance-atual', { idx, parsed: parsedGameRef });
+  }
+
+  // Eventos para os painéis da página; os de lances vêm no máximo uma vez por quadro.
+  const _pendentes = {};
+  function _avisar(nome, detail, juntar) {
+    if (!juntar) { window.dispatchEvent(new CustomEvent(nome, { detail })); return; }
+    _pendentes[nome] = detail;
+    if (_pendentes[nome + ':raf']) return;
+    _pendentes[nome + ':raf'] = requestAnimationFrame(() => {
+      _pendentes[nome + ':raf'] = 0;
+      window.dispatchEvent(new CustomEvent(nome, { detail: _pendentes[nome] }));
+    });
   }
 
   // Barra da análise ao vivo durante a revisão: a linha do motor para a
@@ -601,6 +616,7 @@ const UIController = (() => {
     // Init board
     initBoard();
     renderBoardAtMove(-1);
+    _avisar('gambyte:partida', { parsed: parsedGame });
   }
 
   // ── Tabuleiro vazio (sempre presente) ────────────────────────
@@ -909,6 +925,7 @@ const UIController = (() => {
       cntEls.white[cls].textContent = movesData.filter(m => m.color==='white' && m.classification===cls).length;
       cntEls.black[cls].textContent = movesData.filter(m => m.color==='black' && m.classification===cls).length;
     }
+    _avisar('gambyte:lances', { movesData, parsed: parsedGameRef, idx: currentMoveIdx }, true);
   }
 
   // ── Overlay de classificação no tabuleiro ─────────────────────

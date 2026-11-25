@@ -502,11 +502,11 @@ const PhotoPosition = (() => {
       cx.drawImage(img, 0, 0);
       const k = Math.max(2, img.naturalWidth / 260);
       if (ed.cantos.length) {
-        cx.lineWidth = k; cx.strokeStyle = '#ecbd6e'; cx.fillStyle = 'rgba(236,189,110,.14)';
+        cx.lineWidth = k; cx.strokeStyle = '#3fd69a'; cx.fillStyle = 'rgba(63,214,154,.14)';
         cx.beginPath(); ed.cantos.forEach((q, i) => (i ? cx.lineTo(q[0], q[1]) : cx.moveTo(q[0], q[1])));
         if (ed.cantos.length === 4) { cx.closePath(); cx.fill(); }
         cx.stroke();
-        for (const q of ed.cantos) { cx.beginPath(); cx.arc(q[0], q[1], k * 5, 0, 7); cx.fillStyle = '#5bc97a'; cx.fill(); cx.lineWidth = k; cx.strokeStyle = '#0d0f14'; cx.stroke(); }
+        for (const q of ed.cantos) { cx.beginPath(); cx.arc(q[0], q[1], k * 5, 0, 7); cx.fillStyle = '#5bc97a'; cx.fill(); cx.lineWidth = k; cx.strokeStyle = '#07090b'; cx.stroke(); }
       }
     };
     img.onload = () => {

@@ -1,0 +1,149 @@
+/* DNA geral do jogador (/dna) — mesma linguagem da abertura: fundo
+   profundo, um acento esmeralda, poucas caixas, números em mono. */
+.dna-page{--book:#8d9c99;--blunder:#e0524f;--mistake:#e57d5f;--miss:#e0a05b;--inaccuracy:#d8c06a;--azul:#78aaeb;
+  background:var(--bg); color:var(--text); font-family:'Outfit',system-ui,sans-serif}
+.dna-page::before{content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:radial-gradient(ellipse 60% 40% at 75% 0%, rgba(63,214,154,.08), transparent 60%), radial-gradient(ellipse 50% 40% at 0% 60%, rgba(20,163,114,.05), transparent 60%)}
+.dna{position:relative; z-index:1; width:min(1180px, calc(100% - 40px)); margin:0 auto; padding:56px 0 20px}
+.dna h2,.dna h3{margin:0}
+.dna-rot{display:block; font:500 12px/1.2 'Outfit',sans-serif; letter-spacing:.14em; text-transform:uppercase; color:var(--text3)}
+
+/* topo */
+.dna-topo{max-width:760px; margin-bottom:34px}
+.dna-kicker{margin:0 0 14px; font:500 12.5px/1 'Outfit',sans-serif; letter-spacing:.14em; text-transform:uppercase; color:#8ff0c4}
+.dna-topo h1{font:400 clamp(38px,5vw,60px)/1.04 'DM Serif Display',Georgia,serif; letter-spacing:-.02em; margin:0 0 16px; color:#f3f7f5}
+.dna-resumo{font-size:17px; line-height:1.65; color:var(--text2); margin:0; max-width:64ch}
+.dna-quem{display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; margin-top:22px}
+.dna-quem-lbl{font-size:13.5px; color:var(--text3)}
+.dna-quem-nomes{display:flex; flex-wrap:wrap; gap:6px}
+.dna-quem-nomes button{display:inline-flex; align-items:center; gap:8px; padding:7px 12px; border-radius:99px; border:1px solid var(--linha); background:rgba(255,255,255,.02); color:var(--text2); font:500 13.5px/1 'Outfit',sans-serif; cursor:pointer; transition:all .2s}
+.dna-quem-nomes button small{font:500 11.5px/1 'JetBrains Mono',monospace; color:var(--text3)}
+.dna-quem-nomes button[aria-pressed="true"]{border-color:rgba(63,214,154,.5); background:rgba(63,214,154,.09); color:#e9fff6}
+.dna-quem-nomes button[aria-pressed="true"] small{color:#8ff0c4}
+.dna-quem-nomes button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* vazio */
+.dna-vazio{position:relative; padding:48px 32px; border:1px solid var(--linha); border-radius:22px; text-align:center; background:linear-gradient(180deg,rgba(14,19,22,.6),rgba(9,12,14,.3)); overflow:hidden}
+.dna-vazio-radar{width:150px; height:150px; color:rgba(63,214,154,.35); margin-bottom:10px; animation:dna-gira 40s linear infinite}
+@keyframes dna-gira{to{transform:rotate(360deg)}}
+.dna-vazio h2{font:400 28px/1.2 'DM Serif Display',Georgia,serif; margin-bottom:10px}
+.dna-vazio p{max-width:58ch; margin:0 auto 22px; color:var(--text2); line-height:1.65}
+.dna-vazio-acoes{display:flex; gap:10px; justify-content:center; flex-wrap:wrap}
+.dna-btn{display:inline-flex; align-items:center; min-height:46px; padding:0 20px; border-radius:12px; background:linear-gradient(180deg,#4be3a6,#18b07a); color:var(--accent-ink); font-weight:600; text-decoration:none; box-shadow:0 10px 28px rgba(63,214,154,.25)}
+.dna-btn-sec{background:transparent; color:var(--text); border:1px solid var(--border2); box-shadow:none}
+
+/* palco: rating + radar */
+.dna-palco{display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); gap:0; border:1px solid var(--linha); border-radius:22px; background:linear-gradient(180deg,rgba(14,19,22,.7),rgba(9,12,14,.45)); overflow:hidden}
+.dna-rating{padding:30px 32px; border-right:1px solid var(--linha); display:flex; flex-direction:column}
+.dna-rating-valor{font:600 clamp(56px,7vw,84px)/1 'JetBrains Mono',monospace; letter-spacing:-.04em; color:#f3f7f5; margin:16px 0 8px; text-shadow:0 0 40px rgba(63,214,154,.18)}
+.dna-rating-valor small{font-size:.32em; color:var(--text3); letter-spacing:0; margin-left:6px}
+.dna-rating-faixa{font-size:15px; color:var(--text2)}
+.dna-rating-faixa b{font-family:'JetBrains Mono',monospace; color:#8ff0c4; font-weight:600}
+.dna-curva{width:100%; height:90px; margin:18px 0 4px; overflow:visible}
+.dna-aviso{margin:10px 0 0; padding:10px 12px; border-radius:10px; border:1px solid rgba(216,192,106,.35); background:rgba(216,192,106,.07); color:#efe1ad; font-size:13.5px; line-height:1.5}
+.dna-aviso:empty{display:none}
+.dna-nota{margin:auto 0 0; padding-top:18px; font-size:13px; line-height:1.6; color:var(--text3)}
+.dna-nota strong{color:var(--text2); font-weight:600}
+.dna-nota a{color:#8ff0c4}
+
+.dna-radar-box{padding:26px 28px 22px; display:flex; flex-direction:column}
+.dna-radar-topo{display:flex; justify-content:space-between; align-items:center; gap:12px}
+.dna-radar{width:100%; max-width:470px; margin:8px auto 0; display:block; overflow:visible}
+.dna-radar-info{min-height:44px; margin:6px 0 0; text-align:center; font-size:14px; line-height:1.5; color:var(--text2)}
+.dna-radar-info b{color:#f3f7f5}
+
+.dna-seg{display:inline-flex; padding:3px; border-radius:10px; background:rgba(255,255,255,.04); border:1px solid var(--linha)}
+.dna-seg button{border:0; background:none; color:var(--text2); font:500 13px/1 'Outfit',sans-serif; padding:7px 12px; border-radius:8px; cursor:pointer; transition:all .2s}
+.dna-seg button[aria-pressed="true"]{background:rgba(63,214,154,.12); color:#e9fff6}
+.dna-seg button:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+
+/* radar (SVG) */
+.rd-anel{fill:none; stroke:rgba(255,255,255,.06)}
+.rd-eixo{stroke:rgba(255,255,255,.07)}
+.rd-area{fill:rgba(63,214,154,.16); stroke:#3fd69a; stroke-width:2; stroke-linejoin:round; filter:drop-shadow(0 0 12px rgba(63,214,154,.35)); transition:all .5s var(--ease)}
+.rd-area.rd-comp{fill:none; stroke:rgba(120,170,235,.7); stroke-dasharray:4 4; filter:none; stroke-width:1.5}
+.rd-pt{fill:#07090b; stroke:#3fd69a; stroke-width:2; transition:r .2s}
+.rd-eixo-g{cursor:pointer; outline:none}
+.rd-eixo-g:hover .rd-pt,.rd-eixo-g:focus .rd-pt,.rd-eixo-g.on .rd-pt{r:6; fill:#3fd69a}
+.rd-rot{fill:#b7c5c0; font:500 13px 'Outfit',sans-serif}
+.rd-val{fill:#8ff0c4; font:600 12px 'JetBrains Mono',monospace}
+.rd-eixo-g.on .rd-rot,.rd-eixo-g:hover .rd-rot{fill:#fff}
+.rd-sem{fill:#5d6c68}
+.rd-alvo{fill:transparent}
+
+/* números de apoio */
+.dna-numeros{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); margin:18px 0 0; border:1px solid var(--linha); border-radius:18px; overflow:hidden}
+.dna-numeros>div{padding:18px 22px; display:flex; flex-direction:column; gap:8px; border-left:1px solid var(--linha)}
+.dna-numeros>div:first-child{border-left:0}
+.dna-numeros b{font:600 26px/1 'JetBrains Mono',monospace; color:#f3f7f5}
+.dna-numeros small{font-size:12.5px; color:var(--text3); line-height:1.4}
+
+/* blocos */
+.dna-bloco{margin-top:18px; padding:24px 26px; border:1px solid var(--linha); border-radius:18px; background:rgba(12,16,19,.4)}
+.dna-bloco h2{font:400 24px/1.2 'DM Serif Display',Georgia,serif; color:#f3f7f5}
+.dna-bloco-topo{display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px}
+.dna-sub{margin:6px 0 16px; font-size:13.5px; color:var(--text3)}
+.dna-duas{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+.dna-duas .dna-bloco{margin-top:18px}
+
+.dna-evo-wrap{position:relative}
+.dna-evo{width:100%; height:240px; display:block; overflow:visible}
+.ev-grade{stroke:rgba(255,255,255,.05)}
+.ev-rot{fill:#5d6c68; font:11px 'JetBrains Mono',monospace}
+.ev-area{fill:url(#ev-grad)}
+.ev-linha{fill:none; stroke:#3fd69a; stroke-width:2.2; stroke-linejoin:round; stroke-linecap:round; filter:drop-shadow(0 0 8px rgba(63,214,154,.4))}
+.ev-pt{fill:rgba(233,239,237,.55); transition:r .15s}
+.ev-pt.v{fill:#3fd69a} .ev-pt.d{fill:#e57d5f} .ev-pt.e{fill:#b7c5c0}
+.ev-pt.on{r:6}
+.ev-cursor{stroke:rgba(255,255,255,.18); stroke-dasharray:3 4}
+.dna-tip{position:absolute; pointer-events:none; transform:translate(-50%,-110%); padding:8px 10px; border-radius:10px; background:#0e1417; border:1px solid var(--border2); box-shadow:0 12px 30px rgba(0,0,0,.5); font-size:12.5px; line-height:1.45; color:var(--text2); white-space:nowrap}
+.dna-tip b{color:#f3f7f5; font-family:'JetBrains Mono',monospace}
+.dna-legenda{display:flex; align-items:center; gap:8px; margin:10px 0 0; font-size:12.5px; color:var(--text3)}
+.dna-l-ponto{width:7px; height:7px; border-radius:50%; background:rgba(233,239,237,.55)}
+.dna-l-linha{width:18px; height:2px; border-radius:2px; background:#3fd69a; margin-left:10px}
+
+.dna-barras{display:flex; flex-direction:column; gap:14px}
+.db-linha{display:grid; grid-template-columns:118px 1fr 52px; align-items:center; gap:12px; font-size:14px; color:var(--text2)}
+.db-trilho{height:8px; border-radius:99px; background:rgba(255,255,255,.05); overflow:hidden}
+.db-barra{height:100%; border-radius:99px; background:var(--c); width:0; transition:width .9s var(--ease)}
+.db-num{font:600 14px 'JetBrains Mono',monospace; color:#f3f7f5; text-align:right}
+
+.dna-aberturas{display:flex; flex-direction:column}
+.da-linha{display:grid; grid-template-columns:minmax(0,1fr) 46px 64px 58px; gap:10px; align-items:center; padding:10px 0; border-top:1px solid var(--linha); font-size:14px}
+.da-linha:first-child{border-top:0}
+.da-nome{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text)}
+.da-linha span{font-family:'JetBrains Mono',monospace; color:var(--text2); text-align:right; font-size:13px}
+.da-cab{font:500 11px/1 'Outfit',sans-serif!important; letter-spacing:.1em; text-transform:uppercase; color:var(--text3)!important}
+.dna-vazio-txt{font-size:14px; color:var(--text3)}
+
+/* método */
+.dna-metodo{margin-top:48px; padding-top:34px; border-top:1px solid var(--linha)}
+.dna-metodo>h2{font:400 32px/1.2 'DM Serif Display',Georgia,serif; margin-bottom:22px}
+.dna-metodo-grade{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:26px 40px}
+.dna-metodo h3{font-size:17px; font-weight:600; color:#f3f7f5; margin-bottom:8px}
+.dna-metodo p{font-size:15.5px; line-height:1.75; color:var(--text2); margin:0 0 12px}
+.dna-metodo strong{color:var(--text); font-weight:600}
+.dna-apagar{border:1px solid rgba(224,82,79,.4); background:transparent; color:#f0a4a2; padding:9px 14px; border-radius:10px; font:500 13.5px 'Outfit',sans-serif; cursor:pointer}
+.dna-apagar:hover{background:rgba(224,82,79,.1)}
+
+@media (max-width:900px){
+  .dna{padding-top:36px}
+  .dna-palco{grid-template-columns:1fr}
+  .dna-rating{border-right:0; border-bottom:1px solid var(--linha); padding:24px 22px}
+  .dna-radar-box{padding:22px 16px 18px}
+  .dna-numeros{grid-template-columns:1fr 1fr}
+  .dna-numeros>div:nth-child(3){border-left:0}
+  .dna-numeros>div:nth-child(n+3){border-top:1px solid var(--linha)}
+  .dna-duas{grid-template-columns:1fr; gap:0}
+  .dna-metodo-grade{grid-template-columns:1fr}
+  .dna-bloco{padding:20px 18px}
+  .dna-evo{height:200px}
+}
+@media (max-width:420px){
+  .dna{width:calc(100% - 32px)}
+  .db-linha{grid-template-columns:96px 1fr 44px}
+  .da-linha{grid-template-columns:minmax(0,1fr) 34px 54px 48px; gap:6px}
+}
+@media (prefers-reduced-motion:reduce){.dna-vazio-radar{animation:none}.rd-area,.db-barra{transition:none}}
+.dna-quem[hidden],.dna-vazio[hidden],.dna-corpo[hidden]{display:none}
+.da-linha .da-nome{text-align:left; font-family:"Outfit",sans-serif; font-size:14px; color:var(--text)}
