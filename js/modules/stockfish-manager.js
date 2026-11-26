@@ -228,7 +228,10 @@ const StockfishManager = (() => {
       try {
         for (let i = 0; i < ALVO; i++) _novoSlot(await _startWorker(url, 60000), forcado);
       } catch (err) {
-        if (!opts.soRapido || slots.length) throw err;
+        // Um motor extra que não subiu (memória curta no celular) não pode
+        // derrubar os que já estão prontos: segue com quantos houver.
+        if (slots.length) { console.warn(`[Stockfish] seguindo com ${slots.length} motor(es):`, err.message); return; }
+        if (!opts.soRapido) throw err;
         console.warn('[Stockfish] Lite falhou, carregando o completo:', err.message);
         _novoSlot(await _startWorker(FULL_FILE + '#' + encodeURIComponent(await _urlWasmCompleto()), 120000), 'full');
       }

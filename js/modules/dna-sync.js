@@ -104,22 +104,38 @@ const DNASync = (() => {
         const motores = Math.min(celular ? 2 : 3, Math.max(1, nucleos - 1));
         if (!motorPronto) motorPronto = StockfishManager.init({ soRapido: true, motores });
         await motorPronto;
-      } catch (e) { rodando = false; avisar({ fase: 'parado', erro: 'Não foi possível carregar o motor de análise.' }); return; }
+      } catch (e) {
+        motorPronto = null;   // o "Continuar" tenta de novo, em vez de repetir o mesmo erro
+        rodando = false; avisar({ fase: 'parado', erro: 'Não foi possível carregar o motor de análise. Toque em Continuar para tentar de novo.' }); return;
+      }
     }
     while (!parar && (q = fila()).length) {
       const item = q[0];
       avisar({ fase: 'analisando', atual: item, feitas, total: Math.max(total, feitas + q.length) });
-      let ok = false;
+      let ok = false, descartar = false;
       try {
         const parsed = PGNParser.parsePGN(item.pgn);
         if (parsed.moves.length >= 6) {
           const moves = await analisar(parsed);
           PlayerDNA.registrar(parsed, moves, { fonte: item.site, gameId: item.id });
           ok = true;
-        }
-      } catch (e) { console.warn('[DNA] partida não analisada', item.id, e); }
-      if (!ok) gravarJSON(KEY_DESCARTE, lerJSON(KEY_DESCARTE, []).concat(item.id).slice(-500));
-      gravarJSON(KEY_FILA, fila().filter(x => x.id !== item.id));
+        } else descartar = true;   // curta demais: não entra no DNA
+      } catch (e) {
+        console.warn('[DNA] partida não analisada', item.id, e);
+        // Falha do motor pode ser passageira: a partida vai para o fim da
+        // fila e só é descartada depois de 3 tentativas.
+        item.tentativas = (item.tentativas || 0) + 1;
+        descartar = item.tentativas >= 3;
+      }
+      if (descartar) gravarJSON(KEY_DESCARTE, lerJSON(KEY_DESCARTE, []).concat(item.id).slice(-500));
+      const resto = fila().filter(x => x.id !== item.id);
+      if (!ok && !descartar) resto.push(item);
+      gravarJSON(KEY_FILA, resto);
+      if (!ok && !descartar) {   // motor falhou: para aqui e espera o Continuar
+        rodando = false;
+        avisar({ fase: 'parado', atual: null, erro: 'A análise travou nesta partida. Toque em Continuar para tentar de novo.' });
+        return;
+      }
       feitas++;
       avisar({ feitas, nova: ok ? item : null });
     }

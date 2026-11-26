@@ -20,7 +20,7 @@
     const disp = PlayerDNA.nomesDisponiveis();
     const meus = new Set(PlayerDNA.meusNomes().map(n => n.toLowerCase()));
     const box = $('dna-nomes');
-    $('dna-quem').hidden = !disp.length;
+    $('dna-quem').hidden = !disp.length || PlayerDNA.emExemplo();
     box.innerHTML = disp.slice(0, 12).map(d => `<button type="button" data-nome="${esc(d.nome)}" aria-pressed="${meus.has(d.nome.toLowerCase())}">${esc(d.nome)}<small>${d.partidas}</small></button>`).join('');
   }
   $('dna-nomes').addEventListener('click', e => {
@@ -277,7 +277,7 @@
     const pl = (n, um, v) => `${n} ${n === 1 ? um : v}`;
     $('dna-res-sub').textContent = `${pl(todas.vde.v, 'vitória', 'vitórias')}, ${pl(todas.vde.e, 'empate', 'empates')}, ${pl(todas.vde.d, 'derrota', 'derrotas')}`;
     $('dna-n').textContent = String(todas.n);
-    $('dna-n-sub').textContent = todas.n < todas.minimo ? `Faltam ${todas.minimo - todas.n} para a faixa confiável` : 'Neste aparelho';
+    $('dna-n-sub').textContent = todas.n < todas.minimo ? `Faltam ${todas.minimo - todas.n} para a faixa confiável` : PlayerDNA.emExemplo() ? 'Partidas do exemplo' : 'Neste aparelho';
     $('dna-elo').textContent = todas.eloPgn ? milhar(todas.eloPgn.media) : '—';
     $('dna-elo-sub').textContent = todas.eloPgn ? `Média de ${todas.eloPgn.n} PGNs. Só referência: não entra direto no cálculo.` : 'Os PGNs não trazem o seu Elo.';
     renderEvolucao(todas);

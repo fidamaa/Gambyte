@@ -7,7 +7,7 @@
   const $ = id => document.getElementById(id);
   const NOME = { chesscom: 'Chess.com', lichess: 'Lichess' };
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  let sincronizou = false, t = 0, vinculado = false;
+  let sincronizou = false, t = 0, vinculado = false, exemplo = false;
 
   function redesenhar() {
     clearTimeout(t);
@@ -37,12 +37,16 @@
     if (!AuthSystem.isReady() && !Object.keys(DNASync.contas()).length) return;
     const cs = DNASync.contas(), tem = Object.keys(cs).length > 0;
     vinculado = tem;
+    if (tem) exemplo = false;
+    PlayerDNA.usarExemplo(exemplo ? window.DNA_EXEMPLO : null, 'Bot 1200');
     document.body.classList.remove('dna-carregando');
     document.body.classList.toggle('dna-vinculado', tem);
-    document.body.classList.toggle('dna-sem-conta', !tem);
+    document.body.classList.toggle('dna-sem-conta', !tem && !exemplo);
+    document.body.classList.toggle('dna-modo-exemplo', exemplo);
     PlayerDNA.usarContas(tem ? cs : null, DNASync.fonte());
     $('dna-contas').hidden = !tem;
-    $('dna-semconta').hidden = tem;
+    $('dna-semconta').hidden = tem || exemplo;
+    $('dna-exemplo').hidden = !exemplo;
     if (tem) {
       fontes(cs);
       if (!sincronizou) { sincronizou = true; DNASync.sincronizar(); }
@@ -56,6 +60,20 @@
     }
     redesenhar();
   }
+
+  // DNA de exemplo: carregado só quando pedido (js/data/dna-exemplo.js)
+  $('dsc-exemplo').addEventListener('click', e => {
+    const b = e.currentTarget;
+    const abrir = () => { exemplo = true; aplicar(); scrollTo({ top: 0, behavior: 'smooth' }); };
+    if (window.DNA_EXEMPLO) return abrir();
+    b.disabled = true; b.textContent = 'Carregando…';
+    const sc = document.createElement('script');
+    sc.src = '/js/data/dna-exemplo.js?v=1';
+    sc.onload = () => { b.disabled = false; b.textContent = 'Ver um DNA de exemplo'; abrir(); };
+    sc.onerror = () => { b.disabled = false; b.textContent = 'Não carregou. Tentar de novo'; };
+    document.head.appendChild(sc);
+  });
+  $('dex-sair').addEventListener('click', () => { exemplo = false; aplicar(); });
 
   $('dc-fontes').addEventListener('click', e => {
     const b = e.target.closest('[data-fonte]');

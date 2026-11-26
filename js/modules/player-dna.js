@@ -34,6 +34,11 @@ const PlayerDNA = (() => {
   let _contas = null, _fonte = 'ambos', _soConta = false;
   // A página do DNA exige conta: sem conta vinculada, o DNA fica vazio.
   function exigirConta(sim) { _soConta = !!sim; }
+  // DNA de exemplo (página /dna sem conta): lista fixa só na memória;
+  // nada é gravado nem apagado enquanto ele está na tela.
+  let _exemplo = null, _exNome = '';
+  function usarExemplo(lista, nome) { _exemplo = Array.isArray(lista) ? lista : null; _exNome = nome || ''; }
+  const emExemplo = () => !!_exemplo;
   function usarContas(contas, fonte) {
     const c = {};
     if (contas && contas.chesscom) c.chesscom = contas.chesscom;
@@ -48,19 +53,22 @@ const PlayerDNA = (() => {
   }
 
   function lerTudo() {
+    if (_exemplo) return _exemplo.slice();
     try { const v = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(v) ? v : []; }
     catch (e) { return []; }
   }
   // O que entra no DNA: com contas vinculadas, só as partidas delas.
   function ler() {
     const v = lerTudo(), sites = sitesAtivos();
+    if (_exemplo) return v;
     if (!sites) return _soConta ? [] : v;
     return v.filter(x => sites.includes(fonteDe(x)));
   }
   function gravar(lista) {
+    if (_exemplo) return;
     try { localStorage.setItem(KEY, JSON.stringify(lista.slice(0, MAX))); } catch (e) { /* cheio ou bloqueado */ }
   }
-  function apagar() { try { localStorage.removeItem(KEY); } catch (e) { /* ok */ } }
+  function apagar() { if (_exemplo) return; try { localStorage.removeItem(KEY); } catch (e) { /* ok */ } }
 
   /* ── Registro de uma partida analisada ─────────────────────── */
   const CLS = ['brilliant', 'great', 'best-move', 'excellent', 'good', 'book', 'inaccuracy', 'mistake', 'miss', 'blunder'];
@@ -186,6 +194,7 @@ const PlayerDNA = (() => {
   }
   function meusNomes() {
     // Com contas vinculadas, "você" são os usuários delas.
+    if (_exemplo) return [_exNome];
     const sites = sitesAtivos();
     if (sites) return sites.map(k => _contas[k]);
     if (_soConta) return [];
@@ -514,5 +523,5 @@ const PlayerDNA = (() => {
     return t < 180 ? 'bullet' : t < 480 ? 'blitz' : t < 1500 ? 'rápida' : 'clássica';
   }
 
-  return { registrar, ler, lerTudo, usarContas, exigirConta, sitesAtivos, fonteDe, idsGuardados, apagar, calcular, nomesDisponiveis, meusNomes, definirMeusNomes, rating, evolucaoRating, partidasDe, pgnDe, ritmoDe, MIN_PARTIDAS, num, fmtPct, aberturaBrancas, classificarEstilo, tracosEstilo, tracosSan, sansDoPgn, ESTILOS };
+  return { registrar, ler, lerTudo, usarContas, exigirConta, usarExemplo, emExemplo, sitesAtivos, fonteDe, idsGuardados, apagar, calcular, nomesDisponiveis, meusNomes, definirMeusNomes, rating, evolucaoRating, partidasDe, pgnDe, ritmoDe, MIN_PARTIDAS, num, fmtPct, aberturaBrancas, classificarEstilo, tracosEstilo, tracosSan, sansDoPgn, ESTILOS };
 })();

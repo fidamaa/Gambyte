@@ -170,3 +170,11 @@ body.dna-sem-conta .dna-hub,body.dna-sem-conta .dna-vazio,body.dna-sem-conta .dn
 @media (max-width:1180px){.h-topo .dna-evo{height:170px}.h-topo .dna-bloco h2{font-size:20px}}
 @media (max-width:900px){.h-topo{grid-template-columns:1fr 1fr}.h-topo .h-rating-bloco{grid-column:1 / -1}}
 @media (max-width:720px){.h-topo{grid-template-columns:1fr}}
+
+/* DNA de exemplo (sem conta) */
+.dsc-acoes{display:flex; flex-wrap:wrap; gap:10px}
+.dsc-acoes .dna-btn{border:0; cursor:pointer; font-family:'Outfit',sans-serif; font-size:15px}
+.dsc-acoes .dna-btn-sec{border:1px solid var(--border2)}
+.dna-exemplo[hidden]{display:none}
+.dna-exemplo{border-color:rgba(240,190,90,.35); background:rgba(240,190,90,.06)}
+body.dna-modo-exemplo .dna-quem{display:none}
