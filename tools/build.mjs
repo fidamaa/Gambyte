@@ -20,12 +20,29 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC  = path.join(ROOT, 'tools', 'artigos');
 const OUT  = path.join(ROOT, 'aprender');
 const SITE = 'https://gambyte.com.br';
 const HOJE = new Date().toISOString().slice(0, 10);
+
+/* Datas reais pelo histórico do Git: publicação = primeiro commit do artigo
+   (no fragmento ou na página gerada), atualização = último commit que mudou o
+   texto do fragmento. Um fragmento com mudança ainda não commitada conta como
+   atualizado hoje; um artigo fora do Git conta como publicado hoje. */
+const git = args => { try { return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); } catch { return ''; } };
+function datasGit(arq) {
+  const fonte = `tools/artigos/${arq}`;
+  const criadas = git(['log', '--diff-filter=A', '--format=%ad', '--date=short', '--', fonte, `aprender/${arq}`]).split('\n').filter(Boolean).sort();
+  const publicado = criadas[0] || HOJE;
+  const pendente = git(['status', '--porcelain', '--', fonte]) !== '';
+  const atualizado = pendente ? HOJE : (git(['log', '-1', '--format=%ad', '--date=short', '--', fonte]) || publicado);
+  return { publicado, atualizado: atualizado < publicado ? publicado : atualizado };
+}
+const ultimaData = arq => git(['status', '--porcelain', '--', arq]) !== '' ? HOJE
+  : git(['log', '-1', '--format=%ad', '--date=short', '--', arq]) || HOJE;
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const dataExtenso = iso => { const [a, m, d] = iso.split('-').map(Number); return `${d} de ${MESES[m - 1]} de ${a}`; };
 
@@ -209,6 +226,7 @@ const artigos = fs.readdirSync(SRC).filter(f => f.endsWith('.html')).sort().map(
   let meta;
   try { meta = JSON.parse(m[1]); } catch (e) { falha(arq, 'meta inválido: ' + e.message); return null; }
   meta.slug = arq.replace(/\.html$/, '');
+  { const d = datasGit(arq); meta.publicado = meta.publicado || d.publicado; meta.atualizado = d.atualizado < meta.publicado ? meta.publicado : d.atualizado; }
   for (const k of ['titulo', 'descricao', 'categoria', 'ordem']) if (meta[k] == null) falha(arq, `meta sem "${k}"`);
   if (!CATEGORIAS.some(c => c[0] === meta.categoria)) falha(arq, `categoria desconhecida: ${meta.categoria}`);
   let corpo = bruto.slice(m[0].length);
@@ -229,10 +247,28 @@ const artigos = fs.readdirSync(SRC).filter(f => f.endsWith('.html')).sort().map(
   // [[tab fen="..." lances="..." mostra="antes" marca="e4 d5" leg="..." vez="nao"]]
   corpo = corpo.replace(/\[\[tab ([^\]]*)\]\]/g, (_, at) => diagrama(arq, attrs(at)));
   // [[l 1. e4 e5 2. Nf3]] → sequência conferida a partir da posição inicial;
-  // [[l fen="..." 1. Nc7+]] → conferida a partir de um FEN
+  // [[l fen="..." 1. Nc7+]] → conferida a partir de um FEN.
+  // A sequência é sempre escrita e conferida desde o 1º lance, mas, quando ela
+  // continua um trecho que o artigo já mostrou, a página mostra só os lances
+  // novos ("13. Rxd7 Rxd7 14. Rd1"), como uma pessoa escreveria.
+  const mostrados = [];
+  const semNumeros = s => s.replace(/\d+\.(\.\.)?/g, ' ').split(/\s+/).filter(Boolean);
   corpo = corpo.replace(/\[\[l (?:fen="([^"]*)" )?([^\]]*)\]\]/g, (_, fen, seq) => {
     jogar(arq, fen ? (fen.split(' ').length === 4 ? fen + ' 0 1' : fen) : PGNParser.INITIAL_FEN, seq);
-    return `<span class="lances">${esc(seq.trim())}</span>`;
+    let texto = seq.trim();
+    if (!fen) {
+      const t = semNumeros(texto);
+      // só continua trechos de pelo menos um lance completo: "1. e4" sozinho é
+      // exemplo de notação, e o exemplo seguinte precisa aparecer inteiro
+      const k = mostrados.filter(p => p.length >= 2 && p.length < t.length && p.every((x, i) => x === t[i]))
+        .reduce((n, p) => Math.max(n, p.length), 0);
+      if (k) texto = t.slice(k).map((san, j) => {
+        const i = k + j;
+        return i % 2 === 0 ? `${i / 2 + 1}. ${san}` : j === 0 ? `${(i + 1) / 2}... ${san}` : san;
+      }).join(' ');
+      mostrados.push(t);
+    }
+    return `<span class="lances">${esc(texto)}</span>`;
   });
   if (/\[\[/.test(corpo)) falha(arq, 'sobrou marcação [[...]] não reconhecida: ' + corpo.match(/\[\[[^\]]{0,60}/)[0]);
 
@@ -301,7 +337,7 @@ for (const art of artigos) {
     .filter(a => a && a !== art).slice(0, 3);
   const ld = [{
     '@context': 'https://schema.org', '@type': 'Article', headline: meta.titulo, description: meta.descricao,
-    inLanguage: 'pt-BR', datePublished: meta.publicado || HOJE, dateModified: HOJE, mainEntityOfPage: url,
+    inLanguage: 'pt-BR', datePublished: meta.publicado, dateModified: meta.atualizado, mainEntityOfPage: url,
     author: { '@type': 'Person', name: 'Rampini', url: `${SITE}/sobre` },
     publisher: { '@type': 'Organization', name: 'Gambyte', logo: { '@type': 'ImageObject', url: `${SITE}/logo.png` } },
     articleSection: nomeCat(meta.categoria), wordCount: meta.palavras,
@@ -330,7 +366,7 @@ ${NAV('/aprender/')}
 <h1>${esc(meta.titulo)}</h1>
 <p class="info-summary">${esc(meta.descricao)}</p>
 ${chips}
-<p class="ap-meta">Por Rampini · Atualizado em ${dataExtenso(HOJE)}</p>
+<p class="ap-meta">Por Rampini · Publicado em <time datetime="${meta.publicado}">${dataExtenso(meta.publicado)}</time>${meta.atualizado !== meta.publicado ? ` · atualizado em <time datetime="${meta.atualizado}">${dataExtenso(meta.atualizado)}</time>` : ''}</p>
 ${['gambyte'].includes(meta.categoria) || ['notacao-algebrica', 'glossario', 'exportar-pgn', 'como-estudar-suas-partidas', 'gestao-do-tempo'].includes(meta.slug) ? '' : '<p class="ap-notacao">Os lances usam a notação do PGN: K é rei, Q dama, R torre, B bispo e N cavalo. <a href="/aprender/notacao-algebrica">Como ler a notação</a></p>'}
 ${sumario}
 <div class="ap-corpo">
@@ -365,6 +401,7 @@ ${FOOTER}
     hasPart: artigos.map(a => ({ '@type': 'Article', headline: a.meta.titulo, url: `${SITE}/aprender/${a.meta.slug}` })),
   }];
   const total = artigos.reduce((n, a) => n + a.meta.minutos, 0);
+  const recente = artigos.map(a => a.meta.atualizado).sort().pop();
   fs.writeFileSync(path.join(OUT, 'index.html'), `${head({ titulo: 'Aprender xadrez: guias de tática, finais e aberturas', descricao, url, tipo: 'website', ld })}
 <body class="info-page ap-page ap-hub-page" data-site="gambyte">
 ${NAV('/aprender/')}
@@ -380,7 +417,7 @@ ${secoes}
 <section class="ap-sobre">
 <h1>Aprenda xadrez com exemplos que você pode testar</h1>
 <p class="info-summary">${artigos.length} guias originais em português, com diagramas e sequências conferidas lance a lance. Leia um tema, depois procure o mesmo padrão em uma partida sua.</p>
-<p class="ap-meta">${artigos.length} artigos · cerca de ${total} minutos de leitura no total · Atualizado em ${dataExtenso(HOJE)}</p>
+<p class="ap-meta">${artigos.length} artigos · cerca de ${total} minutos de leitura no total · Atualizado em ${dataExtenso(recente)}</p>
 </section>
 <aside class="ap-cta"><div><strong>Do estudo para a prática</strong><p>Depois de ler, cole o PGN de uma partida sua e veja onde esses temas apareceram. A análise é gratuita e roda no seu navegador.</p></div><a class="btn-ap btn-ap-solid" href="/">Analisar uma partida</a></aside>
 </main>
@@ -397,10 +434,13 @@ fs.writeFileSync(path.join(ROOT, 'js/data/sample-games.js'),
 /* ── Sitemap ───────────────────────────────────────────────────── */
 {
   const fixas = ['', 'jogar', 'dna', 'aprender/', 'como-usar', 'guia', 'sobre', 'contato', 'gambyte-premium', 'privacidade', 'termos', 'licencas'];
-  const urls = [...fixas, ...artigos.map(a => `aprender/${a.meta.slug}`)];
+  // lastmod de cada página = último commit do arquivo dela (o índice do Aprender usa o artigo mais recente)
+  const recente = artigos.map(a => a.meta.atualizado).sort().pop();
+  const dataDe = u => u === 'aprender/' ? recente : ultimaData(u === '' ? 'index.html' : u + '.html');
+  const urls = [...fixas.map(u => [u, dataDe(u)]), ...artigos.map(a => [`aprender/${a.meta.slug}`, a.meta.atualizado])];
   fs.writeFileSync(path.join(ROOT, 'sitemap.xml'),
     `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
-    + urls.map(u => `  <url><loc>${SITE}/${u}</loc><lastmod>${HOJE}</lastmod></url>`).join('\n') + `\n</urlset>\n`);
+    + urls.map(([u, d]) => `  <url><loc>${SITE}/${u}</loc><lastmod>${d}</lastmod></url>`).join('\n') + `\n</urlset>\n`);
 }
 
 if (erros.length) {

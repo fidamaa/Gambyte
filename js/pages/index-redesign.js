@@ -111,7 +111,8 @@
     });
     form.addEventListener('submit', enviar);
     // Texto de exemplo conforme o site escolhido (mais curto no celular)
-    exemplo(); addEventListener('resize', exemplo);
+    // e a altura do campo acompanha a largura (a barra quebra em duas linhas no celular)
+    exemplo(); addEventListener('resize', () => { exemplo(); crescer(); });
     marcarSite(siteAtual());
     crescer();
   }

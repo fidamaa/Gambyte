@@ -440,3 +440,7 @@ html.revelar .info-home.visto{opacity:1; transform:none}
 .rs-detalhes[open]>summary::before{content:"−"}
 .rs-detalhes>summary small{display:block; margin:2px 0 0 18px; font-size:12px; color:var(--text3); font-weight:400}
 .rs-detalhes>summary:hover{color:var(--text)}
+
+/* A barra acima do tabuleiro já faz a busca por usuário: no painel fica só a lista
+   de partidas (o campo e os botões de site continuam no HTML, usados pela barra). */
+#import-box .imp-head, #import-box .imp-row, #import-box .imp-note{display:none}
