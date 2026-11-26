@@ -146,6 +146,8 @@ const DNASync = (() => {
   // Abre a página: procura partidas novas e analisa o que faltar.
   async function sincronizar() {
     if (!Object.keys(contas()).length) { avisar({ fase: 'sem-conta' }); return; }
+    // O que já está na conta (outro aparelho) entra antes: não analisa de novo.
+    if (typeof DNANuvem !== 'undefined') { avisar({ fase: 'buscando', erro: null }); await DNANuvem.pronto(); }
     await buscarNovas();
     await processar();
   }

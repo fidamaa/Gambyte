@@ -174,9 +174,28 @@ const PlayerDNA = (() => {
     if (!item.fonte) item.fonte = fonteDe(item);
     const lista = lerTudo().filter(x => x.chave !== item.chave && !(item.gameId && x.gameId === item.gameId));
     lista.unshift(item);
-    // mais recentes primeiro pela data da partida (a sincronização chega fora de ordem)
-    lista.sort((a, b) => (Date.parse((b.data || '').replace(/\./g, '-')) || b.id) - (Date.parse((a.data || '').replace(/\./g, '-')) || a.id));
-    gravar(lista);
+    gravar(ordenar(lista));
+    _aoRegistrar.forEach(f => { try { f(item); } catch (e) { /* ok */ } });
+    return item;
+  }
+  // mais recentes primeiro pela data da partida (a sincronização chega fora de ordem)
+  const ordenar = lista => lista.sort((a, b) => (Date.parse((b.data || '').replace(/\./g, '-')) || b.id) - (Date.parse((a.data || '').replace(/\./g, '-')) || a.id));
+  const _aoRegistrar = [];
+  function aoRegistrar(f) { _aoRegistrar.push(f); }
+  // Junta resumos vindos da conta (outro aparelho) com os deste aparelho.
+  // Devolve quantos entraram.
+  function mesclar(novos) {
+    if (_exemplo || !Array.isArray(novos) || !novos.length) return 0;
+    const lista = lerTudo();
+    const chaves = new Set(lista.map(x => x.chave)), ids = new Set(lista.map(x => x.gameId).filter(Boolean));
+    let n = 0;
+    for (const x of novos) {
+      if (!x || typeof x !== 'object' || !x.chave || !x.w || !x.b) continue;
+      if (chaves.has(x.chave) || (x.gameId && ids.has(x.gameId))) continue;
+      lista.push(x); chaves.add(x.chave); if (x.gameId) ids.add(x.gameId); n++;
+    }
+    if (n) gravar(ordenar(lista));
+    return n;
   }
 
   /* ── Quem é "você" ─────────────────────────────────────────── */
@@ -523,5 +542,5 @@ const PlayerDNA = (() => {
     return t < 180 ? 'bullet' : t < 480 ? 'blitz' : t < 1500 ? 'rápida' : 'clássica';
   }
 
-  return { registrar, ler, lerTudo, usarContas, exigirConta, usarExemplo, emExemplo, sitesAtivos, fonteDe, idsGuardados, apagar, calcular, nomesDisponiveis, meusNomes, definirMeusNomes, rating, evolucaoRating, partidasDe, pgnDe, ritmoDe, MIN_PARTIDAS, num, fmtPct, aberturaBrancas, classificarEstilo, tracosEstilo, tracosSan, sansDoPgn, ESTILOS };
+  return { registrar, aoRegistrar, mesclar, ler, lerTudo, usarContas, exigirConta, usarExemplo, emExemplo, sitesAtivos, fonteDe, idsGuardados, apagar, calcular, nomesDisponiveis, meusNomes, definirMeusNomes, rating, evolucaoRating, partidasDe, pgnDe, ritmoDe, MIN_PARTIDAS, num, fmtPct, aberturaBrancas, classificarEstilo, tracosEstilo, tracosSan, sansDoPgn, ESTILOS };
 })();

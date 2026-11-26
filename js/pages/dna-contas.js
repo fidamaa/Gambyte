@@ -101,6 +101,8 @@
   });
   $('dc-status').addEventListener('click', e => { if (e.target.closest('[data-continuar]')) DNASync.sincronizar(); });
 
+  // Partidas que chegaram da conta (outro aparelho): redesenha.
+  if (typeof DNANuvem !== 'undefined') DNANuvem.aoMudar(() => redesenhar());
   AuthSystem.onChange(aplicar);
   aplicar();
 })();

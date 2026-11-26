@@ -298,7 +298,7 @@
   $('dna-apagar').addEventListener('click', e => {
     const b = e.currentTarget;
     if (b.dataset.confirma !== '1') { b.dataset.confirma = '1'; b.textContent = 'Clique de novo para apagar de vez'; return; }
-    PlayerDNA.apagar(); b.dataset.confirma = ''; b.textContent = 'Dados apagados';
+    PlayerDNA.apagar(); if (typeof DNANuvem !== 'undefined') DNANuvem.apagarTudo(); b.dataset.confirma = ''; b.textContent = 'Dados apagados';
     render();
     window.dispatchEvent(new Event('dna:nomes'));
   });
